@@ -23,8 +23,9 @@ import { sanitizeAndReconcileQuestion } from './questionUtils.js';
 // Import modular prompt builders
 import { buildDiscoverySystemPrompt } from './prompts/discoveryPrompts.js';
 import { buildLessonPlanSystemPrompt, buildQuestionSystemPrompt } from './prompts/lessonPrompts.js';
-import { buildContrastExplanationPrompt } from './prompts/evaluationPrompts.js';
+import { buildContrastExplanationPrompt, buildWritingRubricPrompt } from './prompts/evaluationPrompts.js';
 import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt } from './prompts/tutorPrompts.js';
+import { createFallbackWritingRubric } from './evaluators/diagnosticHelpers.js';
 
 // Import modular fallbacks and helpers
 import { fallbackDiscoveryTurn } from './fallbacks/diagnosticFallbacks.js';
@@ -394,20 +395,32 @@ export class GeminiLearningProvider implements LearningModelProvider {
     }
 
     if (question.question_type === 'free_writing') {
+      const isVi = profile.explanation_language === 'vi';
+      let aiRubric: any = null;
+      try {
+        const systemPrompt = buildWritingRubricPrompt(question, trimmed, profile);
+        const prompt = `Evaluate free writing submission for ${question.skill_name}.`;
+        aiRubric = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'writing_evaluation' });
+      } catch (err: any) {
+        console.warn('[AI] free_writing AI evaluation fallback:', err?.message);
+      }
+
       const polished = polishWritingText(trimmed, question.prompt, profile);
-      const isSufficient = trimmed.length >= 25;
+      const rubric = createFallbackWritingRubric(trimmed, question.prompt, profile, aiRubric);
+      const isSufficient = rubric.accuracy >= 3 && trimmed.length >= 15;
+
       return {
         verdict: isSufficient ? 'correct' : 'partially_correct',
         user_answer: userAnswer,
         expected_answer: 'Coherent written output',
-        full_correct_sentence: polished.polishedText,
-        decisive_clue: isVi ? 'Ý văn truyền tải tốt.' : 'Clear communicative phrasing.',
-        explanation: isVi ? 'Bài viết mạch lạc! Tham khảo phiên bản trau chuốt bên dưới.' : 'Good response! Review the polished native version below.',
-        corrected_text: polished.polishedText,
-        key_corrections: polished.keyCorrections,
+        full_correct_sentence: rubric.correctedVersion || polished.polishedText,
+        decisive_clue: rubric.feedbackSummary || (isVi ? 'Ý văn truyền tải tốt.' : 'Clear communicative phrasing.'),
+        explanation: rubric.feedbackSummary || (isVi ? 'Bài viết mạch lạc! Tham khảo phiên bản trau chuốt bên dưới.' : 'Good response! Review the AI-polished native version below.'),
+        corrected_text: rubric.correctedVersion || polished.polishedText,
+        key_corrections: rubric.keyCorrections && rubric.keyCorrections.length > 0 ? rubric.keyCorrections : polished.keyCorrections,
         useful_phrases: polished.usefulPhrases,
         reusable_pattern: polished.reusablePattern,
-        error_tags: [],
+        error_tags: isSufficient ? [] : ['Writing structure'],
         needs_retry: false,
         next_action: 'continue'
       };
