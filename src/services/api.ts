@@ -649,8 +649,9 @@ export async function getDiagnosticSession(): Promise<{ session: DiagnosticSessi
   return { session };
 }
 
-export async function startDiagnosticSession(mode: DiagnosticMode = 'standard'): Promise<DiagnosticSession> {
-  const profile = await localStore.getProfile();
+export async function startDiagnosticSession(mode: DiagnosticMode = 'standard', customProfile?: UserProfile): Promise<DiagnosticSession> {
+  const profile = customProfile || await localStore.getProfile();
+  const baseline = profile.current_level || 'A1';
   const plan = createDiagnosticAssessmentPlan(mode, profile.explanation_language);
 
   const initialSession: DiagnosticSession = {
@@ -666,14 +667,14 @@ export async function startDiagnosticSession(mode: DiagnosticMode = 'standard'):
     maxQuestions: plan.totalQuestions,
     history: [],
     currentEstimates: {
-      grammar: { category: 'grammar', cefrRange: profile.current_level || 'B2', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
-      vocabulary: { category: 'vocabulary', cefrRange: profile.current_level || 'B2', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
-      reading: { category: 'reading', cefrRange: profile.current_level || 'B2', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
-      writing: { category: 'writing', cefrRange: profile.current_level || 'B2', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
+      grammar: { category: 'grammar', cefrRange: baseline, confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
+      vocabulary: { category: 'vocabulary', cefrRange: baseline, confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
+      reading: { category: 'reading', cefrRange: baseline, confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
+      writing: { category: 'writing', cefrRange: baseline, confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: [] },
       speaking: { category: 'speaking', cefrRange: 'Not Assessed (Text Diagnostic)', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: ['Speech fluency requires audio session'], recurringErrors: [], unassessedSubskills: ['Spoken spontaneous output', 'Pronunciation'] },
       listening: { category: 'listening', cefrRange: 'Not Assessed (Text Diagnostic)', confidence: 'low', evidenceCount: 0, correctCount: 0, demonstratedStrengths: [], priorityWeaknesses: [], recurringErrors: [], unassessedSubskills: ['Spoken accent comprehension'] }
     },
-    overallCEFR: profile.current_level || 'B2',
+    overallCEFR: baseline,
     startedAt: new Date().toISOString(),
     lastActiveAt: new Date().toISOString()
   };

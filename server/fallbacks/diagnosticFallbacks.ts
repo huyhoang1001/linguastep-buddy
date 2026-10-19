@@ -48,10 +48,25 @@ export function fallbackDiscoveryTurn(
     updated.goal_summary = userMessage.trim();
   }
 
-  if (lower.includes('b2')) updated.current_level = 'B2';
-  else if (lower.includes('b1')) updated.current_level = 'B1';
-  else if (lower.includes('c1')) updated.current_level = 'C1';
-  else if (lower.includes('a2')) updated.current_level = 'A2';
+  if (lower.includes('a1') || lower.includes('mất gốc') || lower.includes('mới bắt đầu') || lower.includes('beginner') || lower.includes('from a1')) {
+    updated.current_level = 'A1';
+  } else if (lower.includes('a2') || lower.includes('elementary') || lower.includes('cơ bản')) {
+    updated.current_level = 'A2';
+  } else if (lower.includes('b1') || lower.includes('intermediate') || lower.includes('trung cấp')) {
+    updated.current_level = 'B1';
+  } else if (lower.includes('b2') || lower.includes('upper-intermediate')) {
+    updated.current_level = 'B2';
+  } else if (lower.includes('c1') || lower.includes('advanced') || lower.includes('thành thạo')) {
+    updated.current_level = 'C1';
+  }
+
+  if (lower.includes('đạt c1') || lower.includes('target c1') || lower.includes('reach c1') || lower.includes('to c1') || lower.includes('go to c1')) {
+    updated.target_level = 'C1';
+  } else if (lower.includes('đạt b2') || lower.includes('target b2') || lower.includes('reach b2') || lower.includes('to b2')) {
+    updated.target_level = 'B2';
+  } else if (lower.includes('đạt b1') || lower.includes('target b1') || lower.includes('reach b1') || lower.includes('to b1')) {
+    updated.target_level = 'B1';
+  }
 
   if (lower.includes('10')) updated.daily_minutes = 10;
   else if (lower.includes('30')) updated.daily_minutes = 30;
@@ -60,7 +75,7 @@ export function fallbackDiscoveryTurn(
   if (turnsCount <= 1) {
     return {
       tutorReply: isVi
-        ? 'Chào bạn! Mình là gia sư tiếng Anh đồng hành cùng bạn. Để thiết kế lộ trình học hiệu quả nhất, mục tiêu tiếng Anh quan trọng nhất của bạn lúc này là gì?'
+        ? 'Chào bạn! Mình là gia sư tiếng Anh đồng hành cùng bạn. Để thiết kế lộ trình học cá nhân hóa chính xác nhất, mục tiêu tiếng Anh quan trọng nhất của bạn lúc này là gì?'
         : 'Hello! I am your personal English tutor. To build your ideal study plan, what is your primary English learning goal right now?',
       quickReplies: isVi
         ? ['Giao tiếp công việc & Kỹ thuật', 'Nói chuyện hàng ngày tự nhiên', 'Viết báo cáo & Đọc tài liệu', 'Cân bằng cả hai']
@@ -72,11 +87,11 @@ export function fallbackDiscoveryTurn(
   } else if (turnsCount === 2) {
     return {
       tutorReply: isVi
-        ? 'Tuyệt vời. Bạn tự đánh giá trình độ hiện tại của mình ở mức nào (ví dụ A2, B1, B2 hay C1), và bạn tự tin bao nhiêu với ước lượng này?'
-        : 'Great. How would you currently estimate your English level (e.g. A2, B1, B2, or C1), and how confident do you feel about this baseline?',
+        ? 'Tuyệt vời. Bạn tự đánh giá trình độ hiện tại của mình ở mức nào (A1 Mất gốc, A2 Cơ bản, B1 Trung cấp, B2 hay C1), và bạn muốn chinh phục cấp độ mục tiêu nào (ví dụ từ A1 lên C1)?'
+        : 'Great. How would you currently estimate your English level (A1 Beginner, A2 Elementary, B1 Intermediate, B2, or C1), and what is your ultimate target level (e.g. from A1 to C1)?',
       quickReplies: isVi
-        ? ['Khoảng B1 (Trung cấp)', 'Khoảng B2 (Trên trung cấp)', 'Khoảng C1 (Thành thạo)', 'Chưa chắc chắn, cần kiểm tra']
-        : ['Around B1 Intermediate', 'Around B2 Upper-Intermediate', 'Around C1 Advanced', 'Not sure, need assessment'],
+        ? ['Từ A1 Mất gốc → C1 Thành thạo', 'Khoảng A2 Cơ bản → B2 / C1', 'Khoảng B1 Trung cấp → C1', 'Chưa chắc chắn, cần kiểm tra']
+        : ['From A1 Beginner → C1 Advanced', 'Around A2 Elementary → B2 / C1', 'Around B1 Intermediate → C1', 'Not sure, need assessment'],
       dimension: 'level',
       updatedProfile: updated,
       isDiscoveryComplete: false

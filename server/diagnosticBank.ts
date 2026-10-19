@@ -12,8 +12,66 @@ export interface DiagnosticBankItem {
 
 export const DIAGNOSTIC_BANK: DiagnosticBankItem[] = [
   // ==========================================
-  // GRAMMAR: A2 / B1 / B2 / C1
+  // GRAMMAR: A1 / A2 / B1 / B2 / C1
   // ==========================================
+  {
+    id: 'diag-gram-a1-tobe-1',
+    category: 'grammar',
+    skillId: 'basic_to_be_pronouns',
+    skillName: 'Subject Pronouns & Verb To Be',
+    difficulty: 'A1',
+    topic: 'general',
+    question: {
+      id: 'dg-a1-1',
+      section: 'grammar',
+      skill_id: 'basic_to_be_pronouns',
+      skill_name: 'Subject Pronouns & Verb To Be',
+      question_type: 'multiple_choice',
+      difficulty: 'A1',
+      context_topic: 'general',
+      prompt: 'My name is Minh and I ____ from Da Nang.',
+      options: [
+        { id: 'A', text: 'am' },
+        { id: 'B', text: 'is' },
+        { id: 'C', text: 'are' },
+        { id: 'D', text: 'be' }
+      ],
+      expected_answer_ids: ['A'],
+      expected_answer_text: 'am',
+      accepted_alternatives: ['am'],
+      hint: 'Chủ ngữ "I" luôn đi với động từ to be "am" ở hiện tại đơn.',
+      explanation_rule: 'Trong tiếng Anh, đại từ nhân xưng ngôi thứ nhất số ít "I" đi cùng động từ to be "am" (I am).'
+    }
+  },
+  {
+    id: 'diag-gram-a1-routine-1',
+    category: 'grammar',
+    skillId: 'present_simple_routine',
+    skillName: 'Present Simple Routines',
+    difficulty: 'A1',
+    topic: 'general',
+    question: {
+      id: 'dg-a1-2',
+      section: 'grammar',
+      skill_id: 'present_simple_routine',
+      skill_name: 'Present Simple Routines',
+      question_type: 'multiple_choice',
+      difficulty: 'A1',
+      context_topic: 'general',
+      prompt: 'Every morning, Lan ____ a glass of warm water before breakfast.',
+      options: [
+        { id: 'A', text: 'drinks' },
+        { id: 'B', text: 'drink' },
+        { id: 'C', text: 'is drinking' },
+        { id: 'D', text: 'drank' }
+      ],
+      expected_answer_ids: ['A'],
+      expected_answer_text: 'drinks',
+      accepted_alternatives: ['drinks'],
+      hint: 'Chủ ngữ "Lan" là ngôi thứ 3 số ít (She), động từ ở hiện tại đơn cần thêm -s.',
+      explanation_rule: 'Với thì hiện tại đơn chỉ thói quen hàng ngày ("Every morning"), chủ ngữ số ít (he/she/Lan) đi với động từ thêm -s/es.'
+    }
+  },
   {
     id: 'diag-gram-a2-past-1',
     category: 'grammar',
@@ -335,8 +393,37 @@ export const DIAGNOSTIC_BANK: DiagnosticBankItem[] = [
   },
 
   // ==========================================
-  // VOCABULARY: A2 / B1 / B2 / C1
+  // VOCABULARY: A1 / A2 / B1 / B2 / C1
   // ==========================================
+  {
+    id: 'diag-voc-a1-greetings-1',
+    category: 'vocabulary',
+    skillId: 'everyday_social_expressions',
+    skillName: 'Everyday Greetings & Meeting',
+    difficulty: 'A1',
+    topic: 'general',
+    question: {
+      id: 'dg-voc-a1-1',
+      section: 'vocabulary',
+      skill_id: 'everyday_social_expressions',
+      skill_name: 'Everyday Greetings & Meeting',
+      question_type: 'multiple_choice',
+      difficulty: 'A1',
+      context_topic: 'general',
+      prompt: 'It was very nice to ____ you at the office today!',
+      options: [
+        { id: 'A', text: 'meet' },
+        { id: 'B', text: 'look' },
+        { id: 'C', text: 'watch' },
+        { id: 'D', text: 'listen' }
+      ],
+      expected_answer_ids: ['A'],
+      expected_answer_text: 'meet',
+      accepted_alternatives: ['meet'],
+      hint: 'Cụm từ lịch sự thông dụng khi gặp gỡ: "Nice to meet you".',
+      explanation_rule: '"Nice to meet you" là mẫu câu chào hỏi cơ bản chuẩn mực khi làm quen hoặc gặp gỡ một người.'
+    }
+  },
   {
     id: 'diag-voc-a2-work-1',
     category: 'vocabulary',
@@ -790,8 +877,32 @@ export const DIAGNOSTIC_BANK: DiagnosticBankItem[] = [
   },
 
   // ==========================================
-  // ORIGINAL WRITING TASKS: B1 / B2 / C1
+  // ORIGINAL WRITING TASKS: A1 / B1 / B2 / C1
   // ==========================================
+  {
+    id: 'diag-write-a1-intro',
+    category: 'writing',
+    skillId: 'writing_personal_introduction',
+    skillName: 'Personal Introduction (A1)',
+    difficulty: 'A1',
+    topic: 'general',
+    question: {
+      id: 'dg-write-a1',
+      section: 'writing',
+      skill_id: 'writing_personal_introduction',
+      skill_name: 'Personal Introduction (A1)',
+      question_type: 'free_writing',
+      difficulty: 'A1',
+      context_topic: 'general',
+      prompt: 'Write 2-3 simple sentences introducing yourself: state your name, where you live or work, and one activity you enjoy doing every week.',
+      options: [],
+      expected_answer_ids: [],
+      expected_answer_text: 'My name is... I live in... In my free time, I like...',
+      accepted_alternatives: [],
+      hint: 'Hãy viết các câu ngắn, rõ ràng: "My name is...", "I live in...", "I like to..."',
+      explanation_rule: 'Sử dụng cấu trúc câu khẳng định đơn giản (Chủ ngữ + Động từ + Tân ngữ) ở thì hiện tại đơn.'
+    }
+  },
   {
     id: 'diag-write-b1-workflow',
     category: 'writing',

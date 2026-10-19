@@ -20,6 +20,7 @@ import {
   Award
 } from 'lucide-react';
 import {
+  UserProfile,
   Question,
   DiagnosticSession,
   DiagnosticMode,
@@ -42,11 +43,13 @@ import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
 
 interface AdaptiveDiagnosticViewProps {
+  profile?: UserProfile;
   onAssessmentCompleted: (report: DiagnosticReport, studyPlan: PersonalizedStudyPlan) => void;
   onPaused?: () => void;
 }
 
 export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
+  profile,
   onAssessmentCompleted,
   onPaused
 }) => {
@@ -108,7 +111,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
     setStartingMode(mode);
     setAiError(null);
     try {
-      const newSession = await startDiagnosticSession(mode);
+      const newSession = await startDiagnosticSession(mode, profile);
       setSession(newSession);
       setCurrentQuestion(newSession.currentQuestion || null);
       setUserAnswer('');
@@ -934,7 +937,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     <p>{lastEvaluation.contrast_explanation}</p>
                   </div>
                 )}
-                {lastEvaluation.explanation && (
+                {lastEvaluation.explanation && !lastEvaluation.contrast_explanation && (
                   <p className="text-slate-400 pt-1 border-t border-slate-800 leading-relaxed">{lastEvaluation.explanation}</p>
                 )}
               </div>

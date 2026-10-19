@@ -56,6 +56,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* Stage 2: Adaptive Diagnostic Assessment */}
         {phase === 'diagnostic' && (
           <AdaptiveDiagnosticView
+            profile={profile}
             onAssessmentCompleted={handleAssessmentCompleted}
             onPaused={() => onComplete()}
           />

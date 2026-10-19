@@ -56,10 +56,12 @@ export class DiagnosticService {
 
     const correctInSec = secAttempts.filter(a => a.verdict === 'correct').length;
     const accuracy = secAttempts.length > 0 ? correctInSec / secAttempts.length : 0.5;
-    const levels: Array<'A2' | 'B1' | 'B2' | 'C1'> = ['A2', 'B1', 'B2', 'C1'];
-    let levelIdx = levels.indexOf((profile.current_level as any) || 'B2');
-    if (secAttempts.length >= 2) {
-      if (accuracy >= 0.8 && levelIdx < levels.length - 1) levelIdx++;
+    const levels: Array<'A1' | 'A2' | 'B1' | 'B2' | 'C1'> = ['A1', 'A2', 'B1', 'B2', 'C1'];
+    let initialBaseline = (profile.current_level as any) || 'A1';
+    if (!levels.includes(initialBaseline)) initialBaseline = 'A1';
+    let levelIdx = levels.indexOf(initialBaseline);
+    if (secAttempts.length >= 1) {
+      if (accuracy >= 0.75 && levelIdx < levels.length - 1) levelIdx++;
       else if (accuracy < 0.4 && levelIdx > 0) levelIdx--;
     }
     const targetLevel = levels[Math.max(0, Math.min(levels.length - 1, levelIdx))];
@@ -81,8 +83,19 @@ export class DiagnosticService {
       console.warn('[AI] generateAdaptiveDiagnosticQuestion fallback:', err?.message);
     }
 
-    const bankCandidates = DIAGNOSTIC_BANK.filter(item => item.category === targetSection && !answeredIds.has(item.question.id) && !answeredPrompts.has(item.question.prompt.trim().toLowerCase()));
-    const selected = bankCandidates[0] || DIAGNOSTIC_BANK[0];
+    // Strictly match candidate difficulty to current target level to avoid throwing B2 questions at A1/A2 learners
+    const exactLevelCandidates = DIAGNOSTIC_BANK.filter(item => 
+      item.category === targetSection && 
+      item.difficulty === targetLevel && 
+      !answeredIds.has(item.question.id) && 
+      !answeredPrompts.has(item.question.prompt.trim().toLowerCase())
+    );
+    const anyLevelCandidates = DIAGNOSTIC_BANK.filter(item => 
+      item.category === targetSection && 
+      !answeredIds.has(item.question.id) && 
+      !answeredPrompts.has(item.question.prompt.trim().toLowerCase())
+    );
+    const selected = exactLevelCandidates[0] || anyLevelCandidates[0] || DIAGNOSTIC_BANK[0];
     return selected.question;
   }
 

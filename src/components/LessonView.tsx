@@ -1043,8 +1043,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Detailed Explanation */}
-              {evaluation.explanation && (
+              {/* Detailed Explanation - only when contrast_explanation is not present to prevent duplicate text with "Why your choice was not suitable" */}
+              {evaluation.explanation && !evaluation.contrast_explanation && (
                 <div>
                   <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-1">
                     Explanation

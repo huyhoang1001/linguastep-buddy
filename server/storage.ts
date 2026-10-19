@@ -37,19 +37,19 @@ export interface MultiUserDatabaseSchema {
 export const DEFAULT_PROFILE: UserProfile = {
   id: 'learner-primary',
   name: 'Learner',
-  current_level: '' as any,
-  target_level: 'B2',
-  primary_goal: '' as any,
+  current_level: 'A1',
+  target_level: 'C1',
+  primary_goal: 'balanced',
   goal_summary: '',
   explanation_language: 'vi',
-  general_vs_work_ratio: 65,
+  general_vs_work_ratio: 50,
   daily_minutes: 0,
   days_per_week: 5,
   feedback_style: 'encouraging',
   enable_audio_tips: true,
   onboarding_completed: false,
   struggles: [],
-  timeline_target: '3 months',
+  timeline_target: '6 months',
   audio_importance: false,
   confidence_in_level: 'moderate',
   created_at: new Date().toISOString(),
@@ -58,26 +58,26 @@ export const DEFAULT_PROFILE: UserProfile = {
 
 export const INITIAL_SKILLS: LearnerSkillState[] = [
   {
-    skill_id: 'past_simple_vs_past_perfect',
-    skill_name: 'Past Simple vs. Past Perfect',
+    skill_id: 'present_simple_vs_continuous',
+    skill_name: 'Present Simple vs. Continuous',
+    category: 'grammar',
+    status: 'learning',
+    accuracy_rate: 0.7,
+    total_attempts: 3,
+    last_practiced_at: new Date().toISOString(),
+    next_review_at: new Date(Date.now() + 86400000).toISOString(),
+    recurring_errors: []
+  },
+  {
+    skill_id: 'past_simple_regular_irregular',
+    skill_name: 'Past Simple Regular & Irregular',
     category: 'grammar',
     status: 'learning',
     accuracy_rate: 0.75,
     total_attempts: 4,
     last_practiced_at: new Date().toISOString(),
     next_review_at: new Date(Date.now() + 86400000).toISOString(),
-    recurring_errors: ['Confusing had + V3 with past simple when time markers are implicit']
-  },
-  {
-    skill_id: 'third_and_mixed_conditionals',
-    skill_name: 'Third & Mixed Conditionals',
-    category: 'grammar',
-    status: 'learning',
-    accuracy_rate: 0.6,
-    total_attempts: 5,
-    last_practiced_at: new Date().toISOString(),
-    next_review_at: new Date(Date.now() + 86400000 * 2).toISOString(),
-    recurring_errors: ['Using would have + V3 instead of would + V for present outcome']
+    recurring_errors: []
   },
   {
     skill_id: 'collocation_mitigate',

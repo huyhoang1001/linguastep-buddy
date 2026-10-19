@@ -29,8 +29,8 @@ Output strictly in JSON:
   "dimension": "goal" | "level" | "struggles" | "time" | "ratio" | "audio" | "timeline" | "confirmation",
   "updatedProfile": {
     "primary_goal"?: "workplace_tech" | "conversation" | "reading_writing" | "exam" | "balanced",
-    "current_level"?: "A2" | "B1" | "B2" | "C1",
-    "target_level"?: "B1" | "B2" | "C1",
+    "current_level"?: "A1" | "A2" | "B1" | "B2" | "C1",
+    "target_level"?: "A2" | "B1" | "B2" | "C1",
     "daily_minutes"?: number,
     "general_vs_work_ratio"?: number,
     "struggles"?: string[],

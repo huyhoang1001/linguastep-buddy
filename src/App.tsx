@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import {
   UserProfile,
   LessonPlan,
@@ -221,8 +222,13 @@ export default function App() {
   };
 
   const handleBuildNextSession = async (overrideMinutes?: number) => {
-    await clearActiveLessonState();
-    await handleStartNewLesson(overrideMinutes);
+    setIsBuildingSession(true);
+    try {
+      await clearActiveLessonState();
+      await handleStartNewLesson(overrideMinutes);
+    } finally {
+      setIsBuildingSession(false);
+    }
   };
 
   if (isLoading && !profile) {
@@ -353,7 +359,10 @@ export default function App() {
         <LessonSummaryModal
           summary={activeSummary}
           onClose={() => setShowSummaryModal(false)}
-          onStartNewLesson={handleStartNewLesson}
+          onStartNewLesson={async (mins) => {
+            setShowSummaryModal(false);
+            await handleStartNewLesson(mins);
+          }}
         />
       )}
 
@@ -364,7 +373,10 @@ export default function App() {
           profile={profile}
           activePlan={activePlan}
           activeSummary={activeSummary}
-          onStartNewLesson={handleStartNewLesson}
+          onStartNewLesson={async (mins) => {
+            setShowRoadmapModal(false);
+            await handleStartNewLesson(mins);
+          }}
         />
       )}
 
@@ -404,6 +416,30 @@ export default function App() {
         onDataReset={initApp}
         onDataImported={initApp}
       />
+
+      {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}
+      {isBuildingSession && (
+        <div 
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md select-none pointer-events-auto cursor-wait"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="bg-slate-900 border border-indigo-500/30 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 text-center">
+            <div className="relative mb-5">
+              <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-indigo-400 animate-pulse" />
+              </div>
+            </div>
+            <h3 className="text-base font-bold text-white mb-2">
+              Building Your New Lesson...
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Curating forward-progressing exercises aligned with your learning profile and skill history. Please wait...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
