@@ -54,6 +54,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [startingMode, setStartingMode] = useState<DiagnosticMode | null>(null);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [lastEvaluation, setLastEvaluation] = useState<AnswerEvaluation | null>(null);
   const [lastRubric, setLastRubric] = useState<WritingRubricScore | null>(null);
@@ -104,7 +105,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   };
 
   const handleStartMode = async (mode: DiagnosticMode) => {
-    setIsLoading(true);
+    setStartingMode(mode);
     setAiError(null);
     try {
       const newSession = await startDiagnosticSession(mode);
@@ -121,7 +122,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       setAiError(err);
       setLastFailedAction(() => () => handleStartMode(mode));
     } finally {
-      setIsLoading(false);
+      setStartingMode(null);
     }
   };
 
@@ -331,10 +332,18 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             </div>
 
             <button
+              disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('quick')}
-              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition"
+              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center space-x-2"
             >
-              Start Express (8 Questions • 10m)
+              {startingMode === 'quick' ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Starting Express Exam...</span>
+                </>
+              ) : (
+                <span>Start Express (8 Questions • 10m)</span>
+              )}
             </button>
           </div>
 
@@ -388,11 +397,21 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             </div>
 
             <button
+              disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('standard')}
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2"
+              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2"
             >
-              <span>Start Standard Exam (13 Questions • 20m)</span>
-              <ArrowRight className="w-4 h-4" />
+              {startingMode === 'standard' ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Starting Standard Exam...</span>
+                </>
+              ) : (
+                <>
+                  <span>Start Standard Exam (13 Questions • 20m)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
 
@@ -443,10 +462,18 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             </div>
 
             <button
+              disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('comprehensive')}
-              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition"
+              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center space-x-2"
             >
-              Start Comprehensive (22 Questions • 36m)
+              {startingMode === 'comprehensive' ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Starting Comprehensive Exam...</span>
+                </>
+              ) : (
+                <span>Start Comprehensive (22 Questions • 36m)</span>
+              )}
             </button>
           </div>
         </div>
