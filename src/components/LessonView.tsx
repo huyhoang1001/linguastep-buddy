@@ -1030,8 +1030,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Full Correct Sentence */}
-              {evaluation.full_correct_sentence && (
+              {/* Full Correct Sentence - only for non-multiple choice / free writing */}
+              {evaluation.full_correct_sentence && (!currentQuestion?.options || currentQuestion.options.length === 0) && (
                 <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
                   <span className="text-xs uppercase font-bold tracking-wider text-emerald-400 block mb-1">
                     Complete Sentence
