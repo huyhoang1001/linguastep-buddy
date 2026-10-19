@@ -1,0 +1,8 @@
+{
+  "name": "Remix LinguaStep - Personal English Learning Tutor",
+  "description": "An adaptive, patient English tutor delivering one-question-at-a-time lessons, natural explanations in Vietnamese and English, vocabulary with IPA, reading, and workplace writing practice.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
