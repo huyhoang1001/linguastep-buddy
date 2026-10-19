@@ -54,6 +54,7 @@ export default function App() {
   const [showRoadmapModal, setShowRoadmapModal] = useState<boolean>(false);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isBuildingSession, setIsBuildingSession] = useState<boolean>(false);
   const [appError, setAppError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
 
@@ -202,7 +203,7 @@ export default function App() {
   };
 
   const handleStartNewLesson = async (overrideMinutes?: number) => {
-    setIsLoading(true);
+    setIsBuildingSession(true);
     setAppError(null);
     try {
       const targetMins = overrideMinutes || profile?.daily_minutes;
@@ -215,7 +216,7 @@ export default function App() {
       setAppError(err);
       setLastFailedAction(() => () => handleStartNewLesson(overrideMinutes));
     } finally {
-      setIsLoading(false);
+      setIsBuildingSession(false);
     }
   };
 
@@ -224,14 +225,12 @@ export default function App() {
     await handleStartNewLesson(overrideMinutes);
   };
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 p-4">
-        <div className="w-12 h-12 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4 shadow-xl shadow-indigo-500/30" />
-        <h2 className="text-lg font-bold text-white mb-1">🤖 AI is building your session...</h2>
-        <p className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">
-          Analyzing your learning history, adapting to your proficiency level, and generating fresh custom exercises. Please wait a moment.
-        </p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
+        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <h2 className="text-base font-medium">Loading LinguaStep Tutor...</h2>
+        <p className="text-xs text-slate-400 mt-1">Checking secure session and persistent learning memory</p>
       </div>
     );
   }
@@ -266,6 +265,7 @@ export default function App() {
           setShowOnboarding(true);
         }}
         onBuildNextSession={() => handleBuildNextSession()}
+        isBuildingSession={isBuildingSession}
       />
 
       {/* Main Content Area */}
@@ -288,6 +288,7 @@ export default function App() {
             onFinishLesson={handleLessonFinished}
             onOpenSummary={() => setShowSummaryModal(true)}
             onBuildNextSession={() => handleBuildNextSession()}
+            isBuildingSession={isBuildingSession}
           />
         ) : (
           <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
@@ -299,10 +300,18 @@ export default function App() {
               Your previous session is complete. Let our AI build a fresh, personalized practice session tailored to your current skill level and recent learning patterns.
             </p>
             <button
+              disabled={isBuildingSession}
               onClick={() => handleBuildNextSession()}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2 mx-auto"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2 mx-auto"
             >
-              <span>Build Next AI Session</span>
+              {isBuildingSession ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Building Next AI Session...</span>
+                </>
+              ) : (
+                <span>Build Next AI Session</span>
+              )}
             </button>
           </div>
         )}

@@ -50,6 +50,7 @@ interface LessonViewProps {
   ) => void;
   onOpenSummary: () => void;
   onBuildNextSession?: () => void;
+  isBuildingSession?: boolean;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
@@ -57,7 +58,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   plan,
   onFinishLesson,
   onOpenSummary,
-  onBuildNextSession
+  onBuildNextSession,
+  isBuildingSession
 }) => {
   // Current section & question navigation
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
@@ -524,12 +526,22 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
             {onBuildNextSession && (
               <button
+                disabled={isBuildingSession}
                 onClick={onBuildNextSession}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 border border-indigo-500/40 shadow-md transition"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 border border-indigo-500/40 shadow-md transition"
                 title="Let AI build a brand new session with fresh questions"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Build Next Session</span>
+                {isBuildingSession ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Building...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Build Next Session</span>
+                  </>
+                )}
               </button>
             )}
 

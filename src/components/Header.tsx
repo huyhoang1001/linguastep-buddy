@@ -41,6 +41,7 @@ interface HeaderProps {
   onOpenRoadmap?: () => void;
   onRestartOnboarding?: () => void;
   onBuildNextSession?: () => void;
+  isBuildingSession?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -61,7 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
   hasActiveSummary,
   onOpenRoadmap,
   onRestartOnboarding,
-  onBuildNextSession
+  onBuildNextSession,
+  isBuildingSession
 }) => {
   const getBadgeIcon = (iconName?: string) => {
     switch (iconName) {
@@ -183,12 +185,22 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Build Next AI Session button */}
           {onBuildNextSession && (
             <button
+              disabled={isBuildingSession}
               onClick={onBuildNextSession}
               title="Ask AI to build the next session with fresh questions"
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 border border-indigo-500/40 shadow-md transition"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 border border-indigo-500/40 shadow-md transition"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Build Next Session</span>
+              {isBuildingSession ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="hidden sm:inline">Building...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span className="hidden sm:inline">Build Next Session</span>
+                </>
+              )}
             </button>
           )}
 
