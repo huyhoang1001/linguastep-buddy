@@ -40,6 +40,7 @@ interface HeaderProps {
   hasActiveSummary?: boolean;
   onOpenRoadmap?: () => void;
   onRestartOnboarding?: () => void;
+  onBuildNextSession?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -59,7 +60,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSummary,
   hasActiveSummary,
   onOpenRoadmap,
-  onRestartOnboarding
+  onRestartOnboarding,
+  onBuildNextSession
 }) => {
   const getBadgeIcon = (iconName?: string) => {
     switch (iconName) {
@@ -177,6 +179,18 @@ export const Header: React.FC<HeaderProps> = ({
             <Brain className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden md:inline">Memory</span>
           </button>
+
+          {/* Build Next AI Session button */}
+          {onBuildNextSession && (
+            <button
+              onClick={onBuildNextSession}
+              title="Ask AI to build the next session with fresh questions"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 border border-indigo-500/40 shadow-md transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">Build Next Session</span>
+            </button>
+          )}
 
           {/* Roadmap & Tomorrow's Plan button */}
           {onOpenRoadmap && (

@@ -23,7 +23,8 @@ import {
   getProfile,
   generateLessonPlan,
   generateLessonSummary,
-  getMemory
+  getMemory,
+  clearActiveLessonState
 } from './services/api.ts';
 import { AIErrorAlert } from './components/AIErrorAlert.tsx';
 import { AIFallbackBanner } from './components/AIFallbackBanner.tsx';
@@ -186,6 +187,9 @@ export default function App() {
       setActiveSummary(summary);
       setShowSummaryModal(true);
 
+      // Clear active lesson state so completed session is archived
+      await clearActiveLessonState();
+
       // Refresh memory stats & milestones
       await refreshMilestones();
     } catch (err) {
@@ -213,6 +217,11 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBuildNextSession = async (overrideMinutes?: number) => {
+    await clearActiveLessonState();
+    await handleStartNewLesson(overrideMinutes);
   };
 
   if (isLoading && !profile) {
@@ -254,6 +263,7 @@ export default function App() {
           setOnboardingPhase('discovery');
           setShowOnboarding(true);
         }}
+        onBuildNextSession={() => handleBuildNextSession()}
       />
 
       {/* Main Content Area */}
@@ -275,18 +285,22 @@ export default function App() {
             plan={activePlan}
             onFinishLesson={handleLessonFinished}
             onOpenSummary={() => setShowSummaryModal(true)}
+            onBuildNextSession={() => handleBuildNextSession()}
           />
         ) : (
-          <div className="max-w-md mx-auto px-4 py-20 text-center">
-            <h3 className="text-lg font-bold text-white mb-2">No Active Lesson Plan</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Ready to begin today's personalized English session?
+          <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 mx-auto flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+              <span className="text-2xl">✨</span>
+            </div>
+            <h3 className="text-xl font-bold text-white">Ready for Your Next AI Session?</h3>
+            <p className="text-xs text-slate-400">
+              Your previous session is complete. Let our AI build a fresh, personalized practice session tailored to your current skill level and recent learning patterns.
             </p>
             <button
-              onClick={() => handleStartNewLesson()}
-              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition"
+              onClick={() => handleBuildNextSession()}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2 mx-auto"
             >
-              Start Today's Lesson
+              <span>Build Next AI Session</span>
             </button>
           </div>
         )}

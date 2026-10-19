@@ -285,10 +285,10 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
               onClose();
               onStartNewLesson(targetMins);
             }}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
           >
-            <span>{isVi ? `Bắt Đầu Phiên Học Mới (${targetMins} phút)` : `Start Next Session (${targetMins} mins)`}</span>
-            <ArrowRight className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>{isVi ? `Xây Dựng Phiên Học AI Tiếp Theo (${targetMins} phút)` : `Build Next AI Session (${targetMins} mins)`}</span>
           </button>
         </div>
       </div>

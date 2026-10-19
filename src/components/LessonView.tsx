@@ -49,13 +49,15 @@ interface LessonViewProps {
     timeSpentMinutes?: number
   ) => void;
   onOpenSummary: () => void;
+  onBuildNextSession?: () => void;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
   profile,
   plan,
   onFinishLesson,
-  onOpenSummary
+  onOpenSummary,
+  onBuildNextSession
 }) => {
   // Current section & question navigation
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
@@ -515,6 +517,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
             >
               {isShortSession ? '⚡ Shortened (Active)' : '⚡ Shorten today'}
             </button>
+
+            {onBuildNextSession && (
+              <button
+                onClick={onBuildNextSession}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 border border-indigo-500/40 shadow-md transition"
+                title="Let AI build a brand new session with fresh questions"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Build Next Session</span>
+              </button>
+            )}
 
             <button
               onClick={handleFinishEarly}
