@@ -1124,13 +1124,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Contrast / tempting wrong answers */}
-              {evaluation.contrast_explanation && (
-                <div className="text-xs text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
-                  <span className="font-semibold text-slate-300">Why common alternatives fail: </span>
-                  {evaluation.contrast_explanation}
-                </div>
-              )}
+
 
               {/* Revealed Vocabulary Card & Usage Notes (Shown AFTER answering) */}
               {currentQuestion.vocab_card && (
