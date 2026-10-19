@@ -224,12 +224,14 @@ export default function App() {
     await handleStartNewLesson(overrideMinutes);
   };
 
-  if (isLoading && !profile) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
-        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-base font-medium">Loading LinguaStep Tutor...</h2>
-        <p className="text-xs text-slate-400 mt-1">Checking secure session and persistent learning memory</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 p-4">
+        <div className="w-12 h-12 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4 shadow-xl shadow-indigo-500/30" />
+        <h2 className="text-lg font-bold text-white mb-1">🤖 AI is building your session...</h2>
+        <p className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">
+          Analyzing your learning history, adapting to your proficiency level, and generating fresh custom exercises. Please wait a moment.
+        </p>
       </div>
     );
   }
