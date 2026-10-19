@@ -462,13 +462,47 @@ export class GeminiLearningProvider implements LearningModelProvider {
 
     try {
       const aiResult = await this.callGeminiJson<DeepDiveInquiryResponse>(prompt, systemPrompt, { userId: profile.id, operation: 'tutor_deep_dive' });
-      if (aiResult && aiResult.reply) return aiResult;
+      if (aiResult && aiResult.reply) {
+        if ((!aiResult.similar_words_comparison || aiResult.similar_words_comparison.length === 0) && question.vocab_card?.similar_word_comparison) {
+          aiResult.similar_words_comparison = [
+            {
+              word: question.vocab_card.word,
+              nuance: question.vocab_card.meaning || 'Primary target word',
+              when_to_use: question.vocab_card.collocation_pattern || 'Formal / Professional',
+              example: question.vocab_card.example_workplace || question.vocab_card.example_general || ''
+            },
+            {
+              word: question.vocab_card.similar_word_comparison.word,
+              nuance: question.vocab_card.similar_word_comparison.difference || 'Contrasting term',
+              when_to_use: 'Distinct nuance / scope',
+              example: ''
+            }
+          ];
+        }
+        return aiResult;
+      }
     } catch (err: any) {
       console.warn('[AI] deepDiveInquiry fallback:', err?.message);
     }
 
+    const fallbackSimilarWords = question.vocab_card?.similar_word_comparison ? [
+      {
+        word: question.vocab_card.word,
+        nuance: question.vocab_card.meaning || 'Primary target word',
+        when_to_use: question.vocab_card.collocation_pattern || 'Formal / Professional',
+        example: question.vocab_card.example_workplace || question.vocab_card.example_general || ''
+      },
+      {
+        word: question.vocab_card.similar_word_comparison.word,
+        nuance: question.vocab_card.similar_word_comparison.difference || 'Contrasting term',
+        when_to_use: 'Distinct nuance / scope',
+        example: ''
+      }
+    ] : undefined;
+
     return {
-      reply: `### Tutor Explanation:\n\nRegarding **"${message}"** for ${question.skill_name}:\n\n• **Core Rule:** ${question.explanation_rule || 'Focus on precision and natural cadence.'}`,
+      reply: `### Tutor Explanation:\n\nRegarding **"${message}"** for ${question.skill_name}:\n\n• **Core Rule:** ${question.explanation_rule || 'Focus on precision and natural cadence.'}\n\n• **Word Contrast:** ${question.vocab_card?.similar_word_comparison?.difference || 'Differentiate based on scope and intent.'}`,
+      similar_words_comparison: fallbackSimilarWords,
       suggestedFollowUps: ['Give me more examples', 'Which prepositions work best here?'],
       examples: ['Our team prioritized precision over speed to ensure long-term stability.']
     };
