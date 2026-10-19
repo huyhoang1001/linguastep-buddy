@@ -137,12 +137,12 @@ app.use('/api/ai/', (req: Request, res: Response, next: NextFunction) => {
 // 1. Generate Lesson Plan
 app.post('/api/ai/lesson-plan', checkAIBudget, async (req: Request, res: Response) => {
   try {
-    const { profile, skills = [], recentErrors = [], dailyMinutes } = req.body;
+    const { profile, skills = [], recentErrors = [], dailyMinutes, lessonHistory = [] } = req.body;
     if (!profile || typeof profile !== 'object') {
       return res.status(400).json({ error: 'Valid learner profile is required in request context.' });
     }
 
-    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors);
+    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors, lessonHistory);
     res.json(plan);
   } catch (err: any) {
     handleAiRouteError(res, err);

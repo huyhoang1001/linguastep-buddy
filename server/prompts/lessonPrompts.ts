@@ -6,7 +6,8 @@ export function buildLessonPlanSystemPrompt(
   recentErrors: string[],
   duration: 10 | 20 | 30,
   paceMode: 'quick_10' | 'standard_20' | 'deep_30',
-  totalPlannedQuestions: number
+  totalPlannedQuestions: number,
+  lessonHistory: any[] = []
 ): string {
   const generalRatio = profile.general_vs_work_ratio || 65;
   const workRatio = 100 - generalRatio;
@@ -23,9 +24,16 @@ Balance: ${generalRatio}% general English, ${workRatio}% workplace/technical Eng
 SELECTED DAILY STUDY TIME: ${duration} minutes per day (${paceMode}).
 TARGET QUESTIONS PLANNED: exactly ${totalPlannedQuestions} questions total across activities.
 
-CRITICAL MULTI-GRAMMAR DIVERSITY INSTRUCTIONS:
-- Do NOT restrict grammar to 1 isolated rule (e.g., do NOT give only 1 or 2 mixed conditional questions).
-- You MUST provide a rich, comprehensive daily plan covering at least 2 to 3 DISTINCT grammar structures suitable for ${profile.current_level} level (e.g., Past Simple vs. Past Perfect, Third & Mixed Conditionals, Inversion with Negative Adverbials, Cleft Sentences for Emphasis, Passive Voice in Reports).
+LEARNER PREVIOUS LESSON HISTORY (ALREADY COMPLETED):
+${JSON.stringify(lessonHistory, null, 2)}
+
+CRITICAL CURRICULUM PROGRESSION & STRUCTURE INSTRUCTIONS:
+- FORWARD PROGRESSION: Review the learner's completed lessonHistory above. You MUST NOT repeat grammar topics or themes that were already covered in previous sessions. Advance immediately along the proficiency roadmap to new grammar structures (e.g., Negative Inversion, Subjunctive Mood, Passive Causative, Cleft Sentences, Participle Clauses), new professional collocations, and a fresh topical context.
+- STRUCTURE OF EVERY NEW SESSION: Every generated session plan must include:
+  1. Warm-up & Review (revisiting vocabulary & grammar concepts from past sessions).
+  2. New Grammar (introducing a brand new grammar rule appropriate for ${profile.current_level}).
+  3. New Vocabulary & Collocations (professional or technical terminology).
+  4. New Topic & Practical Application (fresh real-world topic/context).
 - Provide MULTIPLE questions per activity (2 to 4 items per section) so the learner gets thorough practice.
 
 DURATION SPECIFIC ALLOCATION:

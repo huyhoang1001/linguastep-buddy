@@ -235,18 +235,18 @@ export class GeminiLearningProvider implements LearningModelProvider {
   // =========================================================================
   // 3. LESSON PLAN & QUESTION GENERATION
   // =========================================================================
-  public async generateLessonPlan(profile: UserProfile, skillStates: LearnerSkillState[], recentErrors: string[]): Promise<LessonPlan> {
+  public async generateLessonPlan(profile: UserProfile, skillStates: LearnerSkillState[], recentErrors: string[], lessonHistory: any[] = []): Promise<LessonPlan> {
     const rawDuration = profile.daily_minutes || 20;
     const duration: 10 | 20 | 30 = rawDuration <= 12 ? 10 : rawDuration >= 25 ? 30 : 20;
     const paceMode = duration === 10 ? 'quick_10' : duration === 30 ? 'deep_30' : 'standard_20';
     const totalPlannedQuestions = duration === 10 ? 6 : duration === 30 ? 15 : 10;
 
-    const cacheKey = contentCache.makeKey('lesson_plan', { level: profile.current_level, duration, goal: profile.primary_goal, lang: profile.explanation_language });
-    const cachedPlan = contentCache.get<LessonPlan>(cacheKey);
+    const cacheKey = contentCache.makeKey('lesson_plan', { level: profile.current_level, duration, goal: profile.primary_goal, lang: profile.explanation_language, historyLength: lessonHistory.length });
+    const cachedPlan = lessonHistory.length > 0 ? null : contentCache.get<LessonPlan>(cacheKey);
     if (cachedPlan) return { ...cachedPlan, lesson_id: `lesson-${Date.now()}`, status: 'in_progress' };
 
-    const systemPrompt = buildLessonPlanSystemPrompt(profile, skillStates, recentErrors, duration, paceMode, totalPlannedQuestions);
-    const prompt = `Create daily lesson plan for ${duration} mins (${paceMode}).`;
+    const systemPrompt = buildLessonPlanSystemPrompt(profile, skillStates, recentErrors, duration, paceMode, totalPlannedQuestions, lessonHistory);
+    const prompt = `Create daily lesson plan for ${duration} mins (${paceMode}) advancing forward from previous history.`;
 
     try {
       const aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_plan' });

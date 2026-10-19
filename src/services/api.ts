@@ -295,6 +295,13 @@ export async function generateLessonPlan(dailyMinutes?: number, forceRegenerate?
     return todayLesson;
   }
 
+  const lessonHistory = existingLessons.map(l => ({
+    lesson_number: l.lesson_number,
+    primary_objective: l.primary_objective,
+    date: l.date,
+    sections: l.sections?.map(s => ({ title: s.title, skill_target: s.skill_target }))
+  }));
+
   const skills = await localStore.getSkills();
   const recentErrors = skills.flatMap(s => s.recurring_errors);
 
@@ -305,7 +312,8 @@ export async function generateLessonPlan(dailyMinutes?: number, forceRegenerate?
       profile,
       skills,
       recentErrors,
-      dailyMinutes: profile.daily_minutes
+      dailyMinutes: profile.daily_minutes,
+      lessonHistory
     })
   });
 
