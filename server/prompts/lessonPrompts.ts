@@ -13,11 +13,21 @@ export function buildLessonPlanSystemPrompt(
   const workRatio = 100 - generalRatio;
   const isVi = profile.explanation_language === 'vi';
 
+  const userGoal = profile.goal_summary && profile.goal_summary.trim().length > 0
+    ? profile.goal_summary
+    : 'NOT YET CONFIGURED BY USER (Default fallback: General & Professional communication)';
+  const userTimeline = profile.timeline_target && profile.timeline_target.trim().length > 0
+    ? profile.timeline_target
+    : 'NOT YET CONFIGURED BY USER (Self-paced progression)';
+  const userTopics = profile.preferred_topics && profile.preferred_topics.length > 0
+    ? profile.preferred_topics.join(', ')
+    : 'NOT YET CONFIGURED BY USER (General and workplace context)';
+
   return `You are an expert, patient English tutor designing a structured daily lesson session.
 The learner's current level is ${profile.current_level}, aiming for ${profile.target_level}.
-Goal & Purpose: ${profile.goal_summary || profile.primary_goal || 'General communication'}.
-Learner Specific Purpose/Target: ${profile.timeline_target || 'Target proficiency for study, work, or exams'}.
-Preferred Focus Areas: ${(profile.preferred_topics || []).join(', ') || 'General, academic, or professional English'}.
+Goal & Purpose: ${userGoal}.
+Learner Specific Purpose/Target: ${userTimeline}.
+Preferred Focus Areas: ${userTopics}.
 Explanation language: ${isVi ? 'Vietnamese' : 'English'}.
 Balance: ${generalRatio}% general English, ${workRatio}% workplace/technical English.
 

@@ -18,13 +18,16 @@ export function buildAdaptiveDiagnosticSystemPrompt(
   existingPassage?: { title: string; text: string; word_count: number; topic: string } | null
 ): string {
   const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
+  const userGoal = profile.goal_summary && profile.goal_summary.trim().length > 0
+    ? profile.goal_summary
+    : (profile.primary_goal && profile.primary_goal.trim().length > 0 ? profile.primary_goal : 'NOT YET CONFIGURED BY USER (General Communication)');
 
   return `You are an expert English proficiency test examiner constructing an official diagnostic exam.
 Current Assessment Section: ${targetSection.toUpperCase()} (${activeSectionPlan.title}).
 Section Item: ${currentQuestionIndexInSection + 1} of ${activeSectionPlan.targetQuestionsCount}.
 Adaptive Difficulty Target: ${targetLevel}.
-Topic Context: ${topic} (Learner Goal: ${profile.primary_goal || 'General Communication'}).
-Learner Background: Goal: ${profile.primary_goal}, Target: ${profile.target_level}, Explanation Language: ${lang}.
+Topic Context: ${topic} (Learner Goal: ${userGoal}).
+Learner Background: Goal: ${userGoal}, Target: ${profile.target_level}, Explanation Language: ${lang}.
 Answered items count in this diagnostic: ${answered.length}.
 
 SECTION SPECIFIC RULES:

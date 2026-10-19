@@ -426,13 +426,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {/* Goal summary text */}
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-                Learner Goal Summary
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Learner Goal Summary
+                </label>
+                {(!goalSummary || goalSummary.trim() === '') && (
+                  <span className="text-[10px] text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 flex items-center space-x-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Not Configured</span>
+                  </span>
+                )}
+              </div>
+              {(!goalSummary || goalSummary.trim() === '') && (
+                <div className="mb-2 bg-amber-950/40 border border-amber-500/40 rounded-xl p-2.5 text-[11px] text-amber-200 leading-relaxed flex items-start space-x-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>Warning:</strong> You have not set a custom learner goal yet. The AI is currently using default generic context. Please update your goal summary below to ensure 100% personalized AI lessons!
+                  </p>
+                </div>
+              )}
               <textarea
                 rows={2}
                 value={goalSummary}
                 onChange={e => setGoalSummary(e.target.value)}
+                placeholder="E.g., Prepare for international tech interviews, master business negotiation vocabulary..."
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
