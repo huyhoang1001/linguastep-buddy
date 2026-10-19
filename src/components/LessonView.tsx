@@ -279,13 +279,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }
   };
 
-  const handleSubmitAnswer = async () => {
-    if (!currentQuestion || !userAnswer.trim()) return;
+  const handleSubmitAnswer = async (overrideAnswer?: string) => {
+    const ansToUse = overrideAnswer !== undefined ? overrideAnswer : userAnswer;
+    if (!currentQuestion || !ansToUse.trim()) return;
+    if (overrideAnswer !== undefined) {
+      setUserAnswer(overrideAnswer);
+    }
 
     setIsSubmitting(true);
     setAiError(null);
     try {
-      const result = await evaluateAnswer(currentQuestion, userAnswer, plan.lesson_id);
+      const result = await evaluateAnswer(currentQuestion, ansToUse, plan.lesson_id);
       setEvaluation(result);
 
       // Record to lesson attempts
@@ -762,7 +766,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     <button
                       key={opt.id}
                       disabled={isDisabled}
-                      onClick={() => setUserAnswer(opt.id)}
+                      onClick={async () => {
+                        if (evaluation) return;
+                        setUserAnswer(opt.id);
+                        await handleSubmitAnswer(opt.id);
+                      }}
                       className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center space-x-4">
@@ -850,7 +858,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               <div className="pt-2 flex justify-end">
                 <button
                   disabled={!userAnswer.trim() || isSubmitting}
-                  onClick={handleSubmitAnswer}
+                  onClick={() => handleSubmitAnswer()}
                   className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
                 >
                   {isSubmitting ? (

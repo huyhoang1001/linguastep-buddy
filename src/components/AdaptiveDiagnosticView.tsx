@@ -147,13 +147,17 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
     }
   };
 
-  const handleSubmitAnswer = async () => {
-    if (!currentQuestion || !userAnswer.trim() || isEvaluating) return;
+  const handleSubmitAnswer = async (overrideAnswer?: string) => {
+    const ansToUse = overrideAnswer !== undefined ? overrideAnswer : userAnswer;
+    if (!currentQuestion || !ansToUse.trim() || isEvaluating) return;
+    if (overrideAnswer !== undefined) {
+      setUserAnswer(overrideAnswer);
+    }
 
     setIsEvaluating(true);
     setAiError(null);
     try {
-      const result = await submitDiagnosticAnswer(currentQuestion, userAnswer);
+      const result = await submitDiagnosticAnswer(currentQuestion, ansToUse);
       setLastEvaluation(result.evaluation);
       if (result.writingRubric) {
         setLastRubric(result.writingRubric);
@@ -725,7 +729,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     <button
                       key={opt.id}
                       disabled={isDisabled}
-                      onClick={() => setUserAnswer(opt.id)}
+                      onClick={async () => {
+                        if (lastEvaluation) return;
+                        setUserAnswer(opt.id);
+                        await handleSubmitAnswer(opt.id);
+                      }}
                       className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center space-x-4">
@@ -813,7 +821,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               <div className="pt-2 flex justify-end">
                 <button
                   disabled={!userAnswer.trim() || isEvaluating}
-                  onClick={handleSubmitAnswer}
+                  onClick={() => handleSubmitAnswer()}
                   className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
                 >
                   {isEvaluating ? (
