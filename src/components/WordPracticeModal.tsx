@@ -27,6 +27,8 @@ import {
 } from '../types/learning.ts';
 import { getWordPractice, localStore } from '../services/api.ts';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
+import { playCorrectMeowChime, playMeowSound } from '../services/catSoundService.ts';
+import { catCustomizationStore } from '../services/catCustomizationStore.ts';
 
 interface WordPracticeModalProps {
   word: string;
@@ -218,6 +220,18 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         isCorrect
       }
     }));
+
+    // Cute Cat Chibi sound feedback
+    try {
+      const catConfig = catCustomizationStore.getConfig();
+      if (catConfig.soundEnabled) {
+        if (isCorrect && catConfig.meowOnCorrect) {
+          playCorrectMeowChime();
+        } else if (!isCorrect) {
+          playMeowSound(0.85);
+        }
+      }
+    } catch (e) {}
 
     // Record separate performance evidence for this specific tested word form
     try {

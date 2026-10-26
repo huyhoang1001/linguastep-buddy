@@ -42,6 +42,27 @@ if (res6.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 7: MeoMeo Cat Chibi Themes & Customization Tests...');
+const res7 = spawnSync('npx', ['tsx', 'test/cat_chibi_customization.test.ts'], { stdio: 'inherit' });
+if (res7.status !== 0) {
+  console.error('Cat chibi & customization tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 8: Clickable Sentence Text & Natural Spacing Tests...');
+const res8 = spawnSync('npx', ['tsx', 'test/clickable_sentence_text.test.ts'], { stdio: 'inherit' });
+if (res8.status !== 0) {
+  console.error('Clickable sentence text tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 9: MeoMeo Lesson Urgency & Timeout Tests...');
+const res9 = spawnSync('npx', ['tsx', 'test/lesson_urgency_and_timeout.test.ts'], { stdio: 'inherit' });
+if (res9.status !== 0) {
+  console.error('Lesson urgency and timeout tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

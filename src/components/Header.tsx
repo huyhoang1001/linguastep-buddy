@@ -43,6 +43,7 @@ interface HeaderProps {
   onBuildNextSession?: () => void;
   isBuildingSession?: boolean;
   onSearchVocabulary?: (word: string) => void;
+  onOpenCatStudio?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -64,7 +65,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRoadmap,
   onBuildNextSession,
   isBuildingSession,
-  onSearchVocabulary
+  onSearchVocabulary,
+  onOpenCatStudio
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -83,35 +85,26 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
         {/* Left: Brand & Profile Pills */}
         <div className="flex items-center space-x-2 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/25 shrink-0 text-base sm:text-lg">
+            🐱
           </div>
           <div className="flex items-center space-x-1.5 sm:space-x-2">
-            <span className="font-extrabold text-sm sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-              LinguaStep
+            <span className="font-extrabold text-sm sm:text-lg tracking-tight bg-gradient-to-r from-amber-300 via-orange-200 to-amber-100 bg-clip-text text-transparent flex items-center space-x-1">
+              <span>MeoMeo</span>
+              <span className="text-[11px] text-amber-400 font-normal">🐾</span>
             </span>
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
               {profile.current_level}
             </span>
             <button
               onClick={onOpenSettings}
               title="Adjust your daily study duration"
-              className="cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-indigo-500/60 hover:text-white transition hidden md:flex items-center space-x-1"
+              className="cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-amber-400/60 hover:text-white transition hidden md:flex items-center space-x-1"
             >
               <span>⏱️ {profile.daily_minutes || 20}m</span>
             </button>
           </div>
         </div>
-
-        {/* Cambridge Dictionary Search (Desktop) */}
-        {onSearchVocabulary && (
-          <div className="hidden md:flex flex-1 max-w-[240px] lg:max-w-[320px] mx-2">
-            <CambridgeDictionarySearch
-              onSelectWord={onSearchVocabulary}
-              placeholder="Search Cambridge dictionary..."
-            />
-          </div>
-        )}
 
         {/* Center/Right Desktop Controls (Hidden on small screens to prevent overflow) */}
         <div className="hidden lg:flex items-center space-x-2 shrink-0">
@@ -171,6 +164,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <FileText className="w-4 h-4 text-amber-400" />
               <span>Summary</span>
+            </button>
+          )}
+
+          {/* Cat Studio Customizer */}
+          {onOpenCatStudio && (
+            <button
+              onClick={onOpenCatStudio}
+              title="MeoMeo Cat Studio: Tùy chỉnh màu sắc & bạn mèo"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 transition flex items-center space-x-1.5 shadow-sm"
+            >
+              <span>🐾</span>
+              <span className="hidden xl:inline">Cat Studio</span>
             </button>
           )}
         </div>
@@ -263,20 +268,35 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
+      {/* Second Line: Dedicated Cambridge Dictionary Search Bar */}
+      {onSearchVocabulary && (
+        <div className="border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-sm px-3 sm:px-6 py-2">
+          <div className="max-w-4xl mx-auto">
+            <CambridgeDictionarySearch
+              onSelectWord={onSearchVocabulary}
+              placeholder="Tra từ điển Cambridge, gia đình từ & bài tập ngữ pháp (vd: collaborate, analyze, resilience)..."
+            />
+          </div>
+        </div>
+      )}
+
       {/* Mobile Dropdown Drawer for overflow navigation items */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 space-y-2.5 animate-fadeIn">
-          {onSearchVocabulary && (
-            <div className="pb-1">
-              <CambridgeDictionarySearch
-                onSelectWord={(word) => {
-                  setMobileMenuOpen(false);
-                  onSearchVocabulary(word);
-                }}
-                placeholder="Search Cambridge dictionary..."
-              />
-            </div>
+
+          {onOpenCatStudio && (
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenCatStudio(); }}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/10 text-xs font-bold text-amber-300 hover:text-white border border-amber-500/40 shadow-sm"
+            >
+              <div className="flex items-center space-x-2">
+                <span>🐱</span>
+                <span>MeoMeo Cat Studio (Tùy chỉnh giao diện)</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
+            </button>
           )}
+
           <button
             onClick={() => { setMobileMenuOpen(false); onOpenMilestones(); }}
             className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 text-xs font-medium text-slate-200 hover:text-white border border-amber-500/30"

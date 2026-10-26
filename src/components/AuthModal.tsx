@@ -105,10 +105,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <LogIn className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold text-white">
-            {currentUser ? 'Your LinguaStep Account' : 'Sign in to LinguaStep'}
+            {currentUser ? 'Your MeoMeo Account' : 'Sign in to MeoMeo'}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Learn with your adaptive English tutor. No personal API key required.
+            Learn with your cat chibi adaptive English tutor. No personal API key required.
           </p>
         </div>
 

@@ -44,6 +44,14 @@ import {
   saveActiveLessonState,
   clearActiveLessonState
 } from '../services/api.ts';
+import {
+  playCorrectMeowChime,
+  playMeowSound,
+  playUrgentMeowAlert,
+  playTimesUpChime
+} from '../services/catSoundService.ts';
+import { catCustomizationStore } from '../services/catCustomizationStore.ts';
+import { CatChibiAvatar } from './CatChibiAvatar.tsx';
 
 interface LessonViewProps {
   profile: UserProfile;
@@ -114,6 +122,21 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   // Active session timer
   const [secondsElapsed, setSecondsElapsed] = useState<number>(0);
+  const [extraMinutesAdded, setExtraMinutesAdded] = useState<number>(0);
+  const [hasWarnedNearlyOut, setHasWarnedNearlyOut] = useState<boolean>(false);
+  const [showNearlyOutOfTimeAlert, setShowNearlyOutOfTimeAlert] = useState<boolean>(false);
+  const [showTimeOutModal, setShowTimeOutModal] = useState<boolean>(false);
+  const [isTimeExpired, setIsTimeExpired] = useState<boolean>(false);
+  const [hurryUpQuote, setHurryUpQuote] = useState<string>('');
+  const [catConfig, setCatConfig] = useState(catCustomizationStore.getConfig());
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setCatConfig(catCustomizationStore.getConfig());
+    };
+    window.addEventListener('meomeo:theme-changed', handleThemeChange);
+    return () => window.removeEventListener('meomeo:theme-changed', handleThemeChange);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -303,6 +326,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
       const result = await evaluateAnswer(currentQuestion, ansToUse, plan.lesson_id);
       setEvaluation(result);
 
+      // Cute Cat Chibi sound feedback
+      try {
+        const catConfig = catCustomizationStore.getConfig();
+        if (catConfig.soundEnabled) {
+          if (result.verdict === 'correct' && catConfig.meowOnCorrect) {
+            playCorrectMeowChime();
+          } else if (result.verdict !== 'correct') {
+            playMeowSound(0.85);
+          }
+        }
+      } catch (e) {}
+
       // Record to lesson attempts
       const updatedAttempts = [
         ...lessonAttempts,
@@ -479,8 +514,58 @@ export const LessonView: React.FC<LessonViewProps> = ({
     100,
     Math.round((totalAnsweredCount / (totalPlannedQuestions || 1)) * 100)
   );
-  const durationTarget = plan.estimated_duration_minutes || profile.daily_minutes || 20;
+  const durationTarget = (plan.estimated_duration_minutes || profile.daily_minutes || 20) + extraMinutesAdded;
+  const targetSeconds = durationTarget * 60;
+  const remainingSeconds = Math.max(0, targetSeconds - secondsElapsed);
+  const isNearlyOut = remainingSeconds <= 60 && remainingSeconds > 0;
   const paceMode = plan.session_pace_mode || (durationTarget <= 12 ? 'quick_10' : durationTarget >= 25 ? 'deep_30' : 'standard_20');
+
+  useEffect(() => {
+    // 1. Nearly out of time: Trigger once when <= 60 seconds remaining
+    if (remainingSeconds <= 60 && remainingSeconds > 0 && !hasWarnedNearlyOut && secondsElapsed >= 5) {
+      setHasWarnedNearlyOut(true);
+      setShowNearlyOutOfTimeAlert(true);
+      const quotes = [
+        'Meo meo! ⏰ Sắp hết giờ rồi sen ơi, chỉ còn 1 phút thôi! Vồ lấy điểm số như vồ chuột nào! 🐟💨',
+        'Đồng hồ điểm tic-tac! ⏳ Còn 60 giây nữa, tập trung vuốt đáp án chuẩn xác về đích nào! 🐱⚡',
+        'Nhanh lên sen ơi! Đừng để đĩa cá thơm vàng bị nguội, vuốt đáp án chớp nhoáng nào! 🐾🏆',
+        'Tốc độ bàn chân mèo kích hoạt! 🚀 Một cú nước rút cuối cùng để chốt trọn vẹn điểm số hôm nay! Meow!'
+      ];
+      const q = quotes[Math.floor(Math.random() * quotes.length)];
+      setHurryUpQuote(q);
+
+      try {
+        const currentCfg = catCustomizationStore.getConfig();
+        if (currentCfg.soundEnabled) {
+          playUrgentMeowAlert();
+        }
+      } catch (e) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('meomeo:hurry-up', { detail: { quote: q } }));
+      }
+    }
+
+    // 2. Time expired: Trigger modal when target seconds reached
+    if (remainingSeconds === 0 && !isTimeExpired && secondsElapsed >= targetSeconds && secondsElapsed >= 5) {
+      setIsTimeExpired(true);
+      setShowTimeOutModal(true);
+      setShowNearlyOutOfTimeAlert(false);
+
+      try {
+        const currentCfg = catCustomizationStore.getConfig();
+        if (currentCfg.soundEnabled) {
+          playTimesUpChime();
+        }
+      } catch (e) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('meomeo:time-up', {
+          detail: { quote: '⏰ Hết giờ học rồi meow! Hoàn thành xuất sắc hôm nay, nghỉ ngơi xíu nào sen ơi 🐾💤' }
+        }));
+      }
+    }
+  }, [secondsElapsed, remainingSeconds, hasWarnedNearlyOut, isTimeExpired, targetSeconds]);
 
   const getSectionTitle = (type: SectionType) => {
     return activeSectionPlan.title || `Part ${currentSectionIndex + 1} — ${type.toUpperCase()}`;
@@ -508,10 +593,22 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </span>
             </span>
 
-            <div className="flex items-center space-x-1 text-xs text-slate-300 font-medium bg-slate-800/80 px-2.5 py-1 rounded-xl border border-slate-700/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1" />
+            <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-xl border transition-all ${
+              isNearlyOut
+                ? 'bg-rose-950/70 border-rose-500/60 text-rose-300 animate-pulse ring-1 ring-rose-500/50'
+                : 'bg-slate-800/80 border-slate-700/60 text-slate-300'
+            }`}>
+              <span className={`w-2 h-2 rounded-full mr-1 ${isNearlyOut ? 'bg-rose-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
               <span>{formatTimer(secondsElapsed)}</span>
               <span className="text-slate-500">/ ~{durationTarget}m target</span>
+              {extraMinutesAdded > 0 && (
+                <span className="text-amber-400 font-bold ml-1">(+{extraMinutesAdded}m)</span>
+              )}
+              {isNearlyOut && (
+                <span className="text-rose-400 font-bold ml-1 animate-bounce">
+                  (Còn {remainingSeconds}s! 🐾)
+                </span>
+              )}
             </div>
           </div>
 
@@ -614,6 +711,48 @@ export const LessonView: React.FC<LessonViewProps> = ({
           })}
         </div>
       </div>
+
+      {/* MeoMeo Fun Urgency Encouragement Banner */}
+      {showNearlyOutOfTimeAlert && remainingSeconds > 0 && (
+        <div className="bg-gradient-to-r from-amber-950/90 via-orange-950/80 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-4 sm:p-5 shadow-2xl animate-bounce-short relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3.5">
+              <div className="shrink-0 relative">
+                <CatChibiAvatar
+                  companionId={catConfig.companionId}
+                  accessoryId={catConfig.accessoryId}
+                  mood="excited"
+                  size="md"
+                />
+                <span className="absolute -top-1 -right-1 text-sm animate-spin">⏰</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded-full border border-amber-400/50 flex items-center space-x-1">
+                    <span>🐾</span>
+                    <span>{catConfig.catName} Cổ Vũ Tăng Tốc!</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/40 animate-pulse">
+                    ⏳ Còn {remainingSeconds}s
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
+                  "{hurryUpQuote}"
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowNearlyOutOfTimeAlert(false)}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0"
+              title="Tăng tốc làm bài"
+            >
+              <span>Cố lên MeoMeo! 💨</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Question / Teaching Area */}
       {aiError && (
@@ -784,13 +923,23 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   }
 
                   return (
-                    <button
+                    <div
                       key={opt.id}
-                      disabled={isDisabled}
+                      role="button"
+                      tabIndex={isDisabled ? -1 : 0}
+                      aria-disabled={isDisabled}
                       onClick={async () => {
                         if (evaluation) return;
                         setUserAnswer(opt.id);
                         await handleSubmitAnswer(opt.id);
+                      }}
+                      onKeyDown={async (e) => {
+                        if (evaluation || isDisabled) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setUserAnswer(opt.id);
+                          await handleSubmitAnswer(opt.id);
+                        }
                       }}
                       className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
                     >
@@ -817,7 +966,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                           ✗ Your Choice
                         </span>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -1297,6 +1446,99 @@ export const LessonView: React.FC<LessonViewProps> = ({
           totalQuestions={targetQuestionsInSection}
           onClose={() => setActiveWordPractice(null)}
         />
+      )}
+
+      {/* Time's Up Modal: End with Summary or Continue / Take Break Tomorrow */}
+      {showTimeOutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/60 rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
+            {/* Decorative top paws & cat avatar */}
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="relative">
+                <CatChibiAvatar
+                  companionId={catConfig.companionId}
+                  accessoryId={catConfig.accessoryId}
+                  mood="happy"
+                  size="lg"
+                />
+                <span className="absolute -top-2 -right-2 text-2xl animate-bounce">⏰</span>
+              </div>
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-400/40">
+                🐾 Meo Meo Thông Báo 🐾
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Hết Giờ Quy Định Hôm Nay Rồi! ⏰✨
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
+                Sen đã hoàn thành xuất sắc mục tiêu <strong>{durationTarget} phút</strong> học hôm nay cùng {catConfig.catName}!
+              </p>
+            </div>
+
+            {/* Mini Session Achievement Pill Box */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3 text-center">
+              <div>
+                <span className="text-[10px] text-slate-400 block">Thời gian</span>
+                <strong className="text-sm font-bold text-amber-300">{durationTarget}m</strong>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Câu đã làm</span>
+                <strong className="text-sm font-bold text-sky-300">{lessonAttempts.length} câu</strong>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Thưởng cá</span>
+                <strong className="text-sm font-bold text-emerald-300">+2 🐟</strong>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 italic">
+              "Giờ sen muốn nghỉ ngơi giữ streak để mèo ru ngủ, hay cộng thêm 5 phút học tiếp nào? Meow~"
+            </p>
+
+            {/* Choice Buttons */}
+            <div className="space-y-3 pt-1">
+              {/* Choice 1: Take a Break & View Summary */}
+              <button
+                onClick={async () => {
+                  setShowTimeOutModal(false);
+                  await clearActiveLessonState();
+                  const timeSpent = Math.max(1, Math.round(secondsElapsed / 60));
+                  onFinishLesson(lessonAttempts, timeSpent);
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-900/40 transition flex items-center justify-between group"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <span className="text-xl">😴</span>
+                  <div className="text-left">
+                    <span className="block font-bold">Nghỉ Ngơi & Mai Tiếp Tục 🐟</span>
+                    <span className="text-[11px] text-emerald-200 font-normal">Xem tổng kết thành tích & lưu streak hôm nay</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* Choice 2: Continue Studying (+5m) */}
+              <button
+                onClick={() => {
+                  setShowTimeOutModal(false);
+                  setExtraMinutesAdded(prev => prev + 5);
+                  setIsTimeExpired(false);
+                  setHasWarnedNearlyOut(false);
+                  setShowNearlyOutOfTimeAlert(false);
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-750 border border-amber-400/50 hover:border-amber-400 text-white font-bold text-sm transition flex items-center justify-between group shadow-md"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <span className="text-xl">⚡</span>
+                  <div className="text-left">
+                    <span className="block font-bold text-amber-300">Cộng Thêm 5 Phút & Học Tiếp 🐾</span>
+                    <span className="text-[11px] text-slate-300 font-normal">Đang hăng say, giải nốt các câu hỏi hôm nay!</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

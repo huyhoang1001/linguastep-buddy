@@ -19,6 +19,10 @@ import { AuthModal } from './components/AuthModal.tsx';
 import { CurriculumRoadmapModal } from './components/CurriculumRoadmapModal.tsx';
 import { SessionContextCatalogModal } from './components/SessionContextCatalogModal.tsx';
 import { WordPracticeModal } from './components/WordPracticeModal.tsx';
+import { CatCustomizerModal } from './components/CatCustomizerModal.tsx';
+import { CatCompanionWidget } from './components/CatCompanionWidget.tsx';
+import { catCustomizationStore } from './services/catCustomizationStore.ts';
+import { CatCustomizationConfig, CAT_THEMES } from './types/catTheme.ts';
 import { NextSessionCustomContext } from './types/learning.ts';
 import {
   getAuthSession,
@@ -59,14 +63,24 @@ export default function App() {
   const [showCatalogModal, setShowCatalogModal] = useState<boolean>(false);
   const [activeDictionaryWord, setActiveDictionaryWord] = useState<string | null>(null);
 
+  // Cat Chibi Theme & Customization State
+  const [catConfig, setCatConfig] = useState<CatCustomizationConfig>(() => catCustomizationStore.getConfig());
+  const [showCatCustomizer, setShowCatCustomizer] = useState<boolean>(false);
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isBuildingSession, setIsBuildingSession] = useState<boolean>(false);
   const [appError, setAppError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
 
-  // Initialize application
+  // Initialize application and listen to Cat Chibi theme changes
   useEffect(() => {
     initApp();
+
+    const handleThemeChange = (e: any) => {
+      if (e.detail) setCatConfig(e.detail);
+    };
+    window.addEventListener('meomeo:theme-changed', handleThemeChange);
+    return () => window.removeEventListener('meomeo:theme-changed', handleThemeChange);
   }, []);
 
   const initApp = async () => {
@@ -249,12 +263,15 @@ export default function App() {
     }
   };
 
+  const activeTheme = CAT_THEMES[catConfig.themeId] || CAT_THEMES.calico;
+
   if (isLoading && !profile) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
-        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-base font-medium">Loading LinguaStep Tutor...</h2>
-        <p className="text-xs text-slate-400 mt-1">Checking secure session and persistent learning memory</p>
+        <div className="w-12 h-12 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mb-3" />
+        <div className="text-3xl mb-2 animate-bounce">🐱🐾</div>
+        <h2 className="text-base font-bold text-white">Loading MeoMeo Cat Chibi Tutor...</h2>
+        <p className="text-xs text-slate-400 mt-1">Preparing your personalized cat study session</p>
       </div>
     );
   }
@@ -262,7 +279,18 @@ export default function App() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className={`min-h-screen bg-slate-950 bg-gradient-to-b ${activeTheme.bgGradient} text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden`}>
+      {/* Background Floating Cat Paw Prints */}
+      {catConfig.floatingPaws && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-15">
+          <span className="absolute top-12 left-6 text-3xl animate-pulse">🐾</span>
+          <span className="absolute top-1/4 right-8 text-4xl animate-bounce-short">🐾</span>
+          <span className="absolute top-1/2 left-4 text-2xl">🐾</span>
+          <span className="absolute top-3/4 right-12 text-3xl">🐾</span>
+          <span className="absolute bottom-20 left-16 text-4xl animate-pulse">🐾</span>
+        </div>
+      )}
+
       {/* Top Banner Alert when AI token/quota fallback mode is active */}
       <AIFallbackBanner />
 
@@ -291,6 +319,7 @@ export default function App() {
         onBuildNextSession={handleOpenBuildCatalog}
         isBuildingSession={isBuildingSession}
         onSearchVocabulary={(word) => setActiveDictionaryWord(word)}
+        onOpenCatStudio={() => setShowCatCustomizer(true)}
       />
 
       {/* Main Content Area */}
@@ -457,6 +486,20 @@ export default function App() {
           }}
         />
       )}
+
+      {/* MeoMeo Interactive Cat Companion Widget */}
+      <CatCompanionWidget
+        config={catConfig}
+        onOpenCustomizer={() => setShowCatCustomizer(true)}
+      />
+
+      {/* MeoMeo Cat Studio Customizer Modal */}
+      <CatCustomizerModal
+        isOpen={showCatCustomizer}
+        onClose={() => setShowCatCustomizer(false)}
+        currentConfig={catConfig}
+        onSaveConfig={(newCfg) => setCatConfig(newCfg)}
+      />
 
       {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}
       {isBuildingSession && (

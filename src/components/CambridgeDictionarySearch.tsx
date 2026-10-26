@@ -170,8 +170,8 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Search Input Box (Cambridge Inspired) */}
       <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-        <div className="absolute left-3 pointer-events-none text-slate-400 flex items-center">
-          <Search className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="absolute left-3.5 pointer-events-none text-slate-400 flex items-center">
+          <Search className="w-4 h-4 text-amber-400/90" />
         </div>
 
         <input
@@ -183,13 +183,13 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
           aria-label="Search English vocabulary in Cambridge dictionary"
-          className={`w-full bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 focus:border-indigo-500 rounded-xl pl-9 pr-14 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all ${
-            compact ? 'text-[11px] py-1 pl-8 pr-10' : ''
+          className={`w-full bg-slate-800/95 hover:bg-slate-800 focus:bg-slate-800/90 border border-slate-700/80 focus:border-amber-400/70 rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/25 shadow-inner transition-all ${
+            compact ? 'text-xs py-1.5 pl-9 pr-14 rounded-xl' : ''
           }`}
         />
 
         {/* Clear or Action button inside input */}
-        <div className="absolute right-2 flex items-center space-x-1">
+        <div className="absolute right-2.5 flex items-center space-x-1.5">
           {searchTerm ? (
             <button
               type="button"
@@ -197,23 +197,24 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
                 setSearchTerm('');
                 inputRef.current?.focus();
               }}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/70 transition"
               title="Clear input"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-500 bg-slate-900 border border-slate-700/80">
-              /
+            <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-400 bg-slate-900/90 border border-slate-700/80">
+              Ctrl+K or /
             </kbd>
           )}
 
           {searchTerm.trim().length > 0 && (
             <button
               type="submit"
-              className="p-1 rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/60 transition"
+              className="flex items-center space-x-1 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold shadow-md shadow-amber-500/25 transition"
               title="Search and learn word"
             >
+              <span>Tra từ</span>
               <CornerDownLeft className="w-3 h-3" />
             </button>
           )}

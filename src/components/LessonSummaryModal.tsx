@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { DailySummary } from '../types/learning.ts';
 import { playEnglishSpeech } from '../services/api.ts';
+import { CatChibiAvatar } from './CatChibiAvatar.tsx';
+import { catCustomizationStore } from '../services/catCustomizationStore.ts';
 
 interface LessonSummaryModalProps {
   summary: DailySummary;
@@ -28,6 +30,7 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
   onClose,
   onStartNewLesson
 }) => {
+  const [catConfig] = useState(catCustomizationStore.getConfig());
   const [rating, setRating] = useState<'too_easy' | 'about_right' | 'too_difficult'>(
     summary.learner_rating || 'about_right'
   );
@@ -47,13 +50,24 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
         {/* Celebration Header */}
-        <div className="text-center pb-4 border-b border-slate-800">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-indigo-500 mx-auto flex items-center justify-center text-white shadow-xl shadow-amber-500/20 mb-3">
-            <Trophy className="w-7 h-7" />
+        <div className="text-center pb-4 border-b border-slate-800 space-y-2">
+          <div className="flex justify-center items-center space-x-3 mb-1">
+            <CatChibiAvatar
+              companionId={catConfig.companionId}
+              accessoryId={catConfig.accessoryId}
+              mood="happy"
+              size="md"
+            />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-xl shadow-amber-500/20">
+              <Trophy className="w-6 h-6" />
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-white">Daily Session Complete!</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Lesson #{summary.lesson_number} • {new Date(summary.completed_at).toLocaleDateString()}
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/15 px-3 py-0.5 rounded-full border border-amber-400/40">
+            🐾 {catConfig.catName} Chúc Mừng Bạn Đã Hoàn Thành! 🐟
+          </span>
+          <h2 className="text-2xl font-black text-white">Daily Session Complete! 🏆</h2>
+          <p className="text-xs text-slate-400">
+            Lesson #{summary.lesson_number} • {new Date(summary.completed_at).toLocaleDateString()} • {summary.time_spent_minutes || summary.target_duration_minutes || 20}m đã học hôm nay
           </p>
         </div>
 
@@ -299,13 +313,14 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons: Take a Break vs Continue Studying */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 transition"
+            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-750 text-xs font-bold border border-slate-700 transition flex items-center justify-center space-x-2 shadow-sm"
           >
-            Review Later / Close
+            <span className="text-base">😴</span>
+            <span>Nghỉ Ngơi & Mai Tiếp Tục 🐾</span>
           </button>
 
           <button
@@ -313,10 +328,10 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
               onClose();
               onStartNewLesson(nextMinutes);
             }}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Build Next AI Session ({nextMinutes} mins)</span>
+            <span>Học Tiếp Session Mới ({nextMinutes}m) 🚀</span>
           </button>
         </div>
       </div>

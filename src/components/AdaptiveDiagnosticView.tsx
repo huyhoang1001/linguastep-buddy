@@ -1188,13 +1188,23 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   }
 
                   return (
-                    <button
+                    <div
                       key={opt.id}
-                      disabled={isDisabled}
+                      role="button"
+                      tabIndex={isDisabled ? -1 : 0}
+                      aria-disabled={isDisabled}
                       onClick={async () => {
                         if (lastEvaluation) return;
                         setUserAnswer(opt.id);
                         await handleSubmitAnswer(opt.id);
+                      }}
+                      onKeyDown={async (e) => {
+                        if (lastEvaluation || isDisabled) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setUserAnswer(opt.id);
+                          await handleSubmitAnswer(opt.id);
+                        }
                       }}
                       className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
                     >
@@ -1221,7 +1231,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                           ✗ Your Choice
                         </span>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
