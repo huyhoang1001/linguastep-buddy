@@ -45,12 +45,38 @@ export class AIClientError extends Error {
   }
 }
 
+const SESSION_TOKEN_KEY = 'linguastep_session_token';
+
+export function getStoredSessionToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(SESSION_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSessionToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      localStorage.setItem(SESSION_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(SESSION_TOKEN_KEY);
+    }
+  } catch {}
+}
+
 function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof window !== 'undefined') {
     const customKey = localStorage.getItem('lingua_step_gemini_api_key');
     if (customKey && customKey.trim()) {
       headers['x-goog-api-key'] = customKey.trim();
+    }
+    const token = getStoredSessionToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
   }
   return headers;
@@ -64,6 +90,7 @@ export async function verifyCustomApiKey(apiKey: string): Promise<{ valid: boole
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey.trim()
       },
+      credentials: 'include',
       body: JSON.stringify({ apiKey: apiKey.trim() })
     });
     const data = await res.json().catch(() => ({}));
@@ -119,98 +146,99 @@ async function parseAIResponse<T>(res: Response, fallbackMessage: string): Promi
 }
 
 // =========================================================================
-// AUTH & SESSION (CLIENT-MANAGED / LOCAL-FIRST)
+// AUTH & SESSION (SECURE BACKEND COOKIE + BEARER TOKEN + LOCAL-FIRST SCORING)
 // =========================================================================
 
-const AUTH_USER_KEY = 'linguastep_auth_user';
-
 export async function getAuthSession(): Promise<AuthSessionResponse> {
-  const limits = await getBudgetStats();
-  let user: UserAccount | null = null;
   try {
-    const raw = localStorage.getItem(AUTH_USER_KEY);
-    if (raw) {
-      user = JSON.parse(raw);
+    const res = await fetch('/api/auth/session', {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) {
+        localStore.setActiveAccount(data.user.id);
+      }
+      return {
+        user: data.user || null,
+        googleClientIdConfigured: Boolean(data.googleClientIdConfigured),
+        googleClientId: data.googleClientId || '',
+        limits: data.limits
+      };
     }
-  } catch (e) {
-    console.warn('Failed to parse local auth user', e);
+  } catch (err) {
+    console.warn('[Auth] Error fetching session from server:', err);
   }
 
-  if (!user) {
-    const profile = await localStore.getProfile();
-    user = {
-      id: profile.id || 'local-guest-learner',
-      name: profile.name || 'Guest Learner',
-      email: 'local@linguastep.offline',
-      authProvider: 'guest',
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString()
-    };
-    try {
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    } catch {}
-  }
-
+  const limits = await getBudgetStats();
   return {
-    user,
+    user: null,
     googleClientIdConfigured: false,
     limits
   };
 }
 
 export async function loginAsGuest(): Promise<{ user: UserAccount; limits: BudgetLimits }> {
-  const profile = await localStore.getProfile();
-  const user: UserAccount = {
-    id: profile.id || 'local-guest-learner',
-    name: profile.name || 'Guest Learner',
-    email: 'local@linguastep.offline',
-    authProvider: 'guest',
-    createdAt: new Date().toISOString(),
-    lastLoginAt: new Date().toISOString()
-  };
-  try {
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-  } catch {}
-  const limits = await getBudgetStats();
-  return { user, limits };
+  const res = await fetch('/api/auth/guest', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify({ preferredId: 'learner-primary' })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to initialize guest session.');
+  }
+
+  const data = await res.json();
+  if (data.token) {
+    setStoredSessionToken(data.token);
+  }
+  localStore.setActiveAccount(data.user.id);
+  return { user: data.user, limits: data.limits };
 }
 
 export async function loginWithGoogle(credential: string): Promise<{ user: UserAccount; limits: BudgetLimits }> {
-  let name = 'Google Learner';
-  let email = 'user@gmail.com';
-  let picture: string | undefined;
-  try {
-    const parts = credential.split('.');
-    if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-      name = payload.name || name;
-      email = payload.email || email;
-      picture = payload.picture;
-    }
-  } catch (e) {
-    console.warn('Could not parse Google credential JWT', e);
+  const res = await fetch('/api/auth/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ credential })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Google authentication failed.');
   }
 
-  const user: UserAccount = {
-    id: `google_${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
-    name,
-    email,
-    picture,
-    authProvider: 'google',
-    createdAt: new Date().toISOString(),
-    lastLoginAt: new Date().toISOString()
-  };
-  try {
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-  } catch {}
-  const limits = await getBudgetStats();
-  return { user, limits };
+  const data = await res.json();
+  if (data.token) {
+    setStoredSessionToken(data.token);
+  }
+
+  // Safely migrate prior guest learning progress to newly signed-in Google account
+  await localStore.migrateGuestDataToAccount(data.user.id);
+  localStore.setActiveAccount(data.user.id);
+
+  return { user: data.user, limits: data.limits };
 }
 
 export async function logout(): Promise<void> {
   try {
-    localStorage.removeItem(AUTH_USER_KEY);
-  } catch {}
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+  } catch (err) {
+    console.warn('[Auth] Server logout notification error:', err);
+  } finally {
+    setStoredSessionToken(null);
+    localStore.setActiveAccount('learner-primary');
+  }
 }
 
 // =========================================================================

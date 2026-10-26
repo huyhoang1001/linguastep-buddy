@@ -63,6 +63,13 @@ if (res9.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 10: Google Identity Services & Account Isolation Tests...');
+const res10 = spawnSync('npx', ['tsx', 'test/google_auth_and_session.test.ts'], { stdio: 'inherit' });
+if (res10.status !== 0) {
+  console.error('Google Identity Services & session tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

@@ -19,6 +19,18 @@ import {
   DiagnosticReport
 } from './src/types/learning.js';
 
+import cookieParser from 'cookie-parser';
+import {
+  verifyGoogleIdToken,
+  createSessionToken,
+  validateSessionToken,
+  revokeSessionToken,
+  createGuestSession,
+  isGoogleAuthAvailable,
+  getGoogleClientId
+} from './server/authService.js';
+import { UserAccount } from './server/authTypes.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +40,49 @@ export const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '2mb' }));
+app.use(cookieParser());
+
+const SESSION_COOKIE_NAME = 'linguastep_session';
+
+export function extractAuthToken(req: Request): string | null {
+  const cookieToken = req.cookies?.[SESSION_COOKIE_NAME];
+  if (cookieToken && typeof cookieToken === 'string' && cookieToken.trim()) {
+    return cookieToken.trim();
+  }
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    if (token) return token;
+  }
+  return null;
+}
+
+export function extractAuthUser(req: Request): UserAccount | null {
+  const token = extractAuthToken(req);
+  if (!token) return null;
+  return validateSessionToken(token);
+}
+
+function setSessionCookie(req: Request, res: Response, token: string) {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.cookie(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: '/'
+  });
+}
+
+function clearSessionCookie(req: Request, res: Response) {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.clearCookie(SESSION_COOKIE_NAME, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax',
+    path: '/'
+  });
+}
 
 /**
  * Standardized AI Route Error Handler.
@@ -65,12 +120,20 @@ function checkAIBudget(req: Request, res: Response, next: NextFunction) {
   }
   aiService.setApiKey(undefined);
 
-  // Use client IP or forwarded IP as identifier (not trusting client-supplied user ID)
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string'
-    ? forwarded.split(',')[0].trim()
-    : req.socket.remoteAddress || 'client-default';
-  const clientId = `ip_${ip.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  // Authenticate user via secure session cookie or Bearer token; never trust client-supplied user IDs
+  const authUser = extractAuthUser(req);
+  (req as any).authUser = authUser;
+
+  let clientId: string;
+  if (authUser) {
+    clientId = `user_${authUser.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  } else {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = typeof forwarded === 'string'
+      ? forwarded.split(',')[0].trim()
+      : req.socket.remoteAddress || 'client-default';
+    clientId = `ip_${ip.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  }
 
   const allowance = budgetManager.checkAllowance(clientId);
   if (!allowance.allowed) {
@@ -101,17 +164,106 @@ app.get('/api/health', (req: Request, res: Response) => {
     status: 'ok',
     architecture: 'local_first_stateless',
     hasApiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
+    googleAuthAvailable: isGoogleAuthAvailable(),
     timestamp: new Date().toISOString()
   });
 });
 
-// Budget stats for caller IP
+// =========================================================================
+// AUTHENTICATION ROUTES (GOOGLE IDENTITY SERVICES & GUEST SESSIONS)
+// =========================================================================
+
+// Restore or check session
+app.get('/api/auth/session', (req: Request, res: Response) => {
+  const authUser = extractAuthUser(req);
+  let clientId: string;
+  if (authUser) {
+    clientId = `user_${authUser.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  } else {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = typeof forwarded === 'string'
+      ? forwarded.split(',')[0].trim()
+      : req.socket.remoteAddress || 'client-default';
+    clientId = `ip_${ip.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  }
+  const limits = budgetManager.getStats(clientId);
+
+  res.json({
+    user: authUser || null,
+    googleClientIdConfigured: isGoogleAuthAvailable(),
+    googleClientId: getGoogleClientId(),
+    limits
+  });
+});
+
+// Google ID token sign-in (verifies Google signature, sub, audience, expiration)
+app.post('/api/auth/google', async (req: Request, res: Response) => {
+  try {
+    const { credential, idToken } = req.body || {};
+    const tokenToVerify = credential || idToken;
+    if (!tokenToVerify || typeof tokenToVerify !== 'string') {
+      return res.status(400).json({ error: 'Google ID token credential is required.' });
+    }
+
+    const user = await verifyGoogleIdToken(tokenToVerify);
+    const token = createSessionToken(user);
+    setSessionCookie(req, res, token);
+
+    const limits = budgetManager.getStats(`user_${user.id.replace(/[^a-zA-Z0-9_]/g, '_')}`);
+    res.json({
+      user,
+      token,
+      googleClientIdConfigured: isGoogleAuthAvailable(),
+      googleClientId: getGoogleClientId(),
+      limits
+    });
+  } catch (err: any) {
+    console.warn('[Auth] Google token verification error:', err?.message);
+    res.status(401).json({
+      error: err?.message || 'Google authentication failed. Please verify your account.'
+    });
+  }
+});
+
+// Explicit Guest Sign-In
+app.post('/api/auth/guest', (req: Request, res: Response) => {
+  const { preferredId } = req.body || {};
+  const { user, token } = createGuestSession(preferredId);
+  setSessionCookie(req, res, token);
+
+  const limits = budgetManager.getStats(`user_${user.id.replace(/[^a-zA-Z0-9_]/g, '_')}`);
+  res.json({
+    user,
+    token,
+    googleClientIdConfigured: isGoogleAuthAvailable(),
+    googleClientId: getGoogleClientId(),
+    limits
+  });
+});
+
+// Sign Out (invalidates server session and clears cookie)
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+  const token = extractAuthToken(req);
+  if (token) {
+    revokeSessionToken(token);
+  }
+  clearSessionCookie(req, res);
+  res.json({ success: true });
+});
+
+// Budget stats for caller
 app.get('/api/budget/stats', (req: Request, res: Response) => {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string'
-    ? forwarded.split(',')[0].trim()
-    : req.socket.remoteAddress || 'client-default';
-  const clientId = `ip_${ip.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  const authUser = extractAuthUser(req);
+  let clientId: string;
+  if (authUser) {
+    clientId = `user_${authUser.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  } else {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = typeof forwarded === 'string'
+      ? forwarded.split(',')[0].trim()
+      : req.socket.remoteAddress || 'client-default';
+    clientId = `ip_${ip.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  }
 
   const stats = budgetManager.getStats(clientId);
   res.json(stats);
@@ -132,6 +284,13 @@ app.use('/api/ai/', (req: Request, res: Response, next: NextFunction) => {
     }
     return originalJson(data);
   };
+
+  res.on('finish', () => {
+    if (res.statusCode < 400 && (req as any).clientId && !(req as any).customApiKey) {
+      budgetManager.recordUsage((req as any).clientId, 'gemini-3.1-flash-lite', req.path, 100, 100, 'success');
+    }
+  });
+
   next();
 });
 

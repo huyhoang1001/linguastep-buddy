@@ -2,8 +2,19 @@ import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { UserAccount } from './authTypes.js';
 
+const CONFIGURED_GOOGLE_CLIENT_ID = '119764727712-4loaf3h98jv0gvh5d30ngfgs5s3mm1m9.apps.googleusercontent.com';
+
+export function getGoogleClientId(): string {
+  const clientId = process.env.GOOGLE_CLIENT_ID || CONFIGURED_GOOGLE_CLIENT_ID;
+  return (clientId && clientId !== 'MY_GOOGLE_CLIENT_ID') ? clientId : '';
+}
+
+export function isGoogleAuthAvailable(): boolean {
+  return Boolean(getGoogleClientId());
+}
+
 function getClient(): OAuth2Client {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const clientId = getGoogleClientId();
   return clientId ? new OAuth2Client(clientId) : new OAuth2Client();
 }
 
@@ -11,21 +22,12 @@ function getClient(): OAuth2Client {
 const sessionTokens = new Map<string, { user: UserAccount; expiresAt: number }>();
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-export function isGoogleAuthAvailable(): boolean {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '';
-  return Boolean(clientId && clientId !== 'MY_GOOGLE_CLIENT_ID');
-}
-
-export function getGoogleClientId(): string {
-  return isGoogleAuthAvailable() ? (process.env.GOOGLE_CLIENT_ID || '') : '';
-}
-
 /**
  * Verifies a Google ID token from client-side Google Identity Services (One Tap or Sign-in button).
  * Cryptographically checks Google signature, audience, and expiration.
  */
 export async function verifyGoogleIdToken(idToken: string): Promise<UserAccount> {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const clientId = getGoogleClientId();
 
   // Allow controlled mock tokens in test environment
   if (process.env.NODE_ENV === 'test' && idToken.startsWith('test_mock_google_')) {

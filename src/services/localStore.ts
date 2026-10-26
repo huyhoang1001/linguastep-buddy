@@ -43,11 +43,30 @@ class LocalLearningStore {
   private memoryStore: Map<string, any> = new Map();
   private lastSavedAt: string = new Date().toISOString();
   private lastError: string | null = null;
+  private activeAccountId: string = 'learner-primary';
 
   constructor() {
     this.isIndexedDBAvailable =
       typeof window !== 'undefined' &&
       typeof window.indexedDB !== 'undefined';
+  }
+
+  public setActiveAccount(accountId: string | null | undefined): void {
+    if (accountId && accountId.trim()) {
+      this.activeAccountId = accountId.trim();
+    } else {
+      this.activeAccountId = 'learner-primary';
+    }
+  }
+
+  public getActiveAccount(): string {
+    return this.activeAccountId;
+  }
+
+  private getScopedId(id: string): string {
+    if (!this.activeAccountId) return id;
+    if (id.startsWith(`${this.activeAccountId}::`)) return id;
+    return `${this.activeAccountId}::${id}`;
   }
 
   private async openDB(): Promise<IDBDatabase | null> {
@@ -96,33 +115,54 @@ class LocalLearningStore {
   }
 
   private async getStoreData<T>(storeName: string, id: string): Promise<T | null> {
+    const scopedId = this.getScopedId(id);
     try {
       const db = await this.openDB();
       if (!db) {
-        return this.memoryStore.get(`${storeName}:${id}`) || null;
+        const val = this.memoryStore.get(`${storeName}:${scopedId}`);
+        if (val !== undefined) return val;
+        // Backward-compatible fallback for un-scoped primary guest data
+        if (this.activeAccountId === 'learner-primary') {
+          return this.memoryStore.get(`${storeName}:${id}`) || null;
+        }
+        return null;
       }
 
       return new Promise((resolve, reject) => {
         const tx = db.transaction(storeName, 'readonly');
         const store = tx.objectStore(storeName);
-        const req = store.get(id);
+        const req = store.get(scopedId);
 
-        req.onsuccess = () => resolve(req.result ? req.result.data : null);
+        req.onsuccess = () => {
+          if (req.result) {
+            resolve(req.result.data);
+          } else if (this.activeAccountId === 'learner-primary' && scopedId !== id) {
+            // Check legacy un-scoped id
+            const fallbackReq = store.get(id);
+            fallbackReq.onsuccess = () => resolve(fallbackReq.result ? fallbackReq.result.data : null);
+            fallbackReq.onerror = () => reject(fallbackReq.error);
+          } else {
+            resolve(null);
+          }
+        };
         req.onerror = () => reject(req.error);
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Read error';
-      return this.memoryStore.get(`${storeName}:${id}`) || null;
+      return this.memoryStore.get(`${storeName}:${scopedId}`) || null;
     }
   }
 
   private async getAllStoreData<T>(storeName: string): Promise<T[]> {
+    const prefix = `${this.activeAccountId}::`;
     try {
       const db = await this.openDB();
       if (!db) {
         const results: T[] = [];
         for (const [k, v] of this.memoryStore.entries()) {
-          if (k.startsWith(`${storeName}:`)) {
+          if (k.startsWith(`${storeName}:${prefix}`)) {
+            results.push(v);
+          } else if (this.activeAccountId === 'learner-primary' && k.startsWith(`${storeName}:`) && !k.slice(storeName.length + 1).includes('::')) {
             results.push(v);
           }
         }
@@ -135,7 +175,14 @@ class LocalLearningStore {
         const req = store.getAll();
 
         req.onsuccess = () => {
-          const list = (req.result || []).map((item: any) => item.data);
+          const list = (req.result || [])
+            .filter((item: any) => {
+              if (typeof item.id !== 'string') return false;
+              if (item.id.startsWith(prefix)) return true;
+              if (this.activeAccountId === 'learner-primary' && !item.id.includes('::')) return true;
+              return false;
+            })
+            .map((item: any) => item.data);
           resolve(list);
         };
         req.onerror = () => reject(req.error);
@@ -147,8 +194,9 @@ class LocalLearningStore {
   }
 
   private async setStoreData<T>(storeName: string, id: string, data: T): Promise<void> {
+    const scopedId = this.getScopedId(id);
     this.lastSavedAt = new Date().toISOString();
-    this.memoryStore.set(`${storeName}:${id}`, data);
+    this.memoryStore.set(`${storeName}:${scopedId}`, data);
 
     try {
       const db = await this.openDB();
@@ -157,7 +205,7 @@ class LocalLearningStore {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(storeName, 'readwrite');
         const store = tx.objectStore(storeName);
-        const req = store.put({ id, data, updatedAt: this.lastSavedAt });
+        const req = store.put({ id: scopedId, data, updatedAt: this.lastSavedAt });
 
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
@@ -168,7 +216,8 @@ class LocalLearningStore {
   }
 
   private async deleteStoreData(storeName: string, id: string): Promise<void> {
-    this.memoryStore.delete(`${storeName}:${id}`);
+    const scopedId = this.getScopedId(id);
+    this.memoryStore.delete(`${storeName}:${scopedId}`);
     try {
       const db = await this.openDB();
       if (!db) return;
@@ -176,7 +225,7 @@ class LocalLearningStore {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(storeName, 'readwrite');
         const store = tx.objectStore(storeName);
-        const req = store.delete(id);
+        const req = store.delete(scopedId);
 
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
@@ -187,8 +236,11 @@ class LocalLearningStore {
   }
 
   private async clearStore(storeName: string): Promise<void> {
+    const prefix = `${this.activeAccountId}::`;
     for (const k of Array.from(this.memoryStore.keys())) {
-      if (k.startsWith(`${storeName}:`)) {
+      if (k.startsWith(`${storeName}:${prefix}`)) {
+        this.memoryStore.delete(k);
+      } else if (this.activeAccountId === 'learner-primary' && k.startsWith(`${storeName}:`) && !k.slice(storeName.length + 1).includes('::')) {
         this.memoryStore.delete(k);
       }
     }
@@ -200,13 +252,72 @@ class LocalLearningStore {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(storeName, 'readwrite');
         const store = tx.objectStore(storeName);
-        const req = store.clear();
+        const req = store.getAllKeys();
 
-        req.onsuccess = () => resolve();
+        req.onsuccess = () => {
+          const keys = req.result || [];
+          for (const key of keys) {
+            if (typeof key === 'string') {
+              if (key.startsWith(prefix) || (this.activeAccountId === 'learner-primary' && !key.includes('::'))) {
+                store.delete(key);
+              }
+            }
+          }
+          resolve();
+        };
         req.onerror = () => reject(req.error);
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Clear store error';
+    }
+  }
+
+  /**
+   * Safely migrates learning progress from guest/primary account to a new Google account
+   */
+  public async migrateGuestDataToAccount(targetAccountId: string): Promise<boolean> {
+    if (!targetAccountId || targetAccountId === 'learner-primary') return false;
+    const currentActive = this.activeAccountId;
+    try {
+      this.activeAccountId = 'learner-primary';
+      const guestProfile = await this.getStoreData<UserProfile>('profile', 'current');
+      const guestSkills = await this.getAllStoreData<LearnerSkillState>('skills');
+      const guestVocab = await this.getAllStoreData<VocabularyItem>('vocabulary');
+      const guestAttempts = await this.getAllStoreData<Attempt>('attempts');
+      const guestLessons = await this.getAllStoreData<LessonPlan>('lessons');
+      const guestSummaries = await this.getAllStoreData<DailySummary>('summaries');
+      const guestStudyPlan = await this.getStudyPlan();
+
+      this.activeAccountId = targetAccountId;
+      const existingTargetProfile = await this.getStoreData<UserProfile>('profile', 'current');
+
+      if (!existingTargetProfile && guestProfile) {
+        await this.setStoreData('profile', 'current', { ...guestProfile, id: targetAccountId });
+        for (const s of guestSkills) {
+          await this.setStoreData('skills', s.skill_id, s);
+        }
+        for (const v of guestVocab) {
+          await this.setStoreData('vocabulary', v.id, v);
+        }
+        for (const a of guestAttempts) {
+          await this.setStoreData('attempts', a.id, a);
+        }
+        for (const l of guestLessons) {
+          await this.setStoreData('lessons', l.lesson_id, l);
+        }
+        for (const sm of guestSummaries) {
+          await this.setStoreData('summaries', sm.lesson_id, sm);
+        }
+        if (guestStudyPlan) {
+          await this.saveStudyPlan(guestStudyPlan);
+        }
+      }
+      return true;
+    } catch (err) {
+      console.warn('[LocalStore] Migration error:', err);
+      return false;
+    } finally {
+      this.activeAccountId = targetAccountId;
     }
   }
 
@@ -217,7 +328,7 @@ class LocalLearningStore {
   public async getProfile(): Promise<UserProfile> {
     let p = await this.getStoreData<UserProfile>('profile', 'current');
     if (!p) {
-      p = { ...DEFAULT_PROFILE };
+      p = { ...DEFAULT_PROFILE, id: this.activeAccountId };
       await this.setStoreData('profile', 'current', p);
     }
     return p;

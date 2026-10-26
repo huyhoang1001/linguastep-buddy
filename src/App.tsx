@@ -87,27 +87,35 @@ export default function App() {
     setIsLoading(true);
     setAppError(null);
     try {
-      // 1. Check or establish session
-      let session = await getAuthSession();
+      // 1. Check or establish session with server
+      const session = await getAuthSession();
       setGoogleClientIdConfigured(session.googleClientIdConfigured);
       setGoogleClientId(session.googleClientId || '');
 
-      let user = session.user;
+      const user = session.user;
       if (!user) {
-        // Automatically create or resume guest learner session (retains existing data)
-        const guestResult = await loginAsGuest();
-        user = guestResult.user;
-        setBudgetLimits(guestResult.limits);
-      } else {
+        // No active server session: require explicit Google Sign-In or "Continue as Guest"
+        setCurrentUser(null);
+        setProfile(null);
+        setActivePlan(null);
+        setActiveSummary(null);
+        setMilestonesData(null);
         setBudgetLimits(session.limits);
+        setShowAuthModal(true);
+        setIsLoading(false);
+        return;
       }
-      setCurrentUser(user);
 
-      // 2. Fetch authenticated user profile
+      // 2. Active session verified: isolate storage by account ID
+      localStore.setActiveAccount(user.id);
+      setCurrentUser(user);
+      setBudgetLimits(session.limits);
+
+      // 3. Fetch authenticated user profile
       const userProfile = await getProfile();
       setProfile(userProfile);
 
-      // 3. Fetch user memory, mistakes count, and milestone badges
+      // 4. Fetch user memory, mistakes count, and milestone badges
       const mem = await getMemory();
       const totalErrors = mem.skills?.flatMap(s => s.recurring_errors)?.length || 0;
       setMistakesCount(totalErrors);
@@ -151,6 +159,7 @@ export default function App() {
   };
 
   const handleAuthSuccess = async (user: UserAccount, limits: BudgetLimits) => {
+    localStore.setActiveAccount(user.id);
     setCurrentUser(user);
     setBudgetLimits(limits);
     setShowAuthModal(false);
@@ -162,7 +171,10 @@ export default function App() {
     setCurrentUser(null);
     setProfile(null);
     setActivePlan(null);
-    await initApp();
+    setActiveSummary(null);
+    setMilestonesData(null);
+    setShowOnboarding(false);
+    setShowAuthModal(true);
   };
 
   const refreshMilestones = async () => {
@@ -276,7 +288,28 @@ export default function App() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className={`min-h-screen bg-slate-950 bg-gradient-to-b ${activeTheme.bgGradient} flex flex-col items-center justify-center text-slate-100 p-4 relative`}>
+        {catConfig.floatingPaws && (
+          <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-15">
+            <span className="absolute top-12 left-6 text-3xl animate-pulse">🐾</span>
+            <span className="absolute top-1/4 right-8 text-4xl animate-bounce-short">🐾</span>
+            <span className="absolute bottom-20 left-16 text-4xl animate-pulse">🐾</span>
+          </div>
+        )}
+        <AuthModal
+          isOpen={true}
+          onClose={() => {}}
+          currentUser={null}
+          googleClientIdConfigured={googleClientIdConfigured}
+          googleClientId={googleClientId}
+          limits={budgetLimits}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-slate-950 bg-gradient-to-b ${activeTheme.bgGradient} text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden`}>
