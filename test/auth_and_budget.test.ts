@@ -225,6 +225,24 @@ async function runAuthAndBudgetTests() {
     }
   }
 
+  // =========================================================================
+  // TEST 7: Dynamic API Key Switching
+  // =========================================================================
+  console.log('\n--- Test 7: Dynamic API Key Switching ---');
+  const dynamicProvider = new GeminiLearningProvider();
+  dynamicProvider.setApiKey('AIzaSyCustomTestKey1234567890');
+  assert((dynamicProvider as any).currentApiKey === 'AIzaSyCustomTestKey1234567890', 'Custom API key accepted and assigned');
+  assert((dynamicProvider as any).activeApiKeyInClient === 'AIzaSyCustomTestKey1234567890', 'Client immediately initialized with the new custom key');
+
+  // Switch to another key
+  dynamicProvider.setApiKey('AIzaSySecondKey0987654321');
+  assert((dynamicProvider as any).currentApiKey === 'AIzaSySecondKey0987654321', 'Switched to second new API key');
+  assert((dynamicProvider as any).activeApiKeyInClient === 'AIzaSySecondKey0987654321', 'Client immediately updated to second key without keeping old key');
+
+  // Clear key
+  dynamicProvider.setApiKey(undefined);
+  assert((dynamicProvider as any).currentApiKey === undefined, 'Custom key cleared successfully');
+
   console.log(`\n========================================`);
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log(`========================================`);

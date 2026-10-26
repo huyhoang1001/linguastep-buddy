@@ -17,7 +17,12 @@ import {
   HelpCircle,
   Check,
   ChevronRight,
-  Award
+  Award,
+  Pencil,
+  Globe,
+  Volume2,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
 import {
   UserProfile,
@@ -37,10 +42,130 @@ import {
   getNextDiagnosticQuestion,
   submitDiagnosticAnswer,
   pauseDiagnosticSession,
-  completeDiagnosticSession
+  completeDiagnosticSession,
+  playEnglishSpeech
 } from '../services/api.ts';
+import { localStore } from '../services/localStore.ts';
 import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
+import { ClickableSentenceText } from './ClickableSentenceText.tsx';
+import { WordPracticeModal } from './WordPracticeModal.tsx';
+
+export interface CuratedMajor {
+  id: string;
+  name: string;
+  nameVi: string;
+  icon: string;
+  description: string;
+  examples: string;
+}
+
+export const CURATED_MAJORS: CuratedMajor[] = [
+  {
+    id: 'software_tech',
+    name: 'Software Engineering & IT',
+    nameVi: 'CNTT, Phần mềm & DevOps',
+    icon: '💻',
+    description: 'Web/mobile dev, Cloud, DevOps, AI, system architecture & code reviews',
+    examples: 'E.g., Pull request comments, incident debriefs, API design reviews, daily standups'
+  },
+  {
+    id: 'finance_business',
+    name: 'Finance, Banking & Accounting',
+    nameVi: 'Tài chính, Ngân hàng & Kế toán',
+    icon: '📊',
+    description: 'Corporate finance, auditing, commercial banking, investments & risk assessment',
+    examples: 'E.g., Quarterly earnings briefs, balance sheet audits, investment memorandums'
+  },
+  {
+    id: 'data_analytics',
+    name: 'Data Science & Business Intelligence',
+    nameVi: 'Khoa học dữ liệu & Phân tích',
+    icon: '📈',
+    description: 'Data analytics, predictive modeling, machine learning, SQL & KPI dashboards',
+    examples: 'E.g., A/B test results, conversion funnel anomalies, executive dashboard insights'
+  },
+  {
+    id: 'product_management',
+    name: 'Product Management & Business Analysis',
+    nameVi: 'Quản lý sản phẩm & Phân tích nghiệp vụ',
+    icon: '🚀',
+    description: 'Feature specifications, user story estimation, roadmap trade-offs & sprints',
+    examples: 'E.g., PRD documentation, backlog grooming, stakeholder alignment, release notes'
+  },
+  {
+    id: 'marketing_media',
+    name: 'Marketing, Media & Communications',
+    nameVi: 'Marketing, Truyền thông & Sáng tạo',
+    icon: '📣',
+    description: 'Digital campaigns, branding strategy, copywriting, PR, social media & ad funnels',
+    examples: 'E.g., Campaign creative briefs, pitch decks, press releases, social media copy'
+  },
+  {
+    id: 'healthcare_medicine',
+    name: 'Healthcare, Medicine & Pharmacy',
+    nameVi: 'Y tế, Y khoa & Dược phẩm',
+    icon: '🩺',
+    description: 'Clinical practice, patient consultation, pharmaceutical trials & health management',
+    examples: 'E.g., Patient medical charts, clinical trials, pharmacology consults, medical summaries'
+  },
+  {
+    id: 'engineering_manufacturing',
+    name: 'Engineering & Manufacturing',
+    nameVi: 'Kỹ thuật cơ khí, Điện tử & Sản xuất',
+    icon: '⚙️',
+    description: 'Industrial engineering, hardware testing, quality control & safety standards',
+    examples: 'E.g., Technical root cause analysis, equipment specs, factory safety guidelines'
+  },
+  {
+    id: 'law_compliance',
+    name: 'Law & Corporate Compliance',
+    nameVi: 'Luật pháp & Pháp chế doanh nghiệp',
+    icon: '⚖️',
+    description: 'Commercial contracts, corporate compliance, dispute negotiation & legal drafting',
+    examples: 'E.g., Service level agreements, compliance audit findings, risk disclosures'
+  },
+  {
+    id: 'human_resources',
+    name: 'Human Resources & Talent Acquisition',
+    nameVi: 'Nhân sự & Tuyển dụng quốc tế',
+    icon: '👥',
+    description: 'Recruitment, employee relations, performance appraisals & organizational culture',
+    examples: 'E.g., Interview scorecards, employee policy handbooks, talent acquisition briefs'
+  },
+  {
+    id: 'sales_business_dev',
+    name: 'Sales, Business Development & CS',
+    nameVi: 'Kinh doanh B2B & Chăm sóc khách hàng',
+    icon: '🤝',
+    description: 'Client proposals, contract negotiations, customer onboarding & QBR meetings',
+    examples: 'E.g., B2B solution proposals, enterprise sales discovery, customer onboarding calls'
+  },
+  {
+    id: 'hospitality_tourism',
+    name: 'Hospitality, Aviation & Tourism',
+    nameVi: 'Khách sạn, Du lịch & Hàng không',
+    icon: '✈️',
+    description: 'Guest relations, travel operations, aviation protocol & event management',
+    examples: 'E.g., VIP guest service protocols, airline passenger communications, itinerary plans'
+  },
+  {
+    id: 'academic_research',
+    name: 'Academic Research & Higher Education',
+    nameVi: 'Nghiên cứu khoa học & Học thuật',
+    icon: '🎓',
+    description: 'Scientific papers, literature citations, thesis defense & academic conferences',
+    examples: 'E.g., Peer-reviewed research abstracts, conference slide presentations, thesis abstracts'
+  },
+  {
+    id: 'other_custom',
+    name: 'Other / Custom Field',
+    nameVi: 'Chuyên ngành / Lĩnh vực khác',
+    icon: '✨',
+    description: 'Specify your unique subject, industry, or academic major',
+    examples: 'Type your own major or field of specialization'
+  }
+];
 
 interface AdaptiveDiagnosticViewProps {
   profile?: UserProfile;
@@ -68,7 +193,88 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   const [aiError, setAiError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
 
-  // Section completion transition state
+  // Active vocabulary learning & micro-practice panel state
+  const [activeWordPractice, setActiveWordPractice] = useState<{
+    word: string;
+    contextSentence: string;
+  } | null>(null);
+
+  // Goal & Major context editing state
+  const initialMajor = profile?.major_or_subject || 'Software Engineering & IT';
+  const isKnownCurated = CURATED_MAJORS.some(m => m.id !== 'other_custom' && m.name.toLowerCase() === initialMajor.toLowerCase());
+
+  const [selectedMajorId, setSelectedMajorId] = useState<string>(
+    isKnownCurated
+      ? (CURATED_MAJORS.find(m => m.name.toLowerCase() === initialMajor.toLowerCase())?.id || 'software_tech')
+      : 'other_custom'
+  );
+  const [customMajorText, setCustomMajorText] = useState<string>(isKnownCurated ? '' : initialMajor);
+  const [majorDetailsText, setMajorDetailsText] = useState<string>(profile?.major_focus_details || '');
+  const [goalSummaryText, setGoalSummaryText] = useState<string>(profile?.goal_summary || '');
+  const [isEditingGoal, setIsEditingGoal] = useState<boolean>(false);
+  const [isSavingGoal, setIsSavingGoal] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (profile?.goal_summary) {
+      setGoalSummaryText(profile.goal_summary);
+    }
+    if (profile?.major_or_subject) {
+      const known = CURATED_MAJORS.find(m => m.name.toLowerCase() === profile.major_or_subject?.toLowerCase());
+      if (known && known.id !== 'other_custom') {
+        setSelectedMajorId(known.id);
+        setCustomMajorText('');
+      } else {
+        setSelectedMajorId('other_custom');
+        setCustomMajorText(profile.major_or_subject);
+      }
+    }
+    if (profile?.major_focus_details) {
+      setMajorDetailsText(profile.major_focus_details);
+    }
+  }, [profile?.goal_summary, profile?.major_or_subject, profile?.major_focus_details]);
+
+  const getEffectiveMajorName = (): string => {
+    if (selectedMajorId === 'other_custom') {
+      return customMajorText.trim() || 'General Professional English';
+    }
+    const found = CURATED_MAJORS.find(m => m.id === selectedMajorId);
+    return found ? found.name : 'Software Engineering & IT';
+  };
+
+  const getEffectiveMajorObj = (): CuratedMajor => {
+    const found = CURATED_MAJORS.find(m => m.id === selectedMajorId);
+    if (found) return found;
+    return {
+      id: 'other_custom',
+      name: customMajorText.trim() || 'Custom Field',
+      nameVi: 'Chuyên ngành tùy chỉnh',
+      icon: '✨',
+      description: 'Custom specialization configured by learner',
+      examples: customMajorText.trim() || 'Custom workplace focus'
+    };
+  };
+
+  const handleSaveGoalContext = async () => {
+    setIsSavingGoal(true);
+    const finalMajor = getEffectiveMajorName();
+    try {
+      await localStore.updateProfile({
+        goal_summary: goalSummaryText.trim(),
+        major_or_subject: finalMajor,
+        major_focus_details: majorDetailsText.trim()
+      });
+      if (profile) {
+        profile.goal_summary = goalSummaryText.trim();
+        profile.major_or_subject = finalMajor;
+        profile.major_focus_details = majorDetailsText.trim();
+      }
+      setIsEditingGoal(false);
+    } catch (err) {
+      console.error('Failed to save goal context:', err);
+    } finally {
+      setIsSavingGoal(false);
+    }
+  };
   const [sectionCompletedNotice, setSectionCompletedNotice] = useState<{
     completedSection: string;
     nextSection?: string;
@@ -111,7 +317,21 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
     setStartingMode(mode);
     setAiError(null);
     try {
-      const newSession = await startDiagnosticSession(mode, profile);
+      const finalMajor = getEffectiveMajorName();
+      const activeProfile = profile || await localStore.getProfile();
+      activeProfile.major_or_subject = finalMajor;
+      activeProfile.major_focus_details = majorDetailsText.trim();
+      if (goalSummaryText.trim()) {
+        activeProfile.goal_summary = goalSummaryText.trim();
+      }
+
+      await localStore.updateProfile({
+        major_or_subject: activeProfile.major_or_subject,
+        major_focus_details: activeProfile.major_focus_details,
+        goal_summary: activeProfile.goal_summary
+      });
+
+      const newSession = await startDiagnosticSession(mode, activeProfile);
       setSession(newSession);
       setCurrentQuestion(newSession.currentQuestion || null);
       setUserAnswer('');
@@ -286,6 +506,192 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           />
         )}
 
+        {/* Assessment Field & Major Focus Selector Banner */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/40 rounded-3xl p-5 md:p-6 shadow-2xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <Briefcase className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-300">
+                  Target Field & Major Focus (Chuyên ngành & Trọng tâm đánh giá)
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  AI will calibrate and generate vocabulary, cloze sentences, reading texts, and writing scenarios based on your specific discipline.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsEditingGoal(!isEditingGoal)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 flex items-center space-x-1.5 transition"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>{isEditingGoal ? 'Close Selector' : 'Change Major / Field'}</span>
+            </button>
+          </div>
+
+          {isEditingGoal ? (
+            <div className="space-y-4 pt-1">
+              <div>
+                <label className="text-xs font-bold text-slate-200 block mb-2">
+                  1. Select your main major, discipline, or industry focus:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
+                  {CURATED_MAJORS.map(major => {
+                    const isSelected = selectedMajorId === major.id;
+                    return (
+                      <button
+                        key={major.id}
+                        type="button"
+                        onClick={() => setSelectedMajorId(major.id)}
+                        className={`text-left p-3 rounded-2xl border transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-indigo-950 border-indigo-500 ring-2 ring-indigo-500/80 text-white shadow-lg shadow-indigo-950/60'
+                            : 'bg-slate-800/60 hover:bg-slate-800 border-slate-700/70 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <span className="text-xl mb-1">{major.icon}</span>
+                          {isSelected && (
+                            <span className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-bold">
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <strong className="text-xs font-bold block text-white leading-tight">
+                            {major.name}
+                          </strong>
+                          <span className="text-[10px] text-indigo-300 block font-medium mt-0.5">
+                            {major.nameVi}
+                          </span>
+                          <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                            {major.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Major Input if 'other_custom' is chosen */}
+              {selectedMajorId === 'other_custom' && (
+                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 space-y-1.5 animate-fadeIn">
+                  <label className="text-xs font-bold text-indigo-300 block">
+                    Type your specific field or major:
+                  </label>
+                  <input
+                    type="text"
+                    value={customMajorText}
+                    onChange={e => setCustomMajorText(e.target.value)}
+                    placeholder="E.g., Biotechnology, Architecture, Logistics & Supply Chain..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              )}
+
+              {/* Specific specialty or daily scenarios */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-200 block">
+                  2. Your specific role or daily scenarios to emphasize (Optional):
+                </label>
+                <input
+                  type="text"
+                  value={majorDetailsText}
+                  onChange={e => setMajorDetailsText(e.target.value)}
+                  placeholder="E.g., Backend engineer collaborating with US architects; or Financial analyst presenting monthly audit reports..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* General goal summary */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-200 block">
+                  3. Overall English objective or purpose:
+                </label>
+                <textarea
+                  rows={2}
+                  value={goalSummaryText}
+                  onChange={e => setGoalSummaryText(e.target.value)}
+                  placeholder="E.g., Prepare for job interviews, communicate fluently with global team, write clear incident reviews..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] text-slate-400">
+                  Selected Focus: <strong className="text-indigo-300">{getEffectiveMajorName()}</strong>
+                </span>
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingGoal(false)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveGoalContext}
+                    disabled={isSavingGoal}
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50 flex items-center space-x-1.5"
+                  >
+                    {isSavingGoal ? (
+                      <span>Saving Focus...</span>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Save & Apply to Exam</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-950/80 p-4 md:p-5 rounded-2xl border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">{getEffectiveMajorObj().icon}</span>
+                  <strong className="text-sm font-extrabold text-white">
+                    {getEffectiveMajorName()}
+                  </strong>
+                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">
+                    Active Focus
+                  </span>
+                </div>
+                {majorDetailsText && majorDetailsText.trim().length > 0 && (
+                  <p className="text-xs text-indigo-200/90 font-medium">
+                    <span className="text-slate-400">Specialty / Role:</span> {majorDetailsText}
+                  </p>
+                )}
+                {goalSummaryText && goalSummaryText.trim().length > 0 && (
+                  <p className="text-xs text-slate-300">
+                    <span className="text-slate-400">Target Objective:</span> {goalSummaryText}
+                  </p>
+                )}
+                {!majorDetailsText && !goalSummaryText && (
+                  <p className="text-[11px] text-slate-400 italic">
+                    {getEffectiveMajorObj().examples}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingGoal(true)}
+                className="self-start md:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 font-semibold transition shrink-0 flex items-center space-x-1.5"
+              >
+                <Pencil className="w-3 h-3 text-indigo-400" />
+                <span>Customize Field Focus</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* 3 Explicit Diagnostic Modes */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* 1. Quick Mode */}
@@ -345,7 +751,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Express Exam...</span>
                 </>
               ) : (
-                <span>Start Express (8 Questions • 10m)</span>
+                <span className="truncate">Start Express (8 Qs • Tailored to {getEffectiveMajorName()})</span>
               )}
             </button>
           </div>
@@ -411,8 +817,8 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </>
               ) : (
                 <>
-                  <span>Start Standard Exam (13 Questions • 20m)</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="truncate">Start Standard Exam (13 Qs • Tailored to {getEffectiveMajorName()})</span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
                 </>
               )}
             </button>
@@ -475,7 +881,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Comprehensive Exam...</span>
                 </>
               ) : (
-                <span>Start Comprehensive (22 Questions • 36m)</span>
+                <span className="truncate">Start Comprehensive (22 Qs • Tailored to {getEffectiveMajorName()})</span>
               )}
             </button>
           </div>
@@ -512,10 +918,16 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
         {/* Top header row */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               {plan.title}
             </span>
+            {session.major_or_subject && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-700/50 flex items-center space-x-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Field: {session.major_or_subject}</span>
+              </span>
+            )}
             <span className="text-xs text-slate-400 flex items-center space-x-1">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
               <span>Target: ~{plan.targetDurationMinutes} mins</span>
@@ -662,16 +1074,22 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </p>
             </div>
 
-            <button
-              onClick={() => setFlagged(!flagged)}
-              className={`p-1.5 rounded-lg text-xs transition flex items-center space-x-1 ${
-                flagged ? 'text-amber-400 bg-amber-950/40' : 'text-slate-500 hover:text-slate-300'
-              }`}
-              title="Flag this question as ambiguous or unclear"
-            >
-              <Flag className="w-3.5 h-3.5" />
-              <span className="text-[10px] hidden sm:inline">{flagged ? 'Flagged' : 'Flag'}</span>
-            </button>
+            <div className="flex items-center space-x-2">
+              <span className="text-[11px] text-slate-400 hidden sm:flex items-center space-x-1.5 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700/60">
+                <Sparkles className="w-3 h-3 text-sky-400" />
+                <span>Click any word to learn & practice</span>
+              </span>
+              <button
+                onClick={() => setFlagged(!flagged)}
+                className={`p-1.5 rounded-lg text-xs transition flex items-center space-x-1 ${
+                  flagged ? 'text-amber-400 bg-amber-950/40' : 'text-slate-500 hover:text-slate-300'
+                }`}
+                title="Flag this question as ambiguous or unclear"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                <span className="text-[10px] hidden sm:inline">{flagged ? 'Flagged' : 'Flag'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Reading Passage View (Prominent, High-Readability Passage Box) */}
@@ -687,21 +1105,32 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>{currentQuestion.reading_passage.word_count} words</span>
                 </div>
               </div>
-              <p className="text-sm md:text-base text-slate-200 leading-relaxed font-normal tracking-wide whitespace-pre-line">
-                {currentQuestion.reading_passage.text}
-              </p>
+              <div className="text-sm md:text-base text-slate-200 leading-relaxed font-normal tracking-wide whitespace-pre-line">
+                <ClickableSentenceText
+                  text={currentQuestion.reading_passage.text}
+                  onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                />
+              </div>
             </div>
           )}
 
           {/* Question Prompt Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                {currentQuestion.question_type === 'reading_comprehension' ? 'Comprehension Question' : currentQuestion.question_type === 'free_writing' ? 'Writing Task' : 'Question Prompt'}
-              </span>
-              <p className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
-                {currentQuestion.prompt}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  {currentQuestion.question_type === 'reading_comprehension' ? 'Comprehension Question' : currentQuestion.question_type === 'free_writing' ? 'Writing Task' : 'Question Prompt'}
+                </span>
+                <span className="text-[10px] text-sky-400/80 font-medium flex items-center space-x-1">
+                  <span>💡 Click any unfamiliar word to learn & practice</span>
+                </span>
+              </div>
+              <div className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
+                <ClickableSentenceText
+                  text={currentQuestion.prompt}
+                  onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                />
+              </div>
             </div>
 
             {/* Context sentence callout if available and distinct from prompt */}
@@ -711,9 +1140,12 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">
                   Sentence to Complete
                 </span>
-                <p className="text-base md:text-lg font-medium text-white italic">
-                  "{currentQuestion.context_sentence}"
-                </p>
+                <div className="text-base md:text-lg font-medium text-white italic">
+                  "<ClickableSentenceText
+                    text={currentQuestion.context_sentence}
+                    onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                  />"
+                </div>
               </div>
             )}
 
@@ -770,7 +1202,13 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                         <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${badgeClass}`}>
                           {opt.id}
                         </span>
-                        <span className="text-sm md:text-base font-medium leading-snug">{opt.text}</span>
+                        <span className="text-sm md:text-base font-medium leading-snug">
+                          <ClickableSentenceText
+                            text={opt.text}
+                            contextSentence={currentQuestion.context_sentence || currentQuestion.prompt}
+                            onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                          />
+                        </span>
                       </div>
 
                       {lastEvaluation && isExpectedOpt && (
@@ -925,22 +1363,82 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 )}
               </div>
 
-              {/* Decisive Clue & Explanation */}
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-xs space-y-2">
-                <div>
-                  <span className="text-amber-400 font-bold uppercase tracking-wider block mb-1">Decisive Clue</span>
-                  <p className="text-slate-200 leading-relaxed font-medium">{lastEvaluation.decisive_clue}</p>
-                </div>
-                {lastEvaluation.contrast_explanation && (
-                  <div className="pt-2 border-t border-slate-800 text-rose-300 font-medium leading-relaxed">
-                    <span className="text-rose-400 font-bold block mb-0.5">Why your choice was not suitable:</span>
-                    <p>{lastEvaluation.contrast_explanation}</p>
+              {/* Complete Correct Sentence & Meaning Translation */}
+              {lastEvaluation.full_correct_sentence && (
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                      Complete Sentence
+                    </span>
+                    <button
+                      onClick={() => playEnglishSpeech(lastEvaluation.full_correct_sentence.replace(/\*/g, ''))}
+                      className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition"
+                      title="Listen to full correct sentence"
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Listen</span>
+                    </button>
                   </div>
-                )}
-                {lastEvaluation.explanation && !lastEvaluation.contrast_explanation && (
-                  <p className="text-slate-400 pt-1 border-t border-slate-800 leading-relaxed">{lastEvaluation.explanation}</p>
-                )}
-              </div>
+
+                  <div className="text-sm font-semibold text-white leading-relaxed">
+                    <ClickableSentenceText
+                      text={lastEvaluation.full_correct_sentence}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
+
+                  {/* Sentence Meaning / Translation */}
+                  {(lastEvaluation.sentence_translation || currentQuestion.sentence_translation || currentQuestion.vocab_card?.meaning) && (
+                    <div className="pt-2 border-t border-slate-800/80 flex items-start space-x-2 text-xs text-slate-300">
+                      <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
+                          Ý nghĩa câu / Sentence Meaning:
+                        </span>
+                        <div className="text-slate-200 italic font-medium leading-relaxed">
+                          <ClickableSentenceText
+                            text={lastEvaluation.sentence_translation || currentQuestion.sentence_translation || currentQuestion.vocab_card?.meaning || ''}
+                            contextSentence={lastEvaluation.full_correct_sentence || currentQuestion.context_sentence || currentQuestion.prompt}
+                            onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Contrast explanation for distractors */}
+              {lastEvaluation.contrast_explanation && (
+                <div className="bg-rose-950/30 border border-rose-500/30 rounded-2xl p-4 text-xs text-rose-200 leading-relaxed">
+                  <span className="text-rose-400 font-bold uppercase tracking-wider block mb-1">
+                    Why your choice was not suitable
+                  </span>
+                  <div>
+                    <ClickableSentenceText
+                      text={lastEvaluation.contrast_explanation}
+                      contextSentence={currentQuestion.context_sentence || currentQuestion.prompt}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Single Clear Explanation (No Duplicate Decisive Clue) */}
+              {lastEvaluation.explanation && (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs space-y-1.5">
+                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block mb-1">
+                    Explanation
+                  </span>
+                  <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-medium">
+                    <ClickableSentenceText
+                      text={lastEvaluation.explanation}
+                      contextSentence={lastEvaluation.full_correct_sentence || currentQuestion.context_sentence || currentQuestion.prompt}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Writing Rubric Breakdown (Scale 1 to 5 across 6 dimensions) */}
               {lastRubric && (
@@ -1040,6 +1538,18 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           )}
         </div>
       ) : null}
+
+      {/* Dedicated Word Learning & Micro-Practice Modal */}
+      {activeWordPractice && (
+        <WordPracticeModal
+          word={activeWordPractice.word}
+          contextSentence={activeWordPractice.contextSentence}
+          examMajor={session.major_or_subject || getEffectiveMajorName()}
+          currentQuestionIndex={sectionAttemptsCount + 1}
+          totalQuestions={activeSectionPlan?.targetQuestionsCount || totalPlannedQuestions}
+          onClose={() => setActiveWordPractice(null)}
+        />
+      )}
     </div>
   );
 };

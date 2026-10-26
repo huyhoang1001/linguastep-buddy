@@ -1,4 +1,4 @@
-import { UserProfile, SectionType, LearnerSkillState } from '../../src/types/learning.js';
+import { UserProfile, SectionType, LearnerSkillState, NextSessionCustomContext } from '../../src/types/learning.js';
 
 export function buildLessonPlanSystemPrompt(
   profile: UserProfile,
@@ -7,9 +7,12 @@ export function buildLessonPlanSystemPrompt(
   duration: 10 | 20 | 30,
   paceMode: 'quick_10' | 'standard_20' | 'deep_30',
   totalPlannedQuestions: number,
-  lessonHistory: any[] = []
+  lessonHistory: any[] = [],
+  customContext?: NextSessionCustomContext
 ): string {
-  const generalRatio = profile.general_vs_work_ratio || 65;
+  const generalRatio = customContext?.generalVsWorkRatio !== undefined
+    ? customContext.generalVsWorkRatio
+    : (profile.general_vs_work_ratio || 65);
   const workRatio = 100 - generalRatio;
   const isVi = profile.explanation_language === 'vi';
 
@@ -19,15 +22,26 @@ export function buildLessonPlanSystemPrompt(
   const userTimeline = profile.timeline_target && profile.timeline_target.trim().length > 0
     ? profile.timeline_target
     : 'NOT YET CONFIGURED BY USER (Self-paced progression)';
-  const userTopics = profile.preferred_topics && profile.preferred_topics.length > 0
-    ? profile.preferred_topics.join(', ')
-    : 'NOT YET CONFIGURED BY USER (General and workplace context)';
+  
+  const chosenTopic = customContext?.topicCategory
+    ? (customContext.topicCustomScenario ? `${customContext.topicCategory} — ${customContext.topicCustomScenario}` : customContext.topicCategory)
+    : (profile.preferred_topics && profile.preferred_topics.length > 0
+      ? profile.preferred_topics.join(', ')
+      : `${profile.major_or_subject || 'General & workplace context'}`);
+
+  const activeErrors = customContext?.selectedMistakes && customContext.selectedMistakes.length > 0
+    ? customContext.selectedMistakes
+    : recentErrors.slice(0, 3);
+
+  const activeSkills = customContext?.selectedNewSkills && customContext.selectedNewSkills.length > 0
+    ? customContext.selectedNewSkills
+    : skillStates.filter(s => s.status !== 'mastered').map(s => s.skill_name).slice(0, 3);
 
   return `You are an expert, patient English tutor designing a structured daily lesson session.
 The learner's current level is ${profile.current_level}, aiming for ${profile.target_level}.
 Goal & Purpose: ${userGoal}.
 Learner Specific Purpose/Target: ${userTimeline}.
-Preferred Focus Areas: ${userTopics}.
+Preferred Focus Areas & Field: ${chosenTopic}.
 Explanation language: ${isVi ? 'Vietnamese' : 'English'}.
 Balance: ${generalRatio}% general English, ${workRatio}% workplace/technical English.
 
@@ -37,11 +51,34 @@ TARGET QUESTIONS PLANNED: exactly ${totalPlannedQuestions} questions total acros
 LEARNER PREVIOUS LESSON HISTORY (ALREADY COMPLETED):
 ${JSON.stringify(lessonHistory, null, 2)}
 
+${customContext?.selectedVocabWords && customContext.selectedVocabWords.length > 0 ? `CRITICAL LEARNER SELECTION - VOCABULARY TO REVIEW:
+The learner specifically selected these vocabulary words from their memory review catalog:
+${JSON.stringify(customContext.selectedVocabWords)}
+You MUST integrate these words into the vocabulary review activity and reading/writing context sentences.
+` : ''}
+
+${customContext?.selectedNewSkills && customContext.selectedNewSkills.length > 0 ? `CRITICAL LEARNER SELECTION - TARGET GRAMMAR & SKILLS:
+The learner specifically selected these grammar rules & skills to master in this session:
+${JSON.stringify(customContext.selectedNewSkills)}
+You MUST ensure the new concept sections directly teach and practice these exact skills.
+` : ''}
+
+${customContext?.selectedMistakes && customContext.selectedMistakes.length > 0 ? `CRITICAL LEARNER SELECTION - MISTAKES CLINIC:
+The learner specifically chose to address these recurring mistake patterns:
+${JSON.stringify(customContext.selectedMistakes)}
+Include targeted review/warm-up exercises clarifying the correct usage for these errors.
+` : ''}
+
+${customContext?.customInstructions && customContext.customInstructions.trim() ? `SPECIAL LEARNER INSTRUCTIONS:
+"${customContext.customInstructions.trim()}"
+Incorporate this learner request into the topic, examples, and exercise prompts.
+` : ''}
+
 CRITICAL CURRICULUM PROGRESSION & STRUCTURE INSTRUCTIONS:
-- FORWARD PROGRESSION: Review the learner's completed lessonHistory above. You MUST NOT repeat grammar topics or themes that were already covered in previous sessions. Advance immediately along the proficiency roadmap to new grammar structures (e.g., Negative Inversion, Subjunctive Mood, Passive Causative, Cleft Sentences, Participle Clauses), new professional collocations, and a fresh topical context.
+- FORWARD PROGRESSION: Review the learner's completed lessonHistory above. You MUST NOT repeat grammar topics or themes that were already covered in previous sessions unless selected by the learner above. Advance immediately along the proficiency roadmap.
 - STRUCTURE OF EVERY NEW SESSION: Every generated session plan must include:
   1. Warm-up & Review (revisiting vocabulary & grammar concepts from past sessions).
-  2. New Grammar (introducing a brand new grammar rule appropriate for ${profile.current_level}).
+  2. New Grammar (introducing the target grammar rule).
   3. New Vocabulary & Collocations (professional or technical terminology).
   4. New Topic & Practical Application (fresh real-world topic/context).
 - Provide MULTIPLE questions per activity (2 to 4 items per section) so the learner gets thorough practice.
@@ -51,8 +88,8 @@ DURATION SPECIFIC ALLOCATION:
 - 20 minutes (Standard Practice): 4 activities totaling 10 questions (2 Warm-up, 4 Core Grammar across 2-3 rules, 2 Vocab & Collocations, 2 Workplace Writing/Reading).
 - 30 minutes (Deep Practice): 5 activities totaling 15 questions (3 Mistake Clinic, 6 Core Grammar across 3 rules, 3 Vocab & Collocations, 3 Contextual Reading & Workplace Production).
 
-Recent error patterns to address: ${JSON.stringify(recentErrors.slice(0, 3))}.
-Known skills needing practice: ${JSON.stringify(skillStates.filter(s => s.status !== 'mastered').map(s => s.skill_name).slice(0, 3))}.
+Recent error patterns to address: ${JSON.stringify(activeErrors)}.
+Target skills needing practice: ${JSON.stringify(activeSkills)}.
 
 Output strictly JSON:
 {
@@ -91,6 +128,7 @@ Question ${questionIndex + 1} of ${totalInActivity} in this activity.
 ${sessionObjective ? `OVERALL TODAY LESSON OBJECTIVE: "${sessionObjective}". Ensure this exercise connects directly with the overarching session goal and builds upon earlier concepts.` : ''}
 Context topic: ${topic}.
 Target skill: ${targetSkillName || 'Core ' + section + ' skill for ' + profile.current_level}.
+Learner Field / Major: ${profile.major_or_subject || 'General'} ${profile.major_focus_details ? `(${profile.major_focus_details})` : ''}.
 Learner Goal & Purpose: ${profile.goal_summary || profile.primary_goal || 'General communication'} (${profile.timeline_target || 'Self-paced proficiency'}).
 Preferred Focus Areas: ${(profile.preferred_topics || []).join(', ') || 'General and workplace'}.
 Explanation and hints must be in ${lang}. Examples and prompt in natural English.
@@ -144,6 +182,7 @@ JSON Output Schema:
   "expected_answer_text": string,
   "accepted_alternatives": [string],
   "hint": string,
-  "explanation_rule": string
+  "explanation_rule": string,
+  "sentence_translation": string
 }`;
 }

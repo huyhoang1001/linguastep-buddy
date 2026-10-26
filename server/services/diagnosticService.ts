@@ -9,13 +9,14 @@ import {
   WritingRubricScore
 } from '../../src/types/learning.js';
 import { createDiagnosticAssessmentPlan } from '../../src/types/diagnosticPlans.js';
-import { DIAGNOSTIC_BANK } from '../diagnosticBank.js';
 import { sanitizeAndReconcileQuestion } from '../questionUtils.js';
+import { AIException } from '../aiErrors.js';
 
 import {
   buildAdaptiveDiagnosticSystemPrompt,
   buildDiagnosticReportSystemPrompt,
-  buildPersonalizedStudyPlanPrompt
+  buildPersonalizedStudyPlanPrompt,
+  buildDiagnosticBatchSystemPrompt
 } from '../prompts/diagnosticPrompts.js';
 import { buildWritingRubricPrompt } from '../prompts/evaluationPrompts.js';
 
@@ -26,6 +27,39 @@ import {
 } from '../evaluators/diagnosticHelpers.js';
 
 export class DiagnosticService {
+  public async generateDiagnosticBatchQuestions(
+    callGeminiJson: <T>(prompt: string, sysPrompt: string, opts?: any) => Promise<T | null>,
+    session: DiagnosticSession,
+    profile: UserProfile
+  ): Promise<Question[]> {
+    const plan = session.plan || createDiagnosticAssessmentPlan(session.mode, profile.explanation_language);
+    session.plan = plan;
+
+    const systemPrompt = buildDiagnosticBatchSystemPrompt(session.mode, plan, profile);
+    const prompt = `Generate the complete calibrated suite of ${plan.totalQuestions} assessment questions for ${session.mode} mode.`;
+
+    const response = await callGeminiJson<{ questions: Question[] }>(prompt, systemPrompt, {
+      userId: profile.id,
+      operation: 'diagnostic_batch_questions'
+    });
+
+    if (response && Array.isArray(response.questions) && response.questions.length > 0) {
+      const sanitizedList = response.questions.map((q, idx) => {
+        const sanitized = sanitizeAndReconcileQuestion(q);
+        return {
+          ...sanitized,
+          id: sanitized.id || `diag-batch-${Date.now()}-${idx + 1}`
+        };
+      });
+
+      if (sanitizedList.length >= plan.sections.length) {
+        return sanitizedList;
+      }
+    }
+
+    throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate diagnostic assessment questions from AI.', { retryable: true });
+  }
+
   public async generateAdaptiveDiagnosticQuestion(
     callGeminiJson: <T>(prompt: string, sysPrompt: string, opts?: any) => Promise<T | null>,
     session: DiagnosticSession,
@@ -73,30 +107,13 @@ export class DiagnosticService {
     const systemPrompt = buildAdaptiveDiagnosticSystemPrompt(targetSection, activeSectionPlan, session.questionIndexInSection, targetLevel, topic, profile, answered, existingPassage);
     const prompt = `Generate item ${session.questionIndexInSection + 1}/${activeSectionPlan.targetQuestionsCount} for section ${targetSection} at CEFR ${targetLevel}.`;
 
-    try {
-      const generated = await callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'diagnostic_question' });
-      if (generated && generated.prompt && !answeredIds.has(generated.id) && !answeredPrompts.has(generated.prompt.trim().toLowerCase())) {
-        const sanitized = sanitizeAndReconcileQuestion(generated);
-        return { ...sanitized, id: `diag-gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section: targetSection, difficulty: sanitized.difficulty || targetLevel };
-      }
-    } catch (err: any) {
-      console.warn('[AI] generateAdaptiveDiagnosticQuestion fallback:', err?.message);
+    const generated = await callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'diagnostic_question' });
+    if (generated && generated.prompt && !answeredIds.has(generated.id) && !answeredPrompts.has(generated.prompt.trim().toLowerCase())) {
+      const sanitized = sanitizeAndReconcileQuestion(generated);
+      return { ...sanitized, id: `diag-gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section: targetSection, difficulty: sanitized.difficulty || targetLevel };
     }
 
-    // Strictly match candidate difficulty to current target level to avoid throwing B2 questions at A1/A2 learners
-    const exactLevelCandidates = DIAGNOSTIC_BANK.filter(item => 
-      item.category === targetSection && 
-      item.difficulty === targetLevel && 
-      !answeredIds.has(item.question.id) && 
-      !answeredPrompts.has(item.question.prompt.trim().toLowerCase())
-    );
-    const anyLevelCandidates = DIAGNOSTIC_BANK.filter(item => 
-      item.category === targetSection && 
-      !answeredIds.has(item.question.id) && 
-      !answeredPrompts.has(item.question.prompt.trim().toLowerCase())
-    );
-    const selected = exactLevelCandidates[0] || anyLevelCandidates[0] || DIAGNOSTIC_BANK[0];
-    return selected.question;
+    throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate diagnostic question from AI.', { retryable: true });
   }
 
   public async evaluateDiagnosticAnswer(

@@ -17,7 +17,9 @@ import {
   PauseCircle,
   ChevronDown,
   ChevronUp,
-  FileText
+  FileText,
+  Loader2,
+  Globe
 } from 'lucide-react';
 import {
   UserProfile,
@@ -30,6 +32,8 @@ import {
 import { VocabularyCard } from './VocabularyCard.tsx';
 import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
+import { ClickableSentenceText } from './ClickableSentenceText.tsx';
+import { WordPracticeModal } from './WordPracticeModal.tsx';
 import {
   generateQuestion,
   generateFullSessionQuestions,
@@ -82,6 +86,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [assistError, setAssistError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
   const [lastAssistAction, setLastAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | null>(null);
+  const [activeAssistAction, setActiveAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | null>(null);
+  const [activeWordPractice, setActiveWordPractice] = useState<{
+    word: string;
+    contextSentence: string;
+  } | null>(null);
 
   // Questions pre-generated per section: sectionIndex -> Question[]
   const [questionsBySection, setQuestionsBySection] = useState<Record<number, Question[]>>({});
@@ -341,22 +350,27 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   const handleTutorAction = async (action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity') => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || isLoadingAssist) return;
     setLastAssistAction(action);
-    if (action === 'hint') {
+    if (action === 'hint' && currentQuestion.hint) {
       setShowHint(!showHint);
       return;
     }
+    setActiveAssistAction(action);
     setIsLoadingAssist(true);
     setAssistError(null);
     try {
       const res = await requestTutorAssist(currentQuestion, action);
       setTutorAssistData(res);
+      if (action === 'hint') {
+        setShowHint(true);
+      }
     } catch (err) {
       console.error('Tutor assist error:', err);
       setAssistError(err);
     } finally {
       setIsLoadingAssist(false);
+      setActiveAssistAction(null);
     }
   };
 
@@ -677,9 +691,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   {currentQuestion.reading_passage.word_count} words
                 </span>
               </div>
-              <p className="text-sm md:text-base leading-relaxed text-slate-200 font-normal">
-                {currentQuestion.reading_passage.text}
-              </p>
+              <div className="text-sm md:text-base leading-relaxed text-slate-200 font-normal">
+                <ClickableSentenceText
+                  text={currentQuestion.reading_passage.text}
+                  onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                />
+              </div>
             </div>
           )}
 
@@ -696,12 +713,20 @@ export const LessonView: React.FC<LessonViewProps> = ({
           {/* Question Card: ONE QUESTION AT A TIME */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-slate-100 space-y-6">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                Active Question
-              </span>
-              <p className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
-                {currentQuestion.prompt}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  Active Question
+                </span>
+                <span className="text-[10px] text-sky-400/80 font-medium flex items-center space-x-1">
+                  <span>💡 Click any word to learn & practice</span>
+                </span>
+              </div>
+              <div className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
+                <ClickableSentenceText
+                  text={currentQuestion.prompt}
+                  onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                />
+              </div>
             </div>
 
             {/* Context sentence callout if available and distinct from prompt */}
@@ -711,9 +736,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">
                   Sentence to Complete
                 </span>
-                <p className="text-base md:text-lg font-medium text-white italic">
-                  "{currentQuestion.context_sentence}"
-                </p>
+                <div className="text-base md:text-lg font-medium text-white italic">
+                  "<ClickableSentenceText
+                    text={currentQuestion.context_sentence}
+                    onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                  />"
+                </div>
               </div>
             )}
 
@@ -770,7 +798,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${badgeClass}`}>
                           {opt.id}
                         </span>
-                        <span className="text-sm md:text-base font-medium">{opt.text}</span>
+                        <span className="text-sm md:text-base font-medium">
+                          <ClickableSentenceText
+                            text={opt.text}
+                            contextSentence={currentQuestion.context_sentence || currentQuestion.prompt}
+                            onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                          />
+                        </span>
                       </div>
 
                       {evaluation && isExpectedOpt && (
@@ -876,37 +910,88 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
             <div className="flex flex-wrap items-center gap-2">
               <button
+                disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('hint')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-                <span>{showHint ? 'Hide Hint' : 'I need a hint'}</span>
+                {isLoadingAssist && activeAssistAction === 'hint' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                ) : (
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                )}
+                <span>
+                  {isLoadingAssist && activeAssistAction === 'hint'
+                    ? 'Getting hint...'
+                    : showHint
+                    ? 'Hide Hint'
+                    : 'I need a hint'}
+                </span>
               </button>
 
               <button
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('simpler_explanation')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
-                Explain it more simply
+                {isLoadingAssist && activeAssistAction === 'simpler_explanation' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                )}
+                <span>
+                  {isLoadingAssist && activeAssistAction === 'simpler_explanation'
+                    ? 'Explaining simply...'
+                    : 'Explain it more simply'}
+                </span>
               </button>
 
               <button
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('another_example')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
-                Give me another example
+                {isLoadingAssist && activeAssistAction === 'another_example' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                ) : (
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                )}
+                <span>
+                  {isLoadingAssist && activeAssistAction === 'another_example'
+                    ? 'Generating example...'
+                    : 'Give me another example'}
+                </span>
               </button>
 
               <button
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('clarify_ambiguity')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-slate-400 hover:text-slate-200"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5 text-slate-400 hover:text-slate-200"
               >
-                This seems ambiguous
+                {isLoadingAssist && activeAssistAction === 'clarify_ambiguity' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                ) : (
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                )}
+                <span>
+                  {isLoadingAssist && activeAssistAction === 'clarify_ambiguity'
+                    ? 'Clarifying...'
+                    : 'This seems ambiguous'}
+                </span>
               </button>
             </div>
+
+            {/* In-Flight Loading Status Notification Banner */}
+            {isLoadingAssist && activeAssistAction && (
+              <div className="w-full bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3 flex items-center space-x-2.5 text-xs text-indigo-200 animate-pulse mt-2">
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-400 shrink-0" />
+                <span className="font-medium">
+                  {activeAssistAction === 'simpler_explanation' && 'AI Tutor is crafting a simpler, clearer explanation...'}
+                  {activeAssistAction === 'another_example' && 'AI Tutor is generating another realistic contextual example...'}
+                  {activeAssistAction === 'clarify_ambiguity' && 'AI Tutor is analyzing this question to clarify any ambiguity...'}
+                  {activeAssistAction === 'hint' && 'AI Tutor is preparing a helpful clue...'}
+                </span>
+              </div>
+            )}
 
             {/* Tutor Assist Error Alert */}
             {assistError && (
@@ -915,7 +1000,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 onRetry={lastAssistAction ? () => handleTutorAction(lastAssistAction) : undefined}
                 onDismiss={() => setAssistError(null)}
                 compact
-                className="mt-3"
+                className="mt-3 w-full"
               />
             )}
           </div>
@@ -995,29 +1080,50 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     </p>
                   </div>
                 </div>
-
-                {/* Pronounce complete sentence */}
-                {evaluation.full_correct_sentence && (
-                  <button
-                    onClick={() => playEnglishSpeech(evaluation.full_correct_sentence.replace(/\*/g, ''))}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition"
-                    title="Listen to full correct sentence (browser voice)"
-                  >
-                    <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Listen</span>
-                  </button>
-                )}
               </div>
 
-              {/* Decisive Clue */}
-              {evaluation.decisive_clue && (
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
-                  <span className="text-xs uppercase font-bold tracking-wider text-amber-400 block mb-1">
-                    Decisive Clue
-                  </span>
-                  <p className="text-sm text-slate-200 leading-relaxed font-medium">
-                    {evaluation.decisive_clue}
-                  </p>
+              {/* Complete Correct Sentence & Meaning Translation */}
+              {evaluation.full_correct_sentence && (
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-400">
+                      Complete Sentence
+                    </span>
+                    <button
+                      onClick={() => playEnglishSpeech(evaluation.full_correct_sentence.replace(/\*/g, ''))}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition"
+                      title="Listen to full correct sentence"
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Listen</span>
+                    </button>
+                  </div>
+
+                  <div className="text-base font-semibold text-white leading-relaxed">
+                    <ClickableSentenceText
+                      text={evaluation.full_correct_sentence}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
+
+                  {/* Sentence Meaning / Translation */}
+                  {(evaluation.sentence_translation || currentQuestion?.sentence_translation || currentQuestion?.vocab_card?.meaning) && (
+                    <div className="pt-2 border-t border-slate-800/80 flex items-start space-x-2 text-xs text-slate-300">
+                      <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
+                          Ý nghĩa câu / Sentence Meaning:
+                        </span>
+                        <div className="text-slate-200 italic font-medium leading-relaxed">
+                          <ClickableSentenceText
+                            text={evaluation.sentence_translation || currentQuestion?.sentence_translation || currentQuestion?.vocab_card?.meaning || ''}
+                            contextSentence={evaluation.full_correct_sentence || currentQuestion?.context_sentence || currentQuestion?.prompt}
+                            onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1027,31 +1133,29 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   <span className="text-rose-400 font-bold uppercase tracking-wider block mb-1">
                     Why your choice was not suitable
                   </span>
-                  <p>{evaluation.contrast_explanation}</p>
+                  <div>
+                    <ClickableSentenceText
+                      text={evaluation.contrast_explanation}
+                      contextSentence={currentQuestion?.context_sentence || currentQuestion?.prompt}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Full Correct Sentence - only for non-multiple choice / free writing */}
-              {evaluation.full_correct_sentence && (!currentQuestion?.options || currentQuestion.options.length === 0) && (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-                  <span className="text-xs uppercase font-bold tracking-wider text-emerald-400 block mb-1">
-                    Complete Sentence
-                  </span>
-                  <p className="text-base font-semibold text-white">
-                    {evaluation.full_correct_sentence}
-                  </p>
-                </div>
-              )}
-
-              {/* Detailed Explanation - only when contrast_explanation is not present to prevent duplicate text with "Why your choice was not suitable" */}
-              {evaluation.explanation && !evaluation.contrast_explanation && (
-                <div>
-                  <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-1">
+              {/* Single Clear Explanation (No Duplicate Decisive Clue) */}
+              {evaluation.explanation && (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-1.5">
+                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block mb-1">
                     Explanation
                   </span>
-                  <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-                    {evaluation.explanation}
-                  </p>
+                  <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-medium">
+                    <ClickableSentenceText
+                      text={evaluation.explanation}
+                      contextSentence={evaluation.full_correct_sentence || currentQuestion?.context_sentence || currentQuestion?.prompt}
+                      onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1181,6 +1285,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Dedicated Word Learning & Micro-Practice Modal */}
+      {activeWordPractice && (
+        <WordPracticeModal
+          word={activeWordPractice.word}
+          contextSentence={activeWordPractice.contextSentence}
+          examMajor={profile.major_or_subject || 'General Professional English'}
+          currentQuestionIndex={questionIndexInSection + 1}
+          totalQuestions={targetQuestionsInSection}
+          onClose={() => setActiveWordPractice(null)}
+        />
       )}
     </div>
   );

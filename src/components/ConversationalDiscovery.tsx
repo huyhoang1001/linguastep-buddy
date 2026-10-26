@@ -9,7 +9,8 @@ import {
   Compass,
   RotateCcw,
   SkipForward,
-  MessageSquare
+  MessageSquare,
+  Pencil
 } from 'lucide-react';
 import {
   UserProfile,
@@ -40,6 +41,8 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
   const [isSending, setIsSending] = useState<boolean>(false);
   const [aiError, setAiError] = useState<any>(null);
   const [failedText, setFailedText] = useState<string>('');
+  const [editedSummary, setEditedSummary] = useState<string>('');
+  const [isEditingSummary, setIsEditingSummary] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,11 +53,20 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [discoveryState?.messages, isSending]);
 
+  useEffect(() => {
+    if (discoveryState?.summary) {
+      setEditedSummary(discoveryState.summary);
+    }
+  }, [discoveryState?.summary]);
+
   const loadDiscovery = async () => {
     setIsLoading(true);
     try {
       const state = await getDiscoveryState();
       setDiscoveryState(state);
+      if (state?.summary) {
+        setEditedSummary(state.summary);
+      }
     } catch (err) {
       console.error('Failed to load discovery state:', err);
     } finally {
@@ -74,6 +86,9 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
     try {
       const updated = await sendDiscoveryMessage(text.trim());
       setDiscoveryState(updated);
+      if (updated?.summary) {
+        setEditedSummary(updated.summary);
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
       setAiError(err);
@@ -86,7 +101,8 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
 
   const handleConfirmPlan = async () => {
     try {
-      const result = await confirmDiscovery();
+      const summaryToUse = editedSummary.trim() || discoveryState?.summary || '';
+      const result = await confirmDiscovery(summaryToUse);
       onConfirmed(result.profile);
     } catch (err) {
       console.error('Failed to confirm discovery:', err);
@@ -206,25 +222,49 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
         )}
 
         {/* Confirmation Summary Card */}
-        {discoveryState?.isConfirmed && discoveryState?.summary && (
+        {discoveryState?.isConfirmed && (
           <div className="bg-gradient-to-br from-indigo-950/60 to-slate-900 border border-indigo-500/50 rounded-2xl p-5 shadow-xl space-y-4 my-2">
-            <div className="flex items-center space-x-2 text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-                Discovery Complete • Summary
-              </h4>
+            <div className="flex items-center justify-between text-emerald-400">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5" />
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Discovery Complete • Learner Goal Summary
+                </h4>
+              </div>
+              <button
+                onClick={() => setIsEditingSummary(!isEditingSummary)}
+                className="text-xs font-semibold text-indigo-300 hover:text-white underline flex items-center space-x-1"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{isEditingSummary ? 'Done Editing' : 'Edit Goal Summary'}</span>
+              </button>
             </div>
 
-            <p className="text-xs text-slate-200 whitespace-pre-line leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-              {discoveryState.summary}
-            </p>
+            {isEditingSummary ? (
+              <div className="space-y-2">
+                <label className="text-[11px] text-slate-300 font-medium">
+                  Refine or edit your goal summary below. This will be stored for your account and used to generate your diagnostic exam:
+                </label>
+                <textarea
+                  rows={3}
+                  value={editedSummary}
+                  onChange={e => setEditedSummary(e.target.value)}
+                  placeholder="E.g., Prepare for technical interviews, practice daily standups, learn business negotiation terms..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-slate-200 whitespace-pre-line leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                {editedSummary || discoveryState.summary || 'Master English for professional and daily communication'}
+              </p>
+            )}
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
               <button
                 onClick={() => handleSendMessage('Tôi muốn điều chỉnh lại một số điểm')}
                 className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition"
               >
-                Adjust My Answers
+                Adjust via Tutor Chat
               </button>
 
               <button

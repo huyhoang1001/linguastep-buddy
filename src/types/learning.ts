@@ -43,6 +43,10 @@ export interface UserProfile {
   audio_importance?: boolean;
   preferred_topics?: string[];
   confidence_in_level?: 'low' | 'moderate' | 'high';
+
+  // Major / Subject & Domain Focus
+  major_or_subject?: string; // Main subject, major, industry or domain (e.g., 'Software Engineering & IT', 'Finance & Banking', 'Healthcare', etc.)
+  major_focus_details?: string; // Detailed specialty or workplace/academic context (e.g. 'Backend developer collaborating with US teams')
   
   created_at: string;
   updated_at: string;
@@ -104,6 +108,100 @@ export interface VocabularyItem {
   last_reviewed_at: string;
   times_correct: number;
   times_incorrect: number;
+  word_family?: WordFamilyData;
+  word_form_mastery?: Record<string, WordFormMastery>;
+}
+
+export interface WordFamilyMember {
+  form: string;
+  part_of_speech: 'noun' | 'verb' | 'adjective' | 'adverb' | 'noun_person' | string;
+  ipa?: string;
+  suffix_or_pattern?: string; // e.g. "-tion (noun)", "-ly (adverb)", "-ive (adjective)"
+  meaning_vi: string;
+  meaning_en?: string;
+  example_sentence: string;
+  is_headword?: boolean;
+}
+
+export interface WordFamilyData {
+  family_root: string;
+  members: WordFamilyMember[];
+  missing_forms_note?: string; // e.g. "Note: This word has no commonly accepted adverb derivative."
+}
+
+export type WordFormMasteryStatus = 'needs_practice' | 'understood' | 'mastered';
+
+export interface WordFormMastery {
+  form: string;
+  part_of_speech: string;
+  status: WordFormMasteryStatus;
+  times_correct: number;
+  times_incorrect: number;
+  last_practiced_at: string;
+}
+
+export type WordFamilyExerciseType = 
+  | 'word_form_selection' 
+  | 'sentence_transformation' 
+  | 'error_correction' 
+  | 'family_completion';
+
+export interface WordFamilyExerciseOption {
+  id: string; // 'A' | 'B' | 'C' | 'D'
+  text: string;
+  part_of_speech?: string;
+}
+
+export interface WordFamilyExercise {
+  id: string;
+  exercise_type: WordFamilyExerciseType;
+  prompt: string;
+  target_form: string; // The exact form being tested (e.g. "collaboratively")
+  target_part_of_speech: string; // e.g. "adverb"
+  options: WordFamilyExerciseOption[];
+  expected_answer_id: string; // "A" | "B" | "C" | "D"
+  expected_answer_text: string;
+  full_correct_sentence: string;
+  grammatical_clue: string; // e.g. "Preceded by verb 'worked' and describes manner -> requires an adverb ending in -ly"
+  vietnamese_explanation: string;
+  distractor_explanations?: Record<string, string>; // Maps option id ('A', 'B', etc.) or text to why it is incorrect
+  transformation_source_sentence?: string; // For transformation: "The two teams collaborated successfully."
+  transformation_prompt?: string; // "Rewrite using the noun form 'collaboration'"
+  error_sentence?: string; // For error correction: "The teams worked collaborative on the project."
+  hint?: string;
+}
+
+export interface WordPracticeQuestion {
+  prompt: string;
+  options: Array<{ id: 'A' | 'B' | 'C' | 'D' | string; text: string }>;
+  expected_answer_id: 'A' | 'B' | 'C' | 'D' | string;
+  expected_answer_text: string;
+  explanation: string;
+  hint: string;
+  context_sentence?: string;
+}
+
+export interface WordPracticeData {
+  word: string;
+  cleaned_word: string;
+  part_of_speech: string;
+  ipa: string;
+  pronunciation_tip?: string;
+  meaning_vi: string;
+  meaning_en: string;
+  collocation_pattern: string;
+  example_general: string;
+  example_workplace: string;
+  similar_word_comparison?: {
+    word: string;
+    difference: string;
+  };
+  context_in_exam?: string;
+  // Word Family Discovery & Redesigned Micro-Exam Exercises
+  word_family: WordFamilyData;
+  exercises: WordFamilyExercise[];
+  // Retained for backward compatibility
+  practice_question?: WordPracticeQuestion;
 }
 
 export interface QuestionOption {
@@ -147,6 +245,7 @@ export interface Question {
   accepted_alternatives?: string[];
   hint: string;
   explanation_rule: string;
+  sentence_translation?: string; // Translated meaning of the sentence or target structure in learner's language
 }
 
 export interface AnswerEvaluation {
@@ -157,6 +256,7 @@ export interface AnswerEvaluation {
   decisive_clue: string;
   explanation: string;
   contrast_explanation?: string;
+  sentence_translation?: string; // Meaning translation of the target sentence / concept
   vocab_mastery_update?: {
     word: string;
     previous_stage: VocabMasteryStage;
@@ -226,6 +326,18 @@ export interface LessonPlan {
   total_planned_questions: number; // e.g. 6 for 10m, 10 for 20m, 15 for 30m
   sections: LessonSectionPlan[];
   status: 'planned' | 'in_progress' | 'completed' | 'paused';
+}
+
+export interface NextSessionCustomContext {
+  dailyMinutes?: number;
+  paceMode?: 'quick_10' | 'standard_20' | 'deep_30';
+  topicCategory?: string;
+  topicCustomScenario?: string;
+  generalVsWorkRatio?: number;
+  selectedMistakes?: string[];
+  selectedVocabWords?: string[];
+  selectedNewSkills?: string[];
+  customInstructions?: string;
 }
 
 export interface TomorrowPlanPreview {
@@ -354,6 +466,8 @@ export interface DiagnosticSession {
   sessionId: string;
   mode: DiagnosticMode;
   status: 'in_progress' | 'paused' | 'completed';
+  major_or_subject?: string;
+  major_focus_details?: string;
   plan?: DiagnosticAssessmentPlan;
   currentSectionIndex?: number;
   questionIndexInSection?: number;
@@ -362,6 +476,7 @@ export interface DiagnosticSession {
   minQuestions: number;
   maxQuestions: number;
   history: DiagnosticItemAttempt[];
+  pregeneratedQuestions?: Question[];
   currentEstimates: {
     grammar: SkillProficiencyEstimate;
     vocabulary: SkillProficiencyEstimate;

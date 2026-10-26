@@ -17,6 +17,9 @@ import { SettingsModal } from './components/SettingsModal.tsx';
 import { MilestonesModal } from './components/MilestonesModal.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
 import { CurriculumRoadmapModal } from './components/CurriculumRoadmapModal.tsx';
+import { SessionContextCatalogModal } from './components/SessionContextCatalogModal.tsx';
+import { WordPracticeModal } from './components/WordPracticeModal.tsx';
+import { NextSessionCustomContext } from './types/learning.ts';
 import {
   getAuthSession,
   loginAsGuest,
@@ -53,6 +56,8 @@ export default function App() {
   const [showSummaryModal, setShowSummaryModal] = useState<boolean>(false);
   const [showMilestonesModal, setShowMilestonesModal] = useState<boolean>(false);
   const [showRoadmapModal, setShowRoadmapModal] = useState<boolean>(false);
+  const [showCatalogModal, setShowCatalogModal] = useState<boolean>(false);
+  const [activeDictionaryWord, setActiveDictionaryWord] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isBuildingSession, setIsBuildingSession] = useState<boolean>(false);
@@ -221,11 +226,24 @@ export default function App() {
     }
   };
 
-  const handleBuildNextSession = async (overrideMinutes?: number) => {
+  const handleOpenBuildCatalog = () => {
+    setShowCatalogModal(true);
+  };
+
+  const handleConfirmCustomSession = async (customContext: NextSessionCustomContext) => {
     setIsBuildingSession(true);
+    setAppError(null);
     try {
       await clearActiveLessonState();
-      await handleStartNewLesson(overrideMinutes);
+      const newPlan = await generateLessonPlan(customContext.dailyMinutes, true, customContext);
+      setActivePlan(newPlan);
+      setShowCatalogModal(false);
+      setShowSummaryModal(false);
+      await refreshMilestones();
+    } catch (err) {
+      console.error('Failed to generate customized session plan:', err);
+      setAppError(err);
+      setLastFailedAction(() => () => handleConfirmCustomSession(customContext));
     } finally {
       setIsBuildingSession(false);
     }
@@ -270,8 +288,9 @@ export default function App() {
           setOnboardingPhase('discovery');
           setShowOnboarding(true);
         }}
-        onBuildNextSession={() => handleBuildNextSession()}
+        onBuildNextSession={handleOpenBuildCatalog}
         isBuildingSession={isBuildingSession}
+        onSearchVocabulary={(word) => setActiveDictionaryWord(word)}
       />
 
       {/* Main Content Area */}
@@ -293,7 +312,7 @@ export default function App() {
             plan={activePlan}
             onFinishLesson={handleLessonFinished}
             onOpenSummary={() => setShowSummaryModal(true)}
-            onBuildNextSession={() => handleBuildNextSession()}
+            onBuildNextSession={handleOpenBuildCatalog}
             isBuildingSession={isBuildingSession}
           />
         ) : (
@@ -303,20 +322,20 @@ export default function App() {
             </div>
             <h3 className="text-xl font-bold text-white">Ready for Your Next AI Session?</h3>
             <p className="text-xs text-slate-400">
-              Your previous session is complete. Let our AI build a fresh, personalized practice session tailored to your current skill level and recent learning patterns.
+              Review and select exactly what you want to learn next—target past mistakes, vocabulary from memory, fresh grammar concepts, and professional topics.
             </p>
             <button
               disabled={isBuildingSession}
-              onClick={() => handleBuildNextSession()}
+              onClick={handleOpenBuildCatalog}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2 mx-auto"
             >
               {isBuildingSession ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Building Next AI Session...</span>
+                  <span>Synthesizing Session...</span>
                 </>
               ) : (
-                <span>Build Next AI Session</span>
+                <span>Review Context & Build Next Session</span>
               )}
             </button>
           </div>
@@ -359,10 +378,20 @@ export default function App() {
         <LessonSummaryModal
           summary={activeSummary}
           onClose={() => setShowSummaryModal(false)}
-          onStartNewLesson={async (mins) => {
+          onStartNewLesson={async () => {
             setShowSummaryModal(false);
-            await handleStartNewLesson(mins);
+            handleOpenBuildCatalog();
           }}
+        />
+      )}
+
+      {profile && (
+        <SessionContextCatalogModal
+          isOpen={showCatalogModal}
+          onClose={() => setShowCatalogModal(false)}
+          profile={profile}
+          isBuilding={isBuildingSession}
+          onConfirmBuild={handleConfirmCustomSession}
         />
       )}
 
@@ -373,9 +402,9 @@ export default function App() {
           profile={profile}
           activePlan={activePlan}
           activeSummary={activeSummary}
-          onStartNewLesson={async (mins) => {
+          onStartNewLesson={async () => {
             setShowRoadmapModal(false);
-            await handleStartNewLesson(mins);
+            handleOpenBuildCatalog();
           }}
         />
       )}
@@ -416,6 +445,18 @@ export default function App() {
         onDataReset={initApp}
         onDataImported={initApp}
       />
+
+      {/* Cambridge Dictionary Word Practice & Memory Modal */}
+      {activeDictionaryWord && profile && (
+        <WordPracticeModal
+          word={activeDictionaryWord}
+          examMajor={profile.major_or_subject || 'General Professional English'}
+          onClose={() => setActiveDictionaryWord(null)}
+          onSavedToMemory={() => {
+            refreshMilestones();
+          }}
+        />
+      )}
 
       {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}
       {isBuildingSession && (

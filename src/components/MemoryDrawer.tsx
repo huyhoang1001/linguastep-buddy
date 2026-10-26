@@ -36,6 +36,8 @@ import {
   getStorageStatus,
   playEnglishSpeech
 } from '../services/api.ts';
+import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
+import { WordPracticeModal } from './WordPracticeModal.tsx';
 
 interface MemoryDrawerProps {
   isOpen: boolean;
@@ -61,6 +63,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [isResetting, setIsResetting] = useState<boolean>(false);
+  const [activeModalWord, setActiveModalWord] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -373,7 +376,22 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
 
               {/* TAB: VOCABULARY NOTEBOOK */}
               {activeTab === 'vocab' && (
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {/* Cambridge Dictionary Search Box to type & add word */}
+                  <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 space-y-2 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-xs font-bold text-slate-200">Look Up & Add to Memory</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">Cambridge Dictionary</span>
+                    </div>
+                    <CambridgeDictionarySearch
+                      onSelectWord={(word) => setActiveModalWord(word)}
+                      placeholder="Type a word to look up, practice, or add to memory..."
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between text-xs text-slate-400 pb-1">
                     <span>Organized by Spaced Repetition (Days 1, 3, 7, 14, 30)</span>
                     <span>Total: {vocabulary.length} words</span>
@@ -392,7 +410,13 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center space-x-2">
-                              <h4 className="text-base font-bold text-white">{v.word}</h4>
+                              <button
+                                onClick={() => setActiveModalWord(v.word)}
+                                className="text-base font-bold text-white hover:text-indigo-300 transition text-left cursor-pointer underline decoration-dotted decoration-slate-600 hover:decoration-indigo-400"
+                                title="Open Cambridge dictionary details & micro-exam"
+                              >
+                                {v.word}
+                              </button>
                               <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
                                 {v.part_of_speech}
                               </span>
@@ -428,6 +452,48 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
                           <p className="text-xs text-slate-300 italic">
                             "{v.example_workplace}"
                           </p>
+                        )}
+
+                        {/* Word Family & Form Mastery Summary */}
+                        {v.word_family && v.word_family.members && v.word_family.members.length > 0 && (
+                          <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 block">
+                              Word Family Forms:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {v.word_family.members.map((m, idx) => {
+                                const formKey = m.form.toLowerCase().trim();
+                                const mastery = v.word_form_mastery?.[formKey];
+                                const status = mastery?.status || 'untested';
+
+                                let badgeColor = 'bg-slate-900/80 text-slate-400 border-slate-700';
+                                if (status === 'mastered') {
+                                  badgeColor = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+                                } else if (status === 'understood') {
+                                  badgeColor = 'bg-sky-950/60 text-sky-300 border-sky-500/40';
+                                } else if (status === 'needs_practice') {
+                                  badgeColor = 'bg-amber-950/60 text-amber-300 border-amber-500/40';
+                                }
+
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => setActiveModalWord(m.form)}
+                                    title={`Click to practice ${m.form} (${m.part_of_speech})`}
+                                    className={`px-2 py-0.5 rounded-lg border text-[10px] font-mono transition flex items-center space-x-1 hover:border-indigo-400 ${badgeColor}`}
+                                  >
+                                    <span className="font-bold">{m.form}</span>
+                                    <span className="text-[9px] opacity-70">({m.part_of_speech.slice(0, 3)})</span>
+                                    {status !== 'untested' && (
+                                      <span className="text-[8px] uppercase font-bold opacity-90 pl-0.5">
+                                        • {status === 'needs_practice' ? 'Review' : status}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
                     ))
@@ -514,6 +580,18 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
           )}
         </div>
       </div>
+
+      {activeModalWord && (
+        <WordPracticeModal
+          word={activeModalWord}
+          examMajor="General Professional English"
+          onClose={() => setActiveModalWord(null)}
+          onSavedToMemory={() => {
+            loadMemoryData();
+            onResetComplete();
+          }}
+        />
+      )}
     </div>
   );
 };

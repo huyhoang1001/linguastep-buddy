@@ -12,7 +12,10 @@ import {
   LearningDataExport,
   ActiveLessonState,
   VocabExerciseType,
-  VocabMasteryStage
+  VocabMasteryStage,
+  WordFormMastery,
+  WordFormMasteryStatus,
+  WordFamilyData
 } from '../types/learning.ts';
 import {
   DEFAULT_PROFILE,
@@ -552,6 +555,101 @@ class LocalLearningStore {
         explanation
       }
     };
+  }
+
+  /**
+   * Tracks performance separately for each individual word form in a word family.
+   * For example:
+   * collaborate (verb) — needs practice
+   * collaboration (noun) — understood
+   * collaborative (adj) — understood
+   * collaboratively (adv) — needs practice
+   *
+   * A single correct answer NEVER marks the entire family as mastered.
+   */
+  public async recordWordFormEvidence(params: {
+    rootWord: string;
+    form: string;
+    partOfSpeech: string;
+    isCorrect: boolean;
+    familyData?: WordFamilyData;
+  }): Promise<{
+    item: VocabularyItem;
+    formMastery: WordFormMastery;
+    allFormMasteries: Record<string, WordFormMastery>;
+  }> {
+    const list = await this.getVocabulary();
+    const normalizedRoot = params.rootWord.toLowerCase().trim();
+    const normalizedForm = params.form.toLowerCase().trim();
+
+    let existing = list.find(v => v.word.toLowerCase() === normalizedRoot);
+    if (!existing) {
+      existing = await this.saveVocabularyItem({
+        word: params.rootWord,
+        part_of_speech: params.partOfSpeech,
+        meaning: `Word family for ${params.rootWord}`,
+        word_family: params.familyData
+      });
+    }
+
+    const currentMasteryMap: Record<string, WordFormMastery> = existing.word_form_mastery || {};
+    const existingFormMastery = currentMasteryMap[normalizedForm] || {
+      form: params.form,
+      part_of_speech: params.partOfSpeech,
+      status: 'needs_practice',
+      times_correct: 0,
+      times_incorrect: 0,
+      last_practiced_at: new Date().toISOString()
+    };
+
+    const timesCorrect = existingFormMastery.times_correct + (params.isCorrect ? 1 : 0);
+    const timesIncorrect = existingFormMastery.times_incorrect + (params.isCorrect ? 0 : 1);
+    const totalAttempts = timesCorrect + timesIncorrect;
+    const accuracy = totalAttempts > 0 ? timesCorrect / totalAttempts : 0;
+
+    let status: WordFormMasteryStatus = 'needs_practice';
+    if (!params.isCorrect) {
+      status = 'needs_practice';
+    } else if (timesCorrect >= 2 && accuracy >= 0.75) {
+      status = 'mastered';
+    } else {
+      status = 'understood';
+    }
+
+    const updatedFormMastery: WordFormMastery = {
+      form: params.form,
+      part_of_speech: params.partOfSpeech,
+      status,
+      times_correct: timesCorrect,
+      times_incorrect: timesIncorrect,
+      last_practiced_at: new Date().toISOString()
+    };
+
+    const updatedMap: Record<string, WordFormMastery> = {
+      ...currentMasteryMap,
+      [normalizedForm]: updatedFormMastery
+    };
+
+    const updatedItem: VocabularyItem = {
+      ...existing,
+      word_family: params.familyData || existing.word_family,
+      word_form_mastery: updatedMap,
+      last_reviewed_at: new Date().toISOString()
+    };
+
+    await this.setStoreData('vocabulary', updatedItem.id, updatedItem);
+
+    return {
+      item: updatedItem,
+      formMastery: updatedFormMastery,
+      allFormMasteries: updatedMap
+    };
+  }
+
+  public async getWordFamilyMastery(rootWord: string): Promise<Record<string, WordFormMastery>> {
+    const list = await this.getVocabulary();
+    const existing = list.find(v => v.word.toLowerCase() === rootWord.toLowerCase().trim());
+    return existing?.word_form_mastery || {};
   }
 
   // =========================================================================

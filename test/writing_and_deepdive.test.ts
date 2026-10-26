@@ -415,6 +415,70 @@ async function runWritingAndDeepDiveTests() {
     'Sanitizer populates context_sentence with a valid blanked sentence'
   );
 
+  // -------------------------------------------------------------------------
+  // Test 7: Case-Insensitive Cleft Sentence & Fill-in-Blank Evaluation
+  // -------------------------------------------------------------------------
+  console.log('\n--- Test 7: Case-Insensitive Cleft Sentence & Fill-in-Blank Evaluation ---');
+
+  const cleftFillInQuestion: Question = {
+    id: 'test-cleft-what-1',
+    section: 'grammar',
+    skill_id: 'cleft_sentences_what',
+    skill_name: 'What-Cleft Sentences for Precision',
+    question_type: 'fill_in_blank',
+    difficulty: 'B2',
+    context_topic: 'workplace_tech',
+    prompt: '________ we need to focus on right now is stabilizing the database connection pool.',
+    expected_answer_text: 'What',
+    accepted_alternatives: ['What', 'what'],
+    hint: 'Think about the wh- pronoun used in cleft clauses for emphasis.',
+    explanation_rule: 'Cleft sentence structure: "What + clause + be + focal element".'
+  };
+
+  // 1. Lowercase "what" entered against "What"
+  const evalLowercase = await aiService.evaluateAnswer(cleftFillInQuestion, 'what', mockProfile);
+  assert(evalLowercase.verdict === 'correct', 'Entering lowercase "what" against capitalized "What" returns verdict "correct"');
+  assert(!evalLowercase.needs_retry, 'Lowercase "what" does not trigger retry');
+
+  // 2. Capitalized "What" entered
+  const evalCapitalized = await aiService.evaluateAnswer(cleftFillInQuestion, 'What', mockProfile);
+  assert(evalCapitalized.verdict === 'correct', 'Entering capitalized "What" returns verdict "correct"');
+
+  // 3. Lowercase with trailing period "what." or spaces " what "
+  const evalPunctuation = await aiService.evaluateAnswer(cleftFillInQuestion, 'what.', mockProfile);
+  assert(evalPunctuation.verdict === 'correct', 'Entering "what." with punctuation matches correctly');
+
+  const evalWhitespace = await aiService.evaluateAnswer(cleftFillInQuestion, '  what  ', mockProfile);
+  assert(evalWhitespace.verdict === 'correct', 'Entering "  what  " with whitespace matches correctly');
+
+  // 4. Multiple-choice cleft question where expected option text is "What"
+  const cleftMcQuestion: Question = {
+    id: 'test-cleft-mc-1',
+    section: 'grammar',
+    skill_id: 'cleft_sentences_emphasis',
+    skill_name: 'Cleft Sentences for Precision',
+    question_type: 'multiple_choice',
+    difficulty: 'B2',
+    context_topic: 'workplace_tech',
+    prompt: '________ caused the latency was an unindexed query on the orders table.',
+    options: [
+      { id: 'A', text: 'What' },
+      { id: 'B', text: 'It' },
+      { id: 'C', text: 'Which' },
+      { id: 'D', text: 'That' }
+    ],
+    expected_answer_ids: ['A'],
+    expected_answer_text: 'What',
+    hint: 'This pronoun refers to "the thing that" caused the issue.',
+    explanation_rule: 'Use "What" in a wh-cleft sentence to highlight the cause.'
+  };
+
+  const evalMcLowercase = await aiService.evaluateAnswer(cleftMcQuestion, 'what', mockProfile);
+  assert(evalMcLowercase.verdict === 'correct', 'Typing lowercase "what" for multiple-choice option "What" returns verdict "correct"');
+
+  const evalMcDistractor = await aiService.evaluateAnswer(cleftMcQuestion, 'it', mockProfile);
+  assert(evalMcDistractor.verdict === 'incorrect', 'Selecting incorrect option "it" returns verdict "incorrect"');
+
   console.log('\n========================================');
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('========================================');

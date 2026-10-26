@@ -29,7 +29,11 @@ import {
   importMemory,
   clearMemory,
   validateImportData,
-  getStorageStatus
+  getStorageStatus,
+  verifyCustomApiKey,
+  saveCustomApiKey,
+  clearCustomApiKey,
+  getCustomApiKeyMasked
 } from '../services/api.ts';
 
 interface SettingsModalProps {
@@ -53,8 +57,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'preferences' | 'data' | 'apikey'>('preferences');
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
-  const [apiKeySaved, setApiKeySaved] = useState<boolean>(false);
-  const [apiKeyStatus, setApiKeyStatus] = useState<string>('');
+  const [isVerifyingKey, setIsVerifyingKey] = useState<boolean>(false);
+  const [keyStatusMessage, setKeyStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [activeKeyMasked, setActiveKeyMasked] = useState<{ hasKey: boolean; masked: string }>({ hasKey: false, masked: '' });
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveKeyMasked(getCustomApiKeyMasked());
+      setKeyStatusMessage(null);
+      setApiKeyInput('');
+    }
+  }, [isOpen]);
+
+  const handleSaveAndVerifyApiKey = async () => {
+    const trimmed = apiKeyInput.trim();
+    if (!trimmed) {
+      setKeyStatusMessage({ text: 'Please paste a valid Gemini API key first.', isError: true });
+      return;
+    }
+    setIsVerifyingKey(true);
+    setKeyStatusMessage(null);
+    try {
+      const result = await verifyCustomApiKey(trimmed);
+      if (result.valid) {
+        saveCustomApiKey(trimmed);
+        setActiveKeyMasked(getCustomApiKeyMasked());
+        setApiKeyInput(''); // Clear raw key input immediately so it is NEVER shown on the UI!
+        setKeyStatusMessage({ text: 'API key successfully verified and activated! All tutoring requests now use your new key.', isError: false });
+      } else {
+        setKeyStatusMessage({ text: result.error || 'Failed to validate API key. Please check your key and try again.', isError: true });
+      }
+    } catch (err: any) {
+      setKeyStatusMessage({ text: err.message || 'Error validating API key', isError: true });
+    } finally {
+      setIsVerifyingKey(false);
+    }
+  };
+
+  const handleClearApiKey = () => {
+    clearCustomApiKey();
+    setActiveKeyMasked({ hasKey: false, masked: '' });
+    setApiKeyInput('');
+    setKeyStatusMessage({ text: 'Custom key removed. System reverted to default environment key.', isError: false });
+  };
 
   // Preferences Form State
   const [level, setLevel] = useState<EnglishLevel>(profile.current_level);
@@ -87,25 +132,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setFeedbackStyle(profile.feedback_style || 'encouraging');
       setGoalSummary(profile.goal_summary);
       setStorageStatus(getStorageStatus());
-      setApiKeyInput(localStorage.getItem('lingua_step_gemini_api_key') || '');
     }
   }, [isOpen, profile]);
-
-  const handleSaveApiKey = () => {
-    const trimmed = apiKeyInput.trim();
-    if (trimmed) {
-      localStorage.setItem('lingua_step_gemini_api_key', trimmed);
-      setApiKeyStatus('✓ Custom API key saved and active!');
-    } else {
-      localStorage.removeItem('lingua_step_gemini_api_key');
-      setApiKeyStatus('✓ Custom API key removed. Using default environment configuration.');
-    }
-    setApiKeySaved(true);
-    setTimeout(() => {
-      setApiKeySaved(false);
-      setApiKeyStatus('');
-    }, 3000);
-  };
 
   if (!isOpen) return null;
 
@@ -302,7 +330,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>API Key & Quota</span>
+            <span>AI Connection</span>
           </button>
         </div>
 
@@ -688,48 +716,103 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: API KEY & QUOTA */}
+        {/* TAB 3: GEMINI API KEY CONFIGURATION (SECURE & MASKED) */}
         {/* ============================================================== */}
         {activeTab === 'apikey' && (
           <div className="space-y-4">
-            <div className="bg-slate-850 border border-slate-700/60 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center space-x-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                <span>Bring Your Own Gemini API Key</span>
+            <div className="bg-slate-850 border border-slate-700/60 rounded-2xl p-4 md:p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                  <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                  <span>Custom Gemini API Key</span>
+                </div>
+                {activeKeyMasked.hasKey && (
+                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/40 flex items-center space-x-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span>Custom Key Active</span>
+                  </span>
+                )}
               </div>
+
               <p className="text-xs text-slate-300 leading-relaxed">
-                If your default AI prepayment credits or quota limits are reached, you can input your personal Gemini API key here (e.g. <code className="text-indigo-300 bg-slate-900 px-1 py-0.5 rounded font-mono">YOUR_GEMINI_API_KEY</code>). Your key is stored securely in your browser&apos;s local storage and used directly for all AI tutoring and generation requests without hitting community quotas.
+                Connect your personal Google Gemini API key to power all interactive tutoring, adaptive diagnostic exams, and personalized lesson plans without community quota restrictions.
               </p>
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">
-                  Gemini API Key
+
+              {/* Masked Active Key Display */}
+              {activeKeyMasked.hasKey ? (
+                <div className="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Active Key Status</span>
+                    <span className="text-xs font-mono text-emerald-300 font-medium">
+                      Connected ({activeKeyMasked.masked})
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleClearApiKey}
+                    className="text-xs text-rose-400 hover:text-rose-300 underline font-medium"
+                  >
+                    Remove & Use System Key
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Currently using default system environment key.</span>
+                </div>
+              )}
+
+              {/* Password-masked Input Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 block">
+                  {activeKeyMasked.hasKey ? 'Enter new API key to replace current key:' : 'Enter your Gemini API key:'}
                 </label>
                 <input
                   type="password"
+                  autoComplete="off"
                   value={apiKeyInput}
                   onChange={e => setApiKeyInput(e.target.value)}
-                  placeholder="Paste your Gemini API key here"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Paste your Gemini API key here (masked)..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
                 />
               </div>
-              {apiKeyStatus && (
-                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                  <span>{apiKeyStatus}</span>
+
+              {keyStatusMessage && (
+                <div className={`p-3 rounded-xl border text-xs font-medium flex items-center space-x-2 ${
+                  keyStatusMessage.isError
+                    ? 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                }`}>
+                  {keyStatusMessage.isError ? (
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  )}
+                  <span>{keyStatusMessage.text}</span>
                 </div>
               )}
-              <div className="flex justify-end space-x-2 pt-2">
+
+              <div className="flex justify-end pt-1">
                 <button
-                  onClick={handleSaveApiKey}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-indigo-600/30"
+                  disabled={isVerifyingKey || !apiKeyInput.trim()}
+                  onClick={handleSaveAndVerifyApiKey}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center space-x-2 shadow-md shadow-indigo-600/30"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{apiKeySaved ? 'Saved!' : 'Save API Key'}</span>
+                  {isVerifyingKey ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Verifying & Activating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Verify & Activate Key</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

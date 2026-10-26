@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { aiService } from './server/aiService.js';
 import { budgetManager } from './server/usageBudget.js';
@@ -134,15 +135,40 @@ app.use('/api/ai/', (req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// 0. Verify and test custom Gemini API key
+app.post('/api/ai/verify-key', async (req: Request, res: Response) => {
+  try {
+    const rawKey = req.headers['x-goog-api-key'] || req.headers['x-gemini-api-key'] || req.body?.apiKey;
+    if (!rawKey || typeof rawKey !== 'string' || rawKey.trim().length < 6) {
+      return res.status(400).json({ valid: false, error: 'API key is missing or too short.' });
+    }
+    const key = rawKey.trim();
+    const testClient = new GoogleGenAI({ apiKey: key });
+    const response = await testClient.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: 'Respond with the word OK',
+      config: { maxOutputTokens: 10 }
+    });
+    if (response && response.text) {
+      aiService.setApiKey(key);
+      return res.json({ valid: true, message: 'Gemini API key is verified and active!' });
+    }
+    return res.status(400).json({ valid: false, error: 'Received empty response from Gemini model.' });
+  } catch (err: any) {
+    const classified = classifyGeminiError(err);
+    return res.status(400).json({ valid: false, error: classified.userMessage || 'Invalid API key.' });
+  }
+});
+
 // 1. Generate Lesson Plan
 app.post('/api/ai/lesson-plan', checkAIBudget, async (req: Request, res: Response) => {
   try {
-    const { profile, skills = [], recentErrors = [], dailyMinutes, lessonHistory = [] } = req.body;
+    const { profile, skills = [], recentErrors = [], dailyMinutes, lessonHistory = [], customContext } = req.body;
     if (!profile || typeof profile !== 'object') {
       return res.status(400).json({ error: 'Valid learner profile is required in request context.' });
     }
 
-    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors, lessonHistory);
+    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors, lessonHistory, customContext);
     res.json(plan);
   } catch (err: any) {
     handleAiRouteError(res, err);
@@ -234,6 +260,21 @@ app.post('/api/ai/deep-dive', checkAIBudget, async (req: Request, res: Response)
   }
 });
 
+// 4c. Word Deep-Dive & Micro-Practice (Clickable words in exam/lesson)
+app.post('/api/ai/word-practice', checkAIBudget, async (req: Request, res: Response) => {
+  try {
+    const { word, contextSentence = '', profile, examMajor } = req.body;
+    if (!word || !profile) {
+      return res.status(400).json({ error: 'Word and profile context are required.' });
+    }
+
+    const data = await aiService.generateWordPractice(word, contextSentence, profile, examMajor);
+    res.json(data);
+  } catch (err: any) {
+    handleAiRouteError(res, err);
+  }
+});
+
 // 5. Generate Lesson Summary
 app.post('/api/ai/lesson-summary', checkAIBudget, async (req: Request, res: Response) => {
   try {
@@ -259,6 +300,21 @@ app.post('/api/ai/discovery-turn', checkAIBudget, async (req: Request, res: Resp
 
     const result = await aiService.handleDiscoveryTurn(history, userMessage, profile);
     res.json(result);
+  } catch (err: any) {
+    handleAiRouteError(res, err);
+  }
+});
+
+// 7a. Adaptive Diagnostic: Batch Pre-Generate Questions (One-time generation using learner context)
+app.post('/api/ai/diagnostic-batch-questions', checkAIBudget, async (req: Request, res: Response) => {
+  try {
+    const { session, profile } = req.body;
+    if (!session || !profile) {
+      return res.status(400).json({ error: 'Diagnostic session and profile context are required.' });
+    }
+
+    const questions = await aiService.generateDiagnosticBatchQuestions(session, profile);
+    res.json({ questions });
   } catch (err: any) {
     handleAiRouteError(res, err);
   }

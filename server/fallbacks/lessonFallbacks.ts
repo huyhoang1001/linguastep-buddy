@@ -7,7 +7,6 @@ import {
   TutorAssistantResponse,
   DeepDiveInquiryResponse
 } from '../../src/types/learning.js';
-import { DEFAULT_CURRICULUM } from '../defaultCurriculum.js';
 
 export function polishWritingText(
   rawText: string,
@@ -210,42 +209,5 @@ export function polishWritingText(
     keyCorrections: corrections,
     usefulPhrases,
     reusablePattern
-  };
-}
-
-export function fallbackQuestion(
-  section: SectionType,
-  questionIndex: number,
-  servedHistory: string[]
-): Question {
-  const matching = DEFAULT_CURRICULUM.filter(item => item.section === section);
-  if (matching.length > 0) {
-    const unserved = matching.filter(item => !servedHistory.includes(item.id));
-    const candidates = unserved.length > 0 ? unserved : matching;
-    const selected = candidates[questionIndex % candidates.length];
-    servedHistory.push(selected.id);
-    return selected.question;
-  }
-
-  // Minimal safe default
-  return {
-    id: `fallback-${Date.now()}`,
-    section,
-    skill_id: `skill-${section}`,
-    skill_name: `Core ${section} competency`,
-    question_type: 'multiple_choice',
-    difficulty: 'B2',
-    context_topic: 'general',
-    prompt: 'Select the most appropriate term to complete the workplace status update:\n\n"Our team will ________ the remaining tasks before the afternoon review."',
-    options: [
-      { id: 'A', text: 'finalize' },
-      { id: 'B', text: 'final' },
-      { id: 'C', text: 'finally' },
-      { id: 'D', text: 'finalizing' }
-    ],
-    expected_answer_ids: ['A'],
-    expected_answer_text: 'finalize',
-    hint: 'Look for the base verb form following modal verb "will".',
-    explanation_rule: 'Modal verbs like "will" are followed by base verbs (finalize).'
   };
 }

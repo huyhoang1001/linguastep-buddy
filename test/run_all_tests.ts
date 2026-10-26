@@ -35,6 +35,13 @@ if (res5.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 6: Word Family Discovery & Form Selection Micro-Exam Tests...');
+const res6 = spawnSync('npx', ['tsx', 'test/word_family_and_micro_exam.test.ts'], { stdio: 'inherit' });
+if (res6.status !== 0) {
+  console.error('Word family & micro-exam tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

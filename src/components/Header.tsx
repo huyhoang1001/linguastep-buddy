@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BookOpen,
   Brain,
   Sparkles,
   Sliders,
-  AlertCircle,
   FileText,
   Trophy,
   Award,
@@ -14,13 +13,14 @@ import {
   Zap,
   LogIn,
   LogOut,
-  User as UserIcon,
   Compass,
-  Calendar
+  Menu,
+  X
 } from 'lucide-react';
 import { UserProfile } from '../types/learning.ts';
 import { MilestoneBadge } from '../types/milestone.ts';
 import { UserAccount, BudgetLimits } from '../types/auth.ts';
+import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 
 interface HeaderProps {
   profile: UserProfile;
@@ -42,6 +42,7 @@ interface HeaderProps {
   onRestartOnboarding?: () => void;
   onBuildNextSession?: () => void;
   isBuildingSession?: boolean;
+  onSearchVocabulary?: (word: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -61,10 +62,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSummary,
   hasActiveSummary,
   onOpenRoadmap,
-  onRestartOnboarding,
   onBuildNextSession,
-  isBuildingSession
+  isBuildingSession,
+  onSearchVocabulary
 }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const getBadgeIcon = (iconName?: string) => {
     switch (iconName) {
       case 'Trophy': return <Trophy className="w-3.5 h-3.5 text-amber-400" />;
@@ -76,119 +79,111 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-30 shadow-md">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
-        {/* Brand */}
-        <div className="flex items-center space-x-3 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-            <BookOpen className="w-5 h-5" />
+    <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white sticky top-0 z-30 shadow-md select-none">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
+        {/* Left: Brand & Profile Pills */}
+        <div className="flex items-center space-x-2 shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-                LinguaStep
-              </span>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                {profile.current_level}
-              </span>
-              <button
-                onClick={onOpenSettings}
-                title="Click to adjust your daily study duration"
-                className="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-indigo-500/60 hover:text-white transition flex items-center space-x-1"
-              >
-                <span>⏱️ {profile.daily_minutes || 20}m/day</span>
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-400 hidden lg:block">
-              Adaptive English Tutor • 1 Question at a Time
-            </p>
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            <span className="font-extrabold text-sm sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+              LinguaStep
+            </span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              {profile.current_level}
+            </span>
+            <button
+              onClick={onOpenSettings}
+              title="Adjust your daily study duration"
+              className="cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-indigo-500/60 hover:text-white transition hidden md:flex items-center space-x-1"
+            >
+              <span>⏱️ {profile.daily_minutes || 20}m</span>
+            </button>
           </div>
         </div>
 
-        {/* VISUAL PROGRESS BADGE SYSTEM (IN HEADER) */}
-        <div className="flex items-center">
+        {/* Cambridge Dictionary Search (Desktop) */}
+        {onSearchVocabulary && (
+          <div className="hidden md:flex flex-1 max-w-[240px] lg:max-w-[320px] mx-2">
+            <CambridgeDictionarySearch
+              onSelectWord={onSearchVocabulary}
+              placeholder="Search Cambridge dictionary..."
+            />
+          </div>
+        )}
+
+        {/* Center/Right Desktop Controls (Hidden on small screens to prevent overflow) */}
+        <div className="hidden lg:flex items-center space-x-2 shrink-0">
+          {/* Milestone Widget */}
           <button
             onClick={onOpenMilestones}
-            title="Click to view all milestone achievements"
-            className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-slate-800/90 via-slate-800 to-slate-800/90 hover:from-slate-700/90 hover:to-slate-700 border border-amber-500/30 hover:border-amber-400/60 shadow-sm transition group"
+            title="View all milestone achievements"
+            className="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-amber-500/30 hover:border-amber-400/60 shadow-sm transition group"
           >
-            {/* Visual Icon with Glowing Ring */}
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500/20 to-yellow-500/10 border border-amber-500/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-amber-500/20 to-yellow-500/10 border border-amber-500/40 flex items-center justify-center shrink-0">
               {featuredBadge ? getBadgeIcon(featuredBadge.icon) : <Trophy className="w-3.5 h-3.5 text-amber-400" />}
             </div>
-
-            {/* Badge Title & Progress Label */}
-            <div className="text-left hidden sm:block">
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-bold text-white group-hover:text-amber-200 transition">
-                  {featuredBadge ? featuredBadge.title : (nextBadge ? nextBadge.title : 'Milestone Journey')}
-                </span>
-                {featuredBadge && (
-                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    {featuredBadge.tier}
-                  </span>
-                )}
-              </div>
-
-              {/* Progress track or unlocked counter */}
-              <div className="flex items-center space-x-2 mt-0.5">
-                {nextBadge && !featuredBadge ? (
-                  <span className="text-[10px] text-slate-400">
-                    Progress: {nextBadge.currentValue}/{nextBadge.targetValue}
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-amber-400/90 font-medium">
-                    {unlockedCount} of {totalBadgesCount} Milestones Reached
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile-only badge pill */}
-            <div className="sm:hidden flex items-center space-x-1">
-              <span className="text-xs font-bold text-amber-300">
-                {featuredBadge ? featuredBadge.title.split(' ')[0] : `${unlockedCount}/${totalBadgesCount}`}
+            <div className="text-left">
+              <span className="text-xs font-bold text-white max-w-[110px] truncate block group-hover:text-amber-200 transition">
+                {featuredBadge ? featuredBadge.title : (nextBadge ? nextBadge.title : 'Milestones')}
+              </span>
+              <span className="text-[10px] text-amber-400/90 font-medium block">
+                {unlockedCount}/{totalBadgesCount} Badges
               </span>
             </div>
-
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition group-hover:translate-x-0.5" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
           </button>
-        </div>
 
-        {/* Action controls */}
-        <div className="flex items-center space-x-2 shrink-0">
-          {/* Recurring mistakes alert */}
+          {/* Memory & Mistakes */}
           <button
             onClick={onOpenMemory}
-            title="Inspect recurring errors and review"
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
+            title="Learning Memory & Mistakes"
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
           >
-            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-            <span className="hidden md:inline">Mistakes</span>
+            <Brain className="w-4 h-4 text-sky-400" />
+            <span>Memory</span>
             {mistakesCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+              <span className="px-1.5 py-0.2 text-[10px] bg-rose-500/20 text-rose-300 font-bold rounded-full border border-rose-500/30">
                 {mistakesCount}
               </span>
             )}
           </button>
 
-          {/* Learning Memory button */}
-          <button
-            onClick={onOpenMemory}
-            title="Open Learning Memory & Spaced Repetition"
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
-          >
-            <Brain className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden md:inline">Memory</span>
-          </button>
+          {/* Roadmap */}
+          {onOpenRoadmap && (
+            <button
+              onClick={onOpenRoadmap}
+              title="View Learning Roadmap"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-indigo-200 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 transition flex items-center space-x-1.5"
+            >
+              <Compass className="w-4 h-4 text-indigo-400" />
+              <span>Roadmap</span>
+            </button>
+          )}
 
-          {/* Build Next AI Session button */}
+          {/* Summary */}
+          {hasActiveSummary && onOpenSummary && (
+            <button
+              onClick={onOpenSummary}
+              title="View session summary"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition flex items-center space-x-1.5"
+            >
+              <FileText className="w-4 h-4 text-amber-400" />
+              <span>Summary</span>
+            </button>
+          )}
+        </div>
+
+        {/* Far Right Action Buttons (Always visible: Build Session, Settings, Auth / Mobile Menu) */}
+        <div className="flex items-center space-x-1.5 shrink-0">
+          {/* Primary Action: Build Next AI Session */}
           {onBuildNextSession && (
             <button
               disabled={isBuildingSession}
               onClick={onBuildNextSession}
-              title="Ask AI to build the next session with fresh questions"
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 border border-indigo-500/40 shadow-md transition"
+              title="Build the next session with fresh progressive questions"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 border border-indigo-500/40 shadow-md shadow-indigo-600/20 transition"
             >
               {isBuildingSession ? (
                 <>
@@ -197,66 +192,29 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span className="hidden sm:inline">Build Next Session</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                  <span>Build Next Session</span>
                 </>
               )}
             </button>
           )}
 
-          {/* Roadmap & Tomorrow's Plan button */}
-          {onOpenRoadmap && (
-            <button
-              onClick={onOpenRoadmap}
-              title="View Learning Roadmap & Tomorrow's Plan"
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-indigo-200 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 transition shadow-sm"
-            >
-              <Compass className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="hidden sm:inline">Roadmap</span>
-            </button>
-          )}
-
-          {/* Summary button */}
-          {hasActiveSummary && onOpenSummary && (
-            <button
-              onClick={onOpenSummary}
-              title="View today's summary"
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition"
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">Summary</span>
-            </button>
-          )}
-
-          {/* AI Usage Budget pill */}
-          {budgetLimits && (
-            <div
-              title={`Daily server-side AI budget: ${budgetLimits.userRemaining} of ${budgetLimits.userDailyLimit} requests remaining today`}
-              className="hidden lg:flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/90 border border-slate-700 text-slate-300"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] font-mono">
-                {budgetLimits.userRemaining}/{budgetLimits.userDailyLimit} AI
-              </span>
-            </div>
-          )}
-
-          {/* Settings & Profile */}
+          {/* Settings Icon */}
           <button
             onClick={onOpenSettings}
-            title="Learner Profile & Preferences"
-            className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition"
+            title="Learner Profile & Settings"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition hidden sm:block"
           >
             <Sliders className="w-4 h-4" />
           </button>
 
-          {/* User Account / Sign In */}
+          {/* Account / User Avatar */}
           {currentUser ? (
-            <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-800">
+            <div className="hidden sm:flex items-center space-x-1 pl-1 border-l border-slate-800">
               <button
                 onClick={onOpenAuth}
-                title={`Signed in as ${currentUser.name} (${currentUser.authProvider})`}
-                className="flex items-center space-x-1.5 p-1 rounded-lg hover:bg-slate-800 transition group"
+                title={`Signed in as ${currentUser.name}`}
+                className="flex items-center space-x-1.5 p-1 rounded-xl hover:bg-slate-800 transition group"
               >
                 {currentUser.picture ? (
                   <img
@@ -269,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {currentUser.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-xs font-medium text-slate-200 hidden md:inline max-w-[90px] truncate group-hover:text-white">
+                <span className="text-xs font-medium text-slate-200 hidden xl:inline max-w-[80px] truncate group-hover:text-white">
                   {currentUser.name.split(' ')[0]}
                 </span>
               </button>
@@ -277,7 +235,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onLogout}
                   title="Sign out"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -286,15 +244,122 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={onOpenAuth}
-              title="Sign in with Google or continue as guest"
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition"
+              title="Sign in with Google or guest"
+              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign in</span>
             </button>
           )}
+
+          {/* Mobile Dropdown Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            title="Toggle Menu"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700 lg:hidden transition"
+          >
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Dropdown Drawer for overflow navigation items */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 space-y-2.5 animate-fadeIn">
+          {onSearchVocabulary && (
+            <div className="pb-1">
+              <CambridgeDictionarySearch
+                onSelectWord={(word) => {
+                  setMobileMenuOpen(false);
+                  onSearchVocabulary(word);
+                }}
+                placeholder="Search Cambridge dictionary..."
+              />
+            </div>
+          )}
+          <button
+            onClick={() => { setMobileMenuOpen(false); onOpenMilestones(); }}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 text-xs font-medium text-slate-200 hover:text-white border border-amber-500/30"
+          >
+            <div className="flex items-center space-x-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>Milestones ({unlockedCount}/{totalBadgesCount})</span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          <button
+            onClick={() => { setMobileMenuOpen(false); onOpenMemory(); }}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 text-xs font-medium text-slate-200 hover:text-white border border-slate-700"
+          >
+            <div className="flex items-center space-x-2">
+              <Brain className="w-4 h-4 text-sky-400" />
+              <span>Learning Memory & Mistakes</span>
+            </div>
+            {mistakesCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                {mistakesCount} mistakes
+              </span>
+            )}
+          </button>
+
+          {onOpenRoadmap && (
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenRoadmap(); }}
+              className="w-full flex items-center space-x-2 p-2.5 rounded-xl bg-indigo-500/15 text-xs font-semibold text-indigo-200 border border-indigo-500/30"
+            >
+              <Compass className="w-4 h-4 text-indigo-400" />
+              <span>Learning Roadmap & Plan</span>
+            </button>
+          )}
+
+          {hasActiveSummary && onOpenSummary && (
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenSummary(); }}
+              className="w-full flex items-center space-x-2 p-2.5 rounded-xl bg-amber-500/10 text-xs font-medium text-amber-200 border border-amber-500/30"
+            >
+              <FileText className="w-4 h-4 text-amber-400" />
+              <span>Today's Session Summary</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => { setMobileMenuOpen(false); onOpenSettings(); }}
+            className="w-full flex items-center space-x-2 p-2.5 rounded-xl bg-slate-800 text-xs font-medium text-slate-200 border border-slate-700 sm:hidden"
+          >
+            <Sliders className="w-4 h-4 text-slate-400" />
+            <span>Learner Profile & Settings ({profile.daily_minutes || 20}m/day)</span>
+          </button>
+
+          {currentUser ? (
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between sm:hidden">
+              <div className="flex items-center space-x-2">
+                {currentUser.picture ? (
+                  <img src={currentUser.picture} alt={currentUser.name} className="w-7 h-7 rounded-full border border-indigo-400/60" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-indigo-600/30 text-indigo-300 flex items-center justify-center text-xs font-bold">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-xs font-medium text-slate-200">{currentUser.name}</span>
+              </div>
+              {onLogout && (
+                <button onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20">
+                  Sign out
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => { setMobileMenuOpen(false); onOpenAuth?.(); }}
+              className="w-full flex items-center justify-center space-x-2 p-2.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white sm:hidden"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign in / Guest Session</span>
+            </button>
+          )}
+        </div>
+      )}
     </header>
   );
 };

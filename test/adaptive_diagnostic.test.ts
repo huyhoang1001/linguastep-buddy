@@ -1,5 +1,4 @@
 import { GeminiLearningProvider } from '../server/aiService.js';
-import { DIAGNOSTIC_BANK } from '../server/diagnosticBank.js';
 import { DiagnosticSession, UserProfile, Question } from '../src/types/learning.js';
 import { createDiagnosticAssessmentPlan } from '../src/types/diagnosticPlans.js';
 
@@ -19,10 +18,11 @@ async function runTests() {
     }
   }
 
+  let questionCounter = 0;
   const ai = new GeminiLearningProvider();
   // Mock AI provider for hermetic, fast test execution
   ai.setMockHandler((prompt: string) => {
-    if (prompt.includes('writing') || prompt.includes('Assess writing')) {
+    if (prompt.includes('Assess writing') || prompt.includes('Evaluate free writing')) {
       return {
         accuracy: 4,
         vocabularyRange: 4,
@@ -33,6 +33,82 @@ async function runTests() {
         feedbackSummary: 'Clear and well-structured workplace response.',
         correctedVersion: 'I encountered an unexpected database connection error during deployment.',
         keyCorrections: []
+      };
+    }
+    if (prompt.includes('Generate the complete calibrated suite')) {
+      return {
+        questions: [
+          { id: 'q-g1', section: 'grammar', skill_name: 'Tenses', question_type: 'multiple_choice', difficulty: 'B1', prompt: 'He ____ finished the report.', options: [{ id: 'A', text: 'has' }, { id: 'B', text: 'have' }, { id: 'C', text: 'had' }, { id: 'D', text: 'having' }], expected_answer_ids: ['A'], expected_answer_text: 'has', hint: 'Present perfect with third person singular.' },
+          { id: 'q-g2', section: 'grammar', skill_name: 'Conditionals', question_type: 'multiple_choice', difficulty: 'B2', prompt: 'If we ____ earlier, we would have caught the train.', options: [{ id: 'A', text: 'left' }, { id: 'B', text: 'had left' }, { id: 'C', text: 'have left' }, { id: 'D', text: 'were leaving' }], expected_answer_ids: ['B'], expected_answer_text: 'had left', hint: 'Third conditional.' },
+          { id: 'q-g3', section: 'grammar', skill_name: 'Passive Voice', question_type: 'multiple_choice', difficulty: 'B2', prompt: 'The software ____ by our team last week.', options: [{ id: 'A', text: 'was updated' }, { id: 'B', text: 'is updated' }, { id: 'C', text: 'updated' }, { id: 'D', text: 'has updated' }], expected_answer_ids: ['A'], expected_answer_text: 'was updated', hint: 'Past simple passive.' },
+          { id: 'q-v1', section: 'vocabulary', skill_name: 'Collocations', question_type: 'multiple_choice', difficulty: 'B1', prompt: 'We need to ____ a decision quickly.', options: [{ id: 'A', text: 'make' }, { id: 'B', text: 'do' }, { id: 'C', text: 'take' }, { id: 'D', text: 'give' }], expected_answer_ids: ['A'], expected_answer_text: 'make', hint: 'Make a decision.' },
+          { id: 'q-v2', section: 'vocabulary', skill_name: 'Workplace Terms', question_type: 'multiple_choice', difficulty: 'B2', prompt: 'The team managed to ____ the issue before release.', options: [{ id: 'A', text: 'resolve' }, { id: 'B', text: 'break' }, { id: 'C', text: 'ignore' }, { id: 'D', text: 'delay' }], expected_answer_ids: ['A'], expected_answer_text: 'resolve', hint: 'Fix or resolve a problem.' },
+          { id: 'q-v3', section: 'vocabulary', skill_name: 'Technical Terms', question_type: 'multiple_choice', difficulty: 'B2', prompt: 'We experienced an unexpected network ____.', options: [{ id: 'A', text: 'latency' }, { id: 'B', text: 'happy' }, { id: 'C', text: 'run' }, { id: 'D', text: 'blue' }], expected_answer_ids: ['A'], expected_answer_text: 'latency', hint: 'Network delay.' },
+          { id: 'q-r1', section: 'reading', skill_name: 'Comprehension', question_type: 'reading_comprehension', difficulty: 'B2', reading_passage: { title: 'Async Work', text: 'Asynchronous communication is vital for global remote teams.', word_count: 50, topic: 'remote_work' }, prompt: 'Why is async communication important?', options: [{ id: 'A', text: 'It helps remote teams' }, { id: 'B', text: 'It slows work' }, { id: 'C', text: 'It causes confusion' }, { id: 'D', text: 'It requires co-location' }], expected_answer_ids: ['A'], expected_answer_text: 'It helps remote teams', hint: 'Read the first sentence.' },
+          { id: 'q-w1', section: 'writing', skill_name: 'Workplace Update', question_type: 'free_writing', difficulty: 'B2', prompt: 'Write 2-3 sentences updating your team on current project blockers.', expected_answer_text: 'Original coherent response.', hint: 'Use clear sentences.' }
+        ]
+      };
+    }
+    if (prompt.includes('for section')) {
+      questionCounter++;
+      const isReading = prompt.includes('section reading');
+      const isWriting = prompt.includes('section writing');
+      const isVocab = prompt.includes('section vocabulary');
+      const sec = isWriting ? 'writing' : isReading ? 'reading' : isVocab ? 'vocabulary' : 'grammar';
+
+      if (isWriting) {
+        return {
+          id: `ai-item-${questionCounter}`,
+          section: 'writing',
+          skill_name: 'Written Communication',
+          question_type: 'free_writing',
+          difficulty: 'B2',
+          prompt: `Write 2-3 sentences explaining your progress today (Item ${questionCounter}).`,
+          expected_answer_text: 'Original text.',
+          hint: 'Write clearly.'
+        };
+      }
+      if (isReading) {
+        return {
+          id: `ai-item-${questionCounter}`,
+          section: 'reading',
+          skill_name: 'Reading Comprehension',
+          question_type: 'reading_comprehension',
+          difficulty: 'B2',
+          reading_passage: {
+            title: 'Modern Architecture',
+            text: 'Scalable services require modular component boundaries and isolated state management.',
+            word_count: 100,
+            topic: 'system_design'
+          },
+          prompt: `What is necessary for scalable systems according to the passage? (Item ${questionCounter})`,
+          options: [
+            { id: 'A', text: 'Modular component boundaries' },
+            { id: 'B', text: 'Monolithic single threads' },
+            { id: 'C', text: 'No testing' },
+            { id: 'D', text: 'Uncapped network queues' }
+          ],
+          expected_answer_ids: ['A'],
+          expected_answer_text: 'Modular component boundaries',
+          hint: 'Look at the first line.'
+        };
+      }
+      return {
+        id: `ai-item-${questionCounter}`,
+        section: sec,
+        skill_name: `${sec} precision ${questionCounter}`,
+        question_type: 'multiple_choice',
+        difficulty: 'B2',
+        prompt: `Select the correct form for item ${questionCounter}: Our team has ____ the milestone.`,
+        options: [
+          { id: 'A', text: 'reached' },
+          { id: 'B', text: 'reach' },
+          { id: 'C', text: 'reaching' },
+          { id: 'D', text: 'reaches' }
+        ],
+        expected_answer_ids: ['A'],
+        expected_answer_text: 'reached',
+        hint: 'Past participle form.'
       };
     }
     return null;
@@ -56,15 +132,8 @@ async function runTests() {
     updated_at: new Date().toISOString()
   };
 
-  // TEST 1: Question Bank & Diagnostic Mode Calibration Plans
-  console.log('--- Test 1: Diagnostic Plans & Question Bank Integrity ---');
-  assert(DIAGNOSTIC_BANK.length >= 20, 'Diagnostic bank has at least 20 calibrated items across levels');
-  const sectionsInBank = new Set(DIAGNOSTIC_BANK.map(i => i.category));
-  assert(
-    sectionsInBank.has('grammar') && sectionsInBank.has('vocabulary') && sectionsInBank.has('reading') && sectionsInBank.has('writing'),
-    'Bank covers all 4 core dimensions (grammar, vocabulary, reading, writing)'
-  );
-
+  // TEST 1: Diagnostic Mode Calibration Plans (No hardcoded question banks)
+  console.log('--- Test 1: Diagnostic Mode Calibration Plans ---');
   const quickPlan = createDiagnosticAssessmentPlan('quick');
   assert(quickPlan.targetDurationMinutes === 10, 'Quick mode has calibrated 10m target duration');
   assert(quickPlan.totalQuestions === 8, 'Quick mode has exactly 8 total questions');
@@ -248,6 +317,61 @@ async function runTests() {
   assert(Boolean(studyPlan.prioritizedSkills[0].rationale), 'Prioritized skills include explicit rationale grounded in assessment');
   assert(studyPlan.dailyRoutineTemplate.length === 4, 'Daily routine template has 4 flexible sections (Grammar, Vocab, Reading, Writing)');
   assert(studyPlan.learnerApprovalStatus === 'draft', 'Study plan is created in draft status awaiting learner approval');
+
+  // TEST 6: One-Time Batch Question Generation for Whole Assessment
+  console.log('\n--- Test 6: One-Time Batch Generation for Full Assessment ---');
+  const batchSession: DiagnosticSession = {
+    sessionId: 'test-session-batch',
+    mode: 'quick',
+    status: 'in_progress',
+    plan: quickPlan,
+    currentSectionIndex: 0,
+    questionIndexInSection: 0,
+    currentIndex: 1,
+    totalQuestions: 8,
+    minQuestions: 8,
+    maxQuestions: 8,
+    history: [],
+    currentEstimates: session.currentEstimates,
+    overallCEFR: 'B2',
+    startedAt: new Date().toISOString(),
+    lastActiveAt: new Date().toISOString()
+  };
+
+  const batchQuestions = await ai.generateDiagnosticBatchQuestions(batchSession, mockProfile);
+  assert(Array.isArray(batchQuestions), 'Batch question generation returns an array of questions');
+  assert(batchQuestions.length === 8, 'Quick mode generates all 8 assessment questions at once');
+  const batchGrammar = batchQuestions.filter(q => q.section === 'grammar');
+  const batchVocab = batchQuestions.filter(q => q.section === 'vocabulary');
+  const batchReading = batchQuestions.filter(q => q.section === 'reading');
+  const batchWriting = batchQuestions.filter(q => q.section === 'writing');
+  assert(batchGrammar.length === 3, 'Batch contains 3 grammar questions');
+  assert(batchVocab.length === 3, 'Batch contains 3 vocabulary questions');
+  assert(batchReading.length === 1, 'Batch contains 1 reading comprehension question');
+  assert(Boolean(batchReading[0].reading_passage), 'Reading question in batch has a reading passage');
+  assert(batchWriting.length === 1, 'Batch contains 1 writing question');
+  assert(batchWriting[0].question_type === 'free_writing', 'Writing question in batch is free_writing');
+
+  // TEST 7: Major / Subject Tailoring in Profile & Diagnostic Session
+  console.log('\n--- Test 7: Subject / Major Focus Propagation ---');
+  const medicalProfile: UserProfile = {
+    ...mockProfile,
+    major_or_subject: 'Healthcare & Medicine',
+    major_focus_details: 'Clinical oncology nurse presenting daily patient chart summaries'
+  };
+
+  const medicalSession: DiagnosticSession = {
+    ...batchSession,
+    sessionId: 'test-session-medical',
+    major_or_subject: medicalProfile.major_or_subject,
+    major_focus_details: medicalProfile.major_focus_details
+  };
+
+  assert(medicalSession.major_or_subject === 'Healthcare & Medicine', 'Diagnostic session stores selected major');
+  assert(Boolean(medicalSession.major_focus_details?.includes('Clinical oncology')), 'Diagnostic session stores specialty focus details');
+
+  const medicalQuestions = await ai.generateDiagnosticBatchQuestions(medicalSession, medicalProfile);
+  assert(medicalQuestions.length === 8, 'Batch generator successfully completes for medical major');
 
   console.log(`\n========================================`);
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);

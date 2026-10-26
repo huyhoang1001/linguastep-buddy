@@ -18,7 +18,9 @@ import {
   WritingRubricScore,
   ActiveLessonState,
   DeepDiveInquiryResponse,
-  DiagnosticAssessmentPlan
+  DiagnosticAssessmentPlan,
+  WordPracticeData,
+  NextSessionCustomContext
 } from '../types/learning.ts';
 import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';
 import { localStore } from './localStore.ts';
@@ -52,6 +54,47 @@ function getAuthHeaders(): Record<string, string> {
     }
   }
   return headers;
+}
+
+export async function verifyCustomApiKey(apiKey: string): Promise<{ valid: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/ai/verify-key', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey.trim()
+      },
+      body: JSON.stringify({ apiKey: apiKey.trim() })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { valid: false, error: data.error || 'Failed to validate API key.' };
+    }
+    return { valid: true, message: data.message || 'API key verified and connected!' };
+  } catch (err: any) {
+    return { valid: false, error: err.message || 'Network error verifying key' };
+  }
+}
+
+export function saveCustomApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('lingua_step_gemini_api_key', key.trim());
+  }
+}
+
+export function clearCustomApiKey(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('lingua_step_gemini_api_key');
+  }
+}
+
+export function getCustomApiKeyMasked(): { hasKey: boolean; masked: string } {
+  if (typeof window === 'undefined') return { hasKey: false, masked: '' };
+  const key = localStorage.getItem('lingua_step_gemini_api_key');
+  if (!key || !key.trim()) return { hasKey: false, masked: '' };
+  const trimmed = key.trim();
+  const last4 = trimmed.slice(-4);
+  return { hasKey: true, masked: `••••••••••••${last4}` };
 }
 
 async function parseAIResponse<T>(res: Response, fallbackMessage: string): Promise<T> {
@@ -276,22 +319,29 @@ export async function clearActiveLessonState(): Promise<void> {
 // LESSON GENERATION & EVALUATION (STATELESS AI ENDPOINTS + LOCAL PERSISTENCE)
 // =========================================================================
 
-export async function generateLessonPlan(dailyMinutes?: number, forceRegenerate?: boolean): Promise<LessonPlan> {
+export async function generateLessonPlan(
+  dailyMinutes?: number,
+  forceRegenerate?: boolean,
+  customContext?: NextSessionCustomContext
+): Promise<LessonPlan> {
   let profile = await localStore.getProfile();
-  if (typeof dailyMinutes === 'number' && [10, 20, 30].includes(dailyMinutes)) {
-    profile = await localStore.updateProfile({ daily_minutes: dailyMinutes });
+  const effectiveMinutes = customContext?.dailyMinutes || dailyMinutes;
+  if (typeof effectiveMinutes === 'number' && [10, 20, 30].includes(effectiveMinutes)) {
+    profile = await localStore.updateProfile({ daily_minutes: effectiveMinutes });
   }
+
+  const shouldForce = forceRegenerate || Boolean(customContext);
 
   // Check if an in-progress lesson already exists in local storage to prevent wasteful regeneration on refresh
   const existingActive = await localStore.getActiveLesson();
-  if (existingActive && existingActive.status === 'in_progress' && !forceRegenerate) {
+  if (existingActive && existingActive.status === 'in_progress' && !shouldForce) {
     return existingActive.plan;
   }
 
   const existingLessons = await localStore.getLessons();
   const todayStr = new Date().toISOString().split('T')[0];
   const todayLesson = existingLessons.find(l => l.date === todayStr && l.status === 'in_progress');
-  if (todayLesson && !forceRegenerate) {
+  if (todayLesson && !shouldForce) {
     return todayLesson;
   }
 
@@ -313,7 +363,8 @@ export async function generateLessonPlan(dailyMinutes?: number, forceRegenerate?
       skills,
       recentErrors,
       dailyMinutes: profile.daily_minutes,
-      lessonHistory
+      lessonHistory,
+      customContext
     })
   });
 
@@ -504,6 +555,27 @@ export async function tutorDeepDive(
   return parseAIResponse<DeepDiveInquiryResponse>(res, 'Failed to process tutor inquiry');
 }
 
+export async function getWordPractice(
+  word: string,
+  contextSentence: string = '',
+  examMajor?: string
+): Promise<WordPracticeData> {
+  const profile = await localStore.getProfile();
+
+  const res = await fetch('/api/ai/word-practice', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      word,
+      contextSentence,
+      profile,
+      examMajor
+    })
+  });
+
+  return parseAIResponse<WordPracticeData>(res, `Failed to analyze vocabulary "${word}"`);
+}
+
 export async function generateLessonSummary(
   lesson: LessonPlan,
   attempts: Array<{ question: Question; evaluation: AnswerEvaluation; userAnswer: string }>,
@@ -623,6 +695,7 @@ export async function sendDiscoveryMessage(message: string): Promise<DiscoverySt
   state.isConfirmed = Boolean(result.isDiscoveryComplete);
   if (result.confirmationSummary) {
     state.summary = result.confirmationSummary;
+    await localStore.updateProfile({ goal_summary: result.confirmationSummary });
   }
   state.updatedAt = new Date().toISOString();
 
@@ -630,12 +703,33 @@ export async function sendDiscoveryMessage(message: string): Promise<DiscoverySt
   return state;
 }
 
-export async function confirmDiscovery(): Promise<{ success: boolean; profile: UserProfile }> {
+export async function confirmDiscovery(customGoalSummary?: string): Promise<{ success: boolean; profile: UserProfile }> {
   const state = await localStore.getDiscoveryState();
+  let goalSummaryToUse = customGoalSummary || state?.summary || '';
+
+  // Fallback: Aggregate learner inputs from discovery messages if goalSummaryToUse is still empty
+  if (!goalSummaryToUse.trim() && state?.messages) {
+    const userInputs = state.messages
+      .filter(m => m.sender === 'learner' && m.text.trim().toLowerCase() !== 'skip question')
+      .map(m => m.text.trim())
+      .filter(Boolean);
+    if (userInputs.length > 0) {
+      goalSummaryToUse = userInputs.join('; ');
+    }
+  }
+
   if (state) {
     state.isConfirmed = true;
+    if (goalSummaryToUse) {
+      state.summary = goalSummaryToUse;
+    }
     await localStore.saveDiscoveryState(state);
   }
+
+  if (goalSummaryToUse) {
+    await localStore.updateProfile({ goal_summary: goalSummaryToUse });
+  }
+
   const profile = await localStore.getProfile();
   return { success: true, profile };
 }
@@ -651,6 +745,25 @@ export async function getDiagnosticSession(): Promise<{ session: DiagnosticSessi
 
 export async function startDiagnosticSession(mode: DiagnosticMode = 'standard', customProfile?: UserProfile): Promise<DiagnosticSession> {
   const profile = customProfile || await localStore.getProfile();
+
+  // If goal_summary is empty, check discovery state to restore any discovery summary/inputs
+  if (!profile.goal_summary || profile.goal_summary.trim().length === 0) {
+    const discoveryState = await localStore.getDiscoveryState();
+    if (discoveryState?.summary) {
+      profile.goal_summary = discoveryState.summary;
+      await localStore.updateProfile({ goal_summary: discoveryState.summary });
+    } else if (discoveryState?.messages) {
+      const userInputs = discoveryState.messages
+        .filter(m => m.sender === 'learner' && m.text.trim().toLowerCase() !== 'skip question')
+        .map(m => m.text.trim())
+        .filter(Boolean);
+      if (userInputs.length > 0) {
+        profile.goal_summary = userInputs.join('; ');
+        await localStore.updateProfile({ goal_summary: profile.goal_summary });
+      }
+    }
+  }
+
   const baseline = profile.current_level || 'A1';
   const plan = createDiagnosticAssessmentPlan(mode, profile.explanation_language);
 
@@ -658,6 +771,8 @@ export async function startDiagnosticSession(mode: DiagnosticMode = 'standard', 
     sessionId: `diag-sess-${Date.now()}`,
     mode,
     status: 'in_progress',
+    major_or_subject: profile.major_or_subject || 'Software Engineering & IT',
+    major_focus_details: profile.major_focus_details || '',
     plan,
     currentSectionIndex: 0,
     questionIndexInSection: 0,
@@ -679,15 +794,35 @@ export async function startDiagnosticSession(mode: DiagnosticMode = 'standard', 
     lastActiveAt: new Date().toISOString()
   };
 
-  // Request initial question from stateless endpoint
-  const res = await fetch('/api/ai/diagnostic-question', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ session: initialSession, profile })
-  });
+  // Request all assessment questions in ONE single batch call using user context
+  try {
+    const res = await fetch('/api/ai/diagnostic-batch-questions', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ session: initialSession, profile })
+    });
+    const batchData = await parseAIResponse<{ questions: Question[] }>(res, 'Failed to pre-generate assessment questions');
+    if (batchData && Array.isArray(batchData.questions) && batchData.questions.length > 0) {
+      initialSession.pregeneratedQuestions = batchData.questions;
+      initialSession.currentQuestion = batchData.questions[0];
+    }
+  } catch (err: any) {
+    if (err instanceof AIClientError && (err.code === 'QUOTA_EXHAUSTED' || err.code === 'RATE_LIMITED' || err.code === 'AUTH_FAILED')) {
+      throw err;
+    }
+    console.warn('[AI] Batch question generation fallback to single item:', err);
+  }
 
-  const question: Question = await parseAIResponse<Question>(res, 'Failed to start diagnostic assessment');
-  initialSession.currentQuestion = question;
+  // Fallback to single question endpoint if batch was not generated
+  if (!initialSession.currentQuestion) {
+    const res = await fetch('/api/ai/diagnostic-question', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ session: initialSession, profile })
+    });
+    const question: Question = await parseAIResponse<Question>(res, 'Failed to start diagnostic assessment');
+    initialSession.currentQuestion = question;
+  }
 
   await localStore.saveDiagnosticSession(initialSession);
   return initialSession;
@@ -699,6 +834,15 @@ export async function getNextDiagnosticQuestion(): Promise<{ question: Question;
 
   const profile = await localStore.getProfile();
 
+  // Ensure profile goal_summary is preserved
+  if (!profile.goal_summary || profile.goal_summary.trim().length === 0) {
+    const discoveryState = await localStore.getDiscoveryState();
+    if (discoveryState?.summary) {
+      profile.goal_summary = discoveryState.summary;
+      await localStore.updateProfile({ goal_summary: discoveryState.summary });
+    }
+  }
+
   // Ensure plan exists
   if (!session.plan) {
     session.plan = createDiagnosticAssessmentPlan(session.mode, profile.explanation_language);
@@ -707,6 +851,19 @@ export async function getNextDiagnosticQuestion(): Promise<{ question: Question;
     session.maxQuestions = session.plan.totalQuestions;
   }
 
+  // 1. Check if assessment has pre-generated questions in session:
+  // ZERO AI roundtrip, ZERO token waste between questions!
+  const nextIndex = session.history.length;
+  if (session.pregeneratedQuestions && session.pregeneratedQuestions.length > nextIndex) {
+    const question = session.pregeneratedQuestions[nextIndex];
+    session.currentQuestion = question;
+    session.currentIndex = nextIndex + 1;
+    session.lastActiveAt = new Date().toISOString();
+    await localStore.saveDiagnosticSession(session);
+    return { question, session };
+  }
+
+  // 2. Fallback to individual generation only if pregeneratedQuestions is unavailable
   const res = await fetch('/api/ai/diagnostic-question', {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -751,13 +908,63 @@ export async function submitDiagnosticAnswer(
     session.maxQuestions = session.plan.totalQuestions;
   }
 
-  const res = await fetch('/api/ai/diagnostic-evaluate', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ question, userAnswer, profile })
-  });
+  const isWritingQuestion = question.section === 'writing' || question.question_type === 'free_writing';
+  let evaluation: AnswerEvaluation;
+  let writingRubric: WritingRubricScore | undefined;
 
-  const { evaluation, writingRubric } = await parseAIResponse<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }>(res, 'Failed to evaluate diagnostic answer');
+  // Writing and subjective open questions MUST ALWAYS invoke the AI examiner to assess (not by assumption)
+  if (isWritingQuestion || !question.options || question.options.length === 0) {
+    const res = await fetch('/api/ai/diagnostic-evaluate', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ question, userAnswer, profile })
+    });
+
+    const evalData = await parseAIResponse<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }>(res, 'Failed to evaluate diagnostic answer');
+    evaluation = evalData.evaluation;
+    writingRubric = evalData.writingRubric;
+  } else {
+    // Fast, deterministic evaluation for multiple-choice & fill-in questions (avoids wasting tokens on simple letter/word choices)
+    const options = question.options || [];
+    const trimmed = userAnswer.trim();
+    const expectedOption = options.find(o =>
+      question.expected_answer_ids?.some(id => id.trim().toUpperCase() === o.id.toUpperCase())
+    ) || options[0];
+    const expectedId = expectedOption ? expectedOption.id.toUpperCase() : 'A';
+    const expectedText = expectedOption ? expectedOption.text.trim() : (question.expected_answer_text || '');
+
+    const clean = (s: string) => (s || '').trim().toLowerCase().replace(/[.,!?;:'"“”()[\]{}]/g, '').replace(/\s+/g, ' ');
+    const normUser = clean(trimmed);
+    const normExpected = clean(expectedText);
+    const acceptedAlts = (question.accepted_alternatives || []).map(clean);
+
+    const selectedOption = options.find(
+      o => o.id.toUpperCase() === trimmed.toUpperCase() || clean(o.text) === normUser
+    );
+    const selectedId = (selectedOption ? selectedOption.id : trimmed).toUpperCase();
+
+    const isCorrect = (selectedOption && selectedOption.id.toUpperCase() === expectedId) ||
+      (selectedId === expectedId) ||
+      (normUser === normExpected) ||
+      acceptedAlts.includes(normUser);
+
+    evaluation = {
+      verdict: isCorrect ? 'correct' : 'incorrect',
+      user_answer: selectedOption ? `${selectedOption.id}. ${selectedOption.text}` : userAnswer,
+      expected_answer: `${expectedId}. ${expectedText}`,
+      full_correct_sentence: question.prompt.includes('____')
+        ? question.prompt.replace(/_{2,}/g, `**${expectedText}**`)
+        : `${question.prompt} → ${expectedText}`,
+      decisive_clue: question.explanation_rule || question.hint || `Option ${expectedId} is the correct answer.`,
+      explanation: isCorrect
+        ? (question.explanation_rule || `Well done! ${expectedId} is correct.`)
+        : `You chose "${selectedOption ? selectedOption.text : trimmed}". The correct choice is "${expectedId}. ${expectedText}". ${question.explanation_rule || ''}`,
+      sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+      error_tags: isCorrect ? [] : [question.skill_name || 'Syntax precision'],
+      needs_retry: false,
+      next_action: 'continue'
+    };
+  }
 
   // Record attempt locally in session history
   session.history.push({

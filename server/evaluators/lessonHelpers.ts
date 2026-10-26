@@ -9,6 +9,15 @@ import {
 } from '../../src/types/learning.js';
 import { polishWritingText } from '../fallbacks/lessonFallbacks.js';
 
+export function normalizeAnswerText(text: string): string {
+  if (!text) return '';
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[.,!?;:'"“”()[\]{}]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
 export function evaluateMultipleChoiceAnswer(
   question: Question,
   trimmedUserAnswer: string
@@ -19,15 +28,25 @@ export function evaluateMultipleChoiceAnswer(
   ) || options[0];
 
   const expectedId = expectedOption ? expectedOption.id.toUpperCase() : 'A';
-  const expectedText = expectedOption ? expectedOption.text.trim() : '';
+  const expectedText = expectedOption ? expectedOption.text.trim() : (question.expected_answer_text || '');
 
+  const normUser = normalizeAnswerText(trimmedUserAnswer);
+  const normExpected = normalizeAnswerText(expectedText);
+
+  // Match by letter ID ('A') or normalized option text ('what' vs 'What')
   const selectedOption = options.find(
-    o => o.id.toUpperCase() === trimmedUserAnswer.toUpperCase() || o.text.trim().toLowerCase() === trimmedUserAnswer.toLowerCase()
+    o => o.id.toUpperCase() === trimmedUserAnswer.trim().toUpperCase() ||
+         normalizeAnswerText(o.text) === normUser
   );
 
-  const selectedId = (selectedOption ? selectedOption.id : trimmedUserAnswer).toUpperCase();
+  const selectedId = (selectedOption ? selectedOption.id : trimmedUserAnswer.trim()).toUpperCase();
+  const acceptedAlts = (question.accepted_alternatives || []).map(normalizeAnswerText);
 
-  const isCorrect = (selectedOption && selectedOption.id.toUpperCase() === expectedId) || (selectedId === expectedId);
+  const isCorrect =
+    (selectedOption && selectedOption.id.toUpperCase() === expectedId) ||
+    (selectedId === expectedId) ||
+    (normUser === normExpected) ||
+    acceptedAlts.includes(normUser);
 
   return { isCorrect, selectedOption, expectedId, expectedText };
 }

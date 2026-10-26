@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import fs from 'fs';
 import {
   UserProfile,
   LessonPlan,
@@ -13,7 +14,9 @@ import {
   DiagnosticReport,
   PersonalizedStudyPlan,
   WritingRubricScore,
-  DeepDiveInquiryResponse
+  DeepDiveInquiryResponse,
+  WordPracticeData,
+  NextSessionCustomContext
 } from '../src/types/learning.js';
 import { budgetManager } from './usageBudget.js';
 import { contentCache } from './contentCache.js';
@@ -24,13 +27,13 @@ import { sanitizeAndReconcileQuestion } from './questionUtils.js';
 import { buildDiscoverySystemPrompt } from './prompts/discoveryPrompts.js';
 import { buildLessonPlanSystemPrompt, buildQuestionSystemPrompt } from './prompts/lessonPrompts.js';
 import { buildContrastExplanationPrompt, buildWritingRubricPrompt } from './prompts/evaluationPrompts.js';
-import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt } from './prompts/tutorPrompts.js';
+import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt, buildWordPracticeSystemPrompt } from './prompts/tutorPrompts.js';
 import { createFallbackWritingRubric } from './evaluators/diagnosticHelpers.js';
 
-// Import modular fallbacks and helpers
 import { fallbackDiscoveryTurn } from './fallbacks/diagnosticFallbacks.js';
-import { polishWritingText, fallbackQuestion } from './fallbacks/lessonFallbacks.js';
-import { evaluateMultipleChoiceAnswer, buildFallbackDailySummary, buildFallbackTomorrowPlan } from './evaluators/lessonHelpers.js';
+import { polishWritingText } from './fallbacks/lessonFallbacks.js';
+import { buildRuleBasedWordFamily } from './fallbacks/wordFamilyFallbacks.js';
+import { evaluateMultipleChoiceAnswer, normalizeAnswerText, buildFallbackDailySummary, buildFallbackTomorrowPlan } from './evaluators/lessonHelpers.js';
 import { diagnosticService } from './services/diagnosticService.js';
 
 export { AIException, classifyGeminiError, type AIErrorCode };
@@ -43,6 +46,7 @@ export interface LearningModelProvider {
   generateLessonSummary(lesson: LessonPlan, attempts: Array<{ question: Question; evaluation: AnswerEvaluation; userAnswer: string }>, profile: UserProfile, timeSpentMinutes?: number): Promise<DailySummary>;
   handleDiscoveryTurn(history: DiscoveryMessage[], userMessage: string, currentProfile: UserProfile): Promise<any>;
   generateAdaptiveDiagnosticQuestion(session: DiagnosticSession, profile: UserProfile): Promise<Question>;
+  generateDiagnosticBatchQuestions(session: DiagnosticSession, profile: UserProfile): Promise<Question[]>;
   evaluateDiagnosticAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }>;
   computeDiagnosticReport(session: DiagnosticSession, profile: UserProfile): Promise<DiagnosticReport>;
   generatePersonalizedStudyPlan(report: DiagnosticReport, profile: UserProfile): Promise<PersonalizedStudyPlan>;
@@ -51,6 +55,7 @@ export interface LearningModelProvider {
 
 export class GeminiLearningProvider implements LearningModelProvider {
   private ai: GoogleGenAI | null = null;
+  private activeApiKeyInClient?: string;
   private modelCandidates = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
   private quotaCooldownUntil = 0;
   private servedQuestionHistory: string[] = [];
@@ -59,24 +64,75 @@ export class GeminiLearningProvider implements LearningModelProvider {
   public isFallbackActive = false;
   public lastFallbackReason = '';
 
+  private getLatestEnvKey(): string | undefined {
+    try {
+      if (fs.existsSync('.env')) {
+        const content = fs.readFileSync('.env', 'utf-8');
+        const match = content.match(/^GEMINI_API_KEY\s*=\s*["']?([^"'\r\n]+)["']?/m);
+        if (match && match[1] && match[1].trim() && match[1].trim() !== 'MY_GEMINI_API_KEY') {
+          process.env.GEMINI_API_KEY = match[1].trim();
+          return match[1].trim();
+        }
+      }
+    } catch {}
+    return process.env.GEMINI_API_KEY;
+  }
+
   public setApiKey(key?: string): void {
-    this.currentApiKey = key;
+    const trimmed = key?.trim();
+    if (trimmed && trimmed.length > 5) {
+      if (this.currentApiKey !== trimmed) {
+        this.currentApiKey = trimmed;
+        this.initClientForApiKey(trimmed);
+        this.quotaCooldownUntil = 0;
+        this.isFallbackActive = false;
+        this.lastFallbackReason = '';
+      }
+    } else {
+      if (this.currentApiKey) {
+        this.currentApiKey = undefined;
+        const envKey = this.getLatestEnvKey();
+        if (envKey) {
+          this.initClientForApiKey(envKey);
+        }
+      }
+    }
+  }
+
+  private initClientForApiKey(key: string): GoogleGenAI | null {
+    try {
+      const client = new GoogleGenAI({ apiKey: key });
+      this.ai = client;
+      this.activeApiKeyInClient = key;
+      this.quotaCooldownUntil = 0;
+      return client;
+    } catch (err) {
+      console.warn('Could not initialize GoogleGenAI client for key:', err);
+      return null;
+    }
   }
 
   private getAiClient(): GoogleGenAI | null {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') return null;
-    if (!this.ai || this.currentApiKey !== apiKey) {
-      try {
-        this.ai = new GoogleGenAI({ apiKey });
-        this.currentApiKey = apiKey;
-        this.quotaCooldownUntil = 0;
-      } catch (err) {
-        console.warn('Could not initialize GoogleGenAI client:', err);
-        return null;
+    // 1. Check custom key set for current request / session
+    if (this.currentApiKey && this.currentApiKey.trim().length > 5) {
+      const customKey = this.currentApiKey.trim();
+      if (this.ai && this.activeApiKeyInClient === customKey) {
+        return this.ai;
       }
+      return this.initClientForApiKey(customKey);
     }
-    return this.ai;
+
+    // 2. Check environment / .env file
+    const envKey = this.getLatestEnvKey();
+    if (!envKey || envKey === 'MY_GEMINI_API_KEY') {
+      return null;
+    }
+
+    if (this.ai && this.activeApiKeyInClient === envKey) {
+      return this.ai;
+    }
+
+    return this.initClientForApiKey(envKey);
   }
 
   constructor() {
@@ -89,7 +145,8 @@ export class GeminiLearningProvider implements LearningModelProvider {
 
   public isQuotaExhausted(): boolean {
     if (Date.now() < this.quotaCooldownUntil) return true;
-    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') return false;
+    const activeKey = this.currentApiKey || this.getLatestEnvKey();
+    if (activeKey && activeKey !== 'MY_GEMINI_API_KEY') return false;
     return false;
   }
 
@@ -118,22 +175,29 @@ export class GeminiLearningProvider implements LearningModelProvider {
     options?: { userId?: string; operation?: string }
   ): Promise<T | null> {
     const userId = options?.userId || 'system';
+    const hasCustomKey = Boolean(this.currentApiKey && this.currentApiKey.trim().length > 5);
 
     if (this.isQuotaExhausted()) {
-      this.isFallbackActive = true;
-      this.lastFallbackReason = 'API quota cooldown active.';
-      throw new AIException(
-        'QUOTA_EXHAUSTED',
-        "AI usage limit reached. We're unable to process your request right now. Please try again later.",
-        { retryable: false, retryAfterSeconds: 60 }
-      );
+      if (hasCustomKey) {
+        this.quotaCooldownUntil = 0;
+      } else {
+        this.isFallbackActive = true;
+        this.lastFallbackReason = 'API quota cooldown active.';
+        throw new AIException(
+          'QUOTA_EXHAUSTED',
+          "AI usage limit reached. We're unable to process your request right now. Please try again later.",
+          { retryable: false, retryAfterSeconds: 60 }
+        );
+      }
     }
 
-    const budgetStatus = budgetManager.checkAllowance(userId);
-    if (!budgetStatus.allowed) {
-      this.isFallbackActive = true;
-      this.lastFallbackReason = budgetStatus.reason || 'Usage budget limit reached.';
-      return null;
+    if (!hasCustomKey) {
+      const budgetStatus = budgetManager.checkAllowance(userId);
+      if (!budgetStatus.allowed) {
+        this.isFallbackActive = true;
+        this.lastFallbackReason = budgetStatus.reason || 'Usage budget limit reached.';
+        return null;
+      }
     }
 
     if (this.mockHandler) {
@@ -221,6 +285,10 @@ export class GeminiLearningProvider implements LearningModelProvider {
     return diagnosticService.generateAdaptiveDiagnosticQuestion((p, s, o) => this.callGeminiJson(p, s, o), session, profile);
   }
 
+  public async generateDiagnosticBatchQuestions(session: DiagnosticSession, profile: UserProfile): Promise<Question[]> {
+    return diagnosticService.generateDiagnosticBatchQuestions((p, s, o) => this.callGeminiJson(p, s, o), session, profile);
+  }
+
   public async evaluateDiagnosticAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }> {
     return diagnosticService.evaluateDiagnosticAnswer((p, s, o) => this.callGeminiJson(p, s, o), (q, u, pr) => this.evaluateAnswer(q, u, pr), question, userAnswer, profile);
   }
@@ -236,72 +304,83 @@ export class GeminiLearningProvider implements LearningModelProvider {
   // =========================================================================
   // 3. LESSON PLAN & QUESTION GENERATION
   // =========================================================================
-  public async generateLessonPlan(profile: UserProfile, skillStates: LearnerSkillState[], recentErrors: string[], lessonHistory: any[] = []): Promise<LessonPlan> {
-    const rawDuration = profile.daily_minutes || 20;
+  public async generateLessonPlan(
+    profile: UserProfile,
+    skillStates: LearnerSkillState[],
+    recentErrors: string[],
+    lessonHistory: any[] = [],
+    customContext?: NextSessionCustomContext
+  ): Promise<LessonPlan> {
+    const rawDuration = customContext?.dailyMinutes || profile.daily_minutes || 20;
     const duration: 10 | 20 | 30 = rawDuration <= 12 ? 10 : rawDuration >= 25 ? 30 : 20;
     const paceMode = duration === 10 ? 'quick_10' : duration === 30 ? 'deep_30' : 'standard_20';
     const totalPlannedQuestions = duration === 10 ? 6 : duration === 30 ? 15 : 10;
 
-    const cacheKey = contentCache.makeKey('lesson_plan', { level: profile.current_level, duration, goal: profile.primary_goal, lang: profile.explanation_language, historyLength: lessonHistory.length });
-    const cachedPlan = lessonHistory.length > 0 ? null : contentCache.get<LessonPlan>(cacheKey);
+    const hasCustomConfig = Boolean(
+      customContext && (
+        (customContext.selectedMistakes && customContext.selectedMistakes.length > 0) ||
+        (customContext.selectedVocabWords && customContext.selectedVocabWords.length > 0) ||
+        (customContext.selectedNewSkills && customContext.selectedNewSkills.length > 0) ||
+        customContext.topicCategory ||
+        customContext.customInstructions
+      )
+    );
+
+    const cacheKey = contentCache.makeKey('lesson_plan', {
+      level: profile.current_level,
+      duration,
+      goal: profile.primary_goal,
+      lang: profile.explanation_language,
+      historyLength: lessonHistory.length
+    });
+    const cachedPlan = (lessonHistory.length > 0 || hasCustomConfig) ? null : contentCache.get<LessonPlan>(cacheKey);
     if (cachedPlan) return { ...cachedPlan, lesson_id: `lesson-${Date.now()}`, status: 'in_progress' };
 
-    const systemPrompt = buildLessonPlanSystemPrompt(profile, skillStates, recentErrors, duration, paceMode, totalPlannedQuestions, lessonHistory);
+    const systemPrompt = buildLessonPlanSystemPrompt(
+      profile,
+      skillStates,
+      recentErrors,
+      duration,
+      paceMode,
+      totalPlannedQuestions,
+      lessonHistory,
+      customContext
+    );
     const prompt = `Create daily lesson plan for ${duration} mins (${paceMode}) advancing forward from previous history.`;
 
-    try {
-      const aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_plan' });
-      if (aiResult && aiResult.sections && aiResult.sections.length > 0) {
-        const parsedSections = aiResult.sections.map((s: any) => ({
-          section: s.section,
-          title: s.title,
-          description: s.description,
-          estimated_minutes: s.estimated_minutes,
-          skill_target: s.skill_target,
-          activity_type: s.activity_type || 'concept_practice',
-          target_questions_count: s.target_questions_count || 2,
-          completed_questions_count: 0,
-          completed: false
-        }));
+    const aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_plan' });
+    if (aiResult && aiResult.sections && aiResult.sections.length > 0) {
+      const parsedSections = aiResult.sections.map((s: any) => ({
+        section: s.section,
+        title: s.title,
+        description: s.description,
+        estimated_minutes: s.estimated_minutes,
+        skill_target: s.skill_target,
+        activity_type: s.activity_type || 'concept_practice',
+        target_questions_count: s.target_questions_count || 2,
+        completed_questions_count: 0,
+        completed: false
+      }));
 
-        const plan: LessonPlan = {
-          lesson_id: `lesson-${Date.now()}`,
-          lesson_number: 1,
-          date: new Date().toISOString().split('T')[0],
-          primary_objective: aiResult.primary_objective,
-          reason_for_selection: aiResult.reason_for_selection,
-          estimated_duration_minutes: duration,
-          session_pace_mode: paceMode,
-          total_planned_questions: totalPlannedQuestions,
-          sections: parsedSections,
-          status: 'in_progress'
-        };
+      const plan: LessonPlan = {
+        lesson_id: `lesson-${Date.now()}`,
+        lesson_number: 1,
+        date: new Date().toISOString().split('T')[0],
+        primary_objective: aiResult.primary_objective,
+        reason_for_selection: aiResult.reason_for_selection,
+        estimated_duration_minutes: duration,
+        session_pace_mode: paceMode,
+        total_planned_questions: totalPlannedQuestions,
+        sections: parsedSections,
+        status: 'in_progress'
+      };
 
-        const fullyPopulatedPlan = await this.populatePlanQuestions(plan, profile);
-        contentCache.set(cacheKey, fullyPopulatedPlan, 86400);
-        return fullyPopulatedPlan;
-      }
-    } catch (err: any) {
-      console.warn('[AI] generateLessonPlan fallback:', err?.message);
+      const fullyPopulatedPlan = await this.populatePlanQuestions(plan, profile);
+      contentCache.set(cacheKey, fullyPopulatedPlan, 86400);
+      return fullyPopulatedPlan;
     }
 
-    const fallbackPlan: LessonPlan = {
-      lesson_id: `lesson-${Date.now()}`,
-      lesson_number: 1,
-      date: new Date().toISOString().split('T')[0],
-      primary_objective: 'Standard Practice: Narrative Tense Precision & Workplace Writing',
-      reason_for_selection: 'Balanced daily practice.',
-      estimated_duration_minutes: duration,
-      session_pace_mode: paceMode,
-      total_planned_questions: totalPlannedQuestions,
-      sections: [
-        { section: 'grammar', title: 'Part 1 — Warm-up', description: 'Quick check', estimated_minutes: 3, target_questions_count: 2, completed_questions_count: 0, skill_target: 'Past Perfect', completed: false },
-        { section: 'grammar', title: 'Part 2 — Core Concept', description: 'In-depth practice', estimated_minutes: 7, target_questions_count: 3, completed_questions_count: 0, skill_target: 'Conditionals', completed: false }
-      ],
-      status: 'in_progress'
-    };
-
-    return await this.populatePlanQuestions(fallbackPlan, profile);
+    throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate daily lesson plan from AI.', { retryable: true });
   }
 
   public async populatePlanQuestions(plan: LessonPlan, profile: UserProfile): Promise<LessonPlan> {
@@ -325,17 +404,13 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const systemPrompt = buildQuestionSystemPrompt(section, profile, targetSkillName, topic, activityType, questionIndex, totalInActivity, sessionObjective);
     const prompt = `Generate question ${questionIndex + 1} of ${totalInActivity} for ${section}.`;
 
-    try {
-      const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
-      if (result && result.prompt) {
-        const sanitized = sanitizeAndReconcileQuestion(result);
-        return { ...sanitized, id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section };
-      }
-    } catch (err: any) {
-      console.warn('[AI] generateQuestion fallback:', err?.message);
+    const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
+    if (result && result.prompt) {
+      const sanitized = sanitizeAndReconcileQuestion(result);
+      return { ...sanitized, id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section };
     }
 
-    return fallbackQuestion(section, questionIndex, this.servedQuestionHistory);
+    throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate lesson question from AI.', { retryable: true });
   }
 
   // =========================================================================
@@ -359,7 +434,8 @@ export class GeminiLearningProvider implements LearningModelProvider {
           expected_answer: `${expectedId}. ${expectedText}`,
           full_correct_sentence: question.prompt.replace('____', `**${expectedText}**`),
           decisive_clue: question.explanation_rule || `Correct! Option ${expectedId} is right.`,
-          explanation: `Well done! Option ${expectedId} is correct. ${question.explanation_rule || ''}`,
+          explanation: question.explanation_rule || `Well done! Option ${expectedId} is correct.`,
+          sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
           error_tags: [],
           needs_retry: false,
           next_action: 'continue'
@@ -386,8 +462,9 @@ export class GeminiLearningProvider implements LearningModelProvider {
         expected_answer: `${expectedId}. ${expectedText}`,
         full_correct_sentence: question.prompt.includes('____') ? question.prompt.replace('____', `**${expectedText}**`) : `${question.prompt} → **${expectedText}**`,
         decisive_clue: decisiveClue,
-        explanation: `Not quite. Option ${expectedId} is correct. ${question.explanation_rule || ''}`,
         contrast_explanation: contrastExplanation,
+        explanation: question.explanation_rule || `Option ${expectedId} is correct.`,
+        sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
         error_tags: ['distractor_choice'],
         needs_retry: true,
         next_action: 'retry'
@@ -426,14 +503,47 @@ export class GeminiLearningProvider implements LearningModelProvider {
       };
     }
 
+    // Handle fill_in_blank, open text, sentence completion, etc.
+    const expected = (question.expected_answer_text || (question.options?.find(o => question.expected_answer_ids?.includes(o.id))?.text) || '').trim();
+    const normUser = normalizeAnswerText(trimmed);
+    const normExpected = normalizeAnswerText(expected);
+    const acceptedAlts = (question.accepted_alternatives || []).map(normalizeAnswerText);
+    const optionMatches = (question.options || []).some(o =>
+      (o.id.toLowerCase() === normUser || normalizeAnswerText(o.text) === normUser) &&
+      question.expected_answer_ids?.some(eid => eid.toUpperCase() === o.id.toUpperCase())
+    );
+
+    const isMatch = (normUser === normExpected) || acceptedAlts.includes(normUser) || optionMatches;
+
+    const fullSentence = question.prompt.includes('____')
+      ? question.prompt.replace(/_{2,}/g, `**${expected}**`)
+      : (question.prompt.includes('(') ? question.prompt : `${question.prompt} → **${expected}**`);
+
+    if (isMatch) {
+      return {
+        verdict: 'correct',
+        user_answer: userAnswer,
+        expected_answer: expected,
+        full_correct_sentence: fullSentence,
+        decisive_clue: question.explanation_rule || `Correct! The expected answer is "${expected}".`,
+        explanation: question.explanation_rule || `Well done! "${expected}" is the correct answer.`,
+        sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+        error_tags: [],
+        needs_retry: false,
+        next_action: 'continue'
+      };
+    }
+
     return {
       verdict: 'incorrect',
       user_answer: userAnswer,
-      expected_answer: question.expected_answer_text || '',
-      full_correct_sentence: question.prompt,
-      decisive_clue: question.explanation_rule || 'Check time anchors and word forms.',
-      explanation: question.explanation_rule || 'Review key grammar structure.',
-      error_tags: [question.skill_name],
+      expected_answer: expected,
+      full_correct_sentence: fullSentence,
+      decisive_clue: question.explanation_rule || `The expected answer is "${expected}".`,
+      explanation: `The expected answer is "${expected}". ${question.explanation_rule || ''}`,
+      contrast_explanation: `You entered "${trimmed}". The expected answer is "${expected}".`,
+      sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+      error_tags: [question.skill_name || 'Grammar precision'],
       needs_retry: true,
       next_action: 'retry'
     };
@@ -549,6 +659,67 @@ export class GeminiLearningProvider implements LearningModelProvider {
     }
 
     return buildFallbackDailySummary(lesson, attempts, profile, timeSpentMinutes);
+  }
+
+  public async generateWordPractice(
+    word: string,
+    contextSentence: string,
+    profile: UserProfile,
+    majorOrField?: string
+  ): Promise<WordPracticeData> {
+    const cleaned = word.trim().replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '');
+    if (!cleaned) {
+      throw new AIException('INVALID_REQUEST', 'Please provide a valid word or phrase to learn.', { retryable: false });
+    }
+
+    const systemPrompt = buildWordPracticeSystemPrompt(cleaned, contextSentence, profile, majorOrField);
+    const prompt = `Break down and create practice micro-exercise for vocabulary: "${cleaned}".`;
+
+    try {
+      const aiResult = await this.callGeminiJson<WordPracticeData>(prompt, systemPrompt, {
+        userId: profile.id,
+        operation: 'word_practice'
+      });
+
+      if (aiResult && (aiResult.meaning_vi || aiResult.word_family)) {
+        const exercises = Array.isArray(aiResult.exercises) && aiResult.exercises.length > 0
+          ? aiResult.exercises
+          : [];
+
+        let wordFamily = aiResult.word_family;
+        if (!wordFamily || !Array.isArray(wordFamily.members) || wordFamily.members.length === 0) {
+          const fallbackData = buildRuleBasedWordFamily(cleaned, contextSentence, profile, majorOrField);
+          wordFamily = fallbackData.word_family;
+          if (exercises.length === 0) {
+            exercises.push(...fallbackData.exercises);
+          }
+        }
+
+        const practiceQuestion = aiResult.practice_question || (exercises.length > 0 ? {
+          prompt: exercises[0].prompt,
+          options: exercises[0].options.map(o => ({ id: o.id, text: o.text })),
+          expected_answer_id: exercises[0].expected_answer_id,
+          expected_answer_text: exercises[0].expected_answer_text,
+          explanation: exercises[0].vietnamese_explanation,
+          hint: exercises[0].hint || 'Choose the correct grammatical form.'
+        } : undefined);
+
+        return {
+          ...aiResult,
+          word: aiResult.word || cleaned,
+          cleaned_word: cleaned,
+          context_in_exam: contextSentence,
+          word_family: wordFamily,
+          exercises,
+          practice_question: practiceQuestion
+        };
+      }
+    } catch (err: any) {
+      console.warn('[AI] generateWordPractice error, using morphological fallback:', err?.message);
+      return buildRuleBasedWordFamily(cleaned, contextSentence, profile, majorOrField);
+    }
+
+    return buildRuleBasedWordFamily(cleaned, contextSentence, profile, majorOrField);
   }
 }
 

@@ -112,11 +112,149 @@ Output JSON:
   "recurring_mistakes_flagged": [string],
   "next_review_topics": [string],
   "tomorrow_plan": {
-    "focus_title": string (e.g. "Tomorrow's Focus: Negative Inversion & Executive Status Writing"),
-    "review_topics": [string] (1-3 items to review tomorrow based on today's performance & mistakes),
-    "new_skills": [string] (2-3 new grammar/vocab/writing skills coming in tomorrow's session),
-    "estimated_minutes": number,
-    "preview_summary": string
+    "focus_title": "string",
+    "review_topics": ["string"],
+    "new_skills": ["string"],
+    "estimated_minutes": 15,
+    "preview_summary": "string"
+  }
+}`;
+}
+
+export function buildWordPracticeSystemPrompt(
+  word: string,
+  contextSentence: string,
+  profile: UserProfile,
+  majorOrField?: string
+): string {
+  const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
+  const major = majorOrField || profile.major_or_subject || 'General / Technology';
+
+  return `You are an expert lexicographer, morphological linguist, and adaptive English language coach.
+A learner looked up or encountered the word: "${word}" (Discipline: "${major}").
+Encounter context sentence: "${contextSentence || 'Exam context'}".
+
+Your mission: Redesign vocabulary learning around WORD FAMILY DISCOVERY, GRAMMATICAL FORM SELECTION, and NATURAL USAGE.
+
+CRITICAL PEDAGOGICAL DIRECTIVES:
+1. WORD FAMILY DISCOVERY:
+   - Identify the word's canonical root and discover all VALID derivational forms: noun, verb, adjective, adverb, plus person/agent nouns where applicable (e.g., collaborate -> collaborator).
+   - Distinguish DERIVATION from INFLECTION (e.g., "collaborate" vs "collaborated" is just tense inflection; do NOT list inflections as family members. Focus on derivational forms like "collaborative", "collaboration", "collaboratively").
+   - NEVER invent or hallucinate non-existent words. If modern English lacks a common form (e.g., discrepancy has no common verb or adverb), explain this explicitly in "missing_forms_note" instead of fabricating words.
+   - For each member provide: "form", "part_of_speech", "suffix_or_pattern" (e.g. "-tion (noun)", "-ive (adjective)", "-ly (adverb)"), "meaning_vi", and an authentic "example_sentence".
+
+2. PRIMARY EXERCISE — WORD FORM SELECTION:
+   - Generate a context-based fill-in-the-blank question testing a DIFFERENT available word form in the family (do NOT test the exact same word the user just entered!).
+   - Example pattern: "The teams worked _____ to deliver the project." -> Options: collaborate (verb), collaboration (noun), collaborative (adjective), collaboratively (adverb) -> Correct: collaboratively (adverb).
+   - The syntactic clue must be decisive (e.g., modifies active verb "worked" -> requires adverb).
+
+3. ADDITIONAL EXERCISE:
+   - Provide a secondary exercise such as "error_correction" (spotting and correcting an incorrect part of speech used in a sentence) or "sentence_transformation" (rewriting a sentence using another specified word form).
+
+4. FEEDBACK RIGOR:
+   - "grammatical_clue": Crystal clear explanation of the syntactic trigger (e.g., "Preceded by verb 'worked' and describes manner -> requires Adverb").
+   - "vietnamese_explanation": Clear explanation in Vietnamese.
+   - "distractor_explanations": Provide an object mapping each option ID to the exact reason why it is grammatically incorrect in this slot.
+   - "full_correct_sentence": The complete natural sentence.
+
+Return strictly JSON format:
+{
+  "word": string,
+  "cleaned_word": string,
+  "part_of_speech": string,
+  "ipa": string,
+  "pronunciation_tip": string,
+  "meaning_vi": string,
+  "meaning_en": string,
+  "collocation_pattern": string,
+  "example_workplace": string,
+  "example_general": string,
+  "similar_word_comparison": {
+    "word": string,
+    "difference": string
+  },
+  "word_family": {
+    "family_root": string,
+    "missing_forms_note": string,
+    "members": [
+      {
+        "form": string,
+        "part_of_speech": "noun" | "verb" | "adjective" | "adverb" | "noun_person" | string,
+        "ipa": string,
+        "suffix_or_pattern": string,
+        "meaning_vi": string,
+        "example_sentence": string,
+        "is_headword": boolean
+      }
+    ]
+  },
+  "exercises": [
+    {
+      "id": "wf-1",
+      "exercise_type": "word_form_selection",
+      "prompt": string,
+      "target_form": string,
+      "target_part_of_speech": string,
+      "options": [
+        { "id": "A", "text": string, "part_of_speech": string },
+        { "id": "B", "text": string, "part_of_speech": string },
+        { "id": "C", "text": string, "part_of_speech": string },
+        { "id": "D", "text": string, "part_of_speech": string }
+      ],
+      "expected_answer_id": "A" | "B" | "C" | "D",
+      "expected_answer_text": string,
+      "full_correct_sentence": string,
+      "grammatical_clue": string,
+      "vietnamese_explanation": string,
+      "distractor_explanations": {
+        "A": string,
+        "B": string,
+        "C": string,
+        "D": string
+      },
+      "hint": string
+    },
+    {
+      "id": "wf-2",
+      "exercise_type": "error_correction" | "sentence_transformation",
+      "prompt": string,
+      "target_form": string,
+      "target_part_of_speech": string,
+      "error_sentence": string,
+      "transformation_source_sentence": string,
+      "transformation_prompt": string,
+      "options": [
+        { "id": "A", "text": string },
+        { "id": "B", "text": string },
+        { "id": "C", "text": string },
+        { "id": "D", "text": string }
+      ],
+      "expected_answer_id": "A" | "B" | "C" | "D",
+      "expected_answer_text": string,
+      "full_correct_sentence": string,
+      "grammatical_clue": string,
+      "vietnamese_explanation": string,
+      "distractor_explanations": {
+        "A": string,
+        "B": string,
+        "C": string,
+        "D": string
+      },
+      "hint": string
+    }
+  ],
+  "practice_question": {
+    "prompt": string,
+    "options": [
+      { "id": "A", "text": string },
+      { "id": "B", "text": string },
+      { "id": "C", "text": string },
+      { "id": "D", "text": string }
+    ],
+    "expected_answer_id": "A" | "B" | "C" | "D",
+    "expected_answer_text": string,
+    "explanation": string,
+    "hint": string
   }
 }`;
 }
