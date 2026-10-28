@@ -32,7 +32,8 @@ import {
   generateLessonPlan,
   generateLessonSummary,
   getMemory,
-  clearActiveLessonState
+  clearActiveLessonState,
+  getBudgetStats
 } from './services/api.ts';
 import { AIErrorAlert } from './components/AIErrorAlert.tsx';
 import { AIFallbackBanner } from './components/AIFallbackBanner.tsx';
@@ -80,7 +81,21 @@ export default function App() {
       if (e.detail) setCatConfig(e.detail);
     };
     window.addEventListener('meomeo:theme-changed', handleThemeChange);
-    return () => window.removeEventListener('meomeo:theme-changed', handleThemeChange);
+
+    const handleBudgetUpdate = async () => {
+      try {
+        const stats = await getBudgetStats();
+        setBudgetLimits(stats);
+      } catch (err) {
+        console.warn('Failed to refresh budget stats:', err);
+      }
+    };
+    window.addEventListener('ai-budget-updated', handleBudgetUpdate);
+
+    return () => {
+      window.removeEventListener('meomeo:theme-changed', handleThemeChange);
+      window.removeEventListener('ai-budget-updated', handleBudgetUpdate);
+    };
   }, []);
 
   const initApp = async () => {

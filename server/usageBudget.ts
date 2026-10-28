@@ -62,7 +62,8 @@ export class UsageBudgetManager {
       globalDailyLimit: this.config.globalDailyRequestsLimit,
       globalRemaining: Math.max(0, this.config.globalDailyRequestsLimit - globalSummary.requestCount),
       userCountToday: userSummary.requestCount,
-      globalCountToday: globalSummary.requestCount
+      globalCountToday: globalSummary.requestCount,
+      estimatedTokensUsedToday: globalSummary.estimatedTokens
     };
   }
 

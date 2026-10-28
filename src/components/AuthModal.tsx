@@ -171,15 +171,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {limits && (
-                <div className="mt-4 pt-3 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center text-xs">
-                  <div className="bg-slate-900/60 p-2 rounded-lg">
-                    <span className="text-[10px] text-slate-400 block">Daily AI Quota</span>
-                    <span className="font-bold text-indigo-400">{limits.userRemaining} of {limits.userDailyLimit} available</span>
+                <div className="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div className="bg-slate-900/60 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">Your Daily Quota</span>
+                      <span className="font-bold text-indigo-400">{limits.userRemaining} of {limits.userDailyLimit} available</span>
+                    </div>
+                    <div className="bg-slate-900/60 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block">Community Budget</span>
+                      <span className="font-bold text-sky-400">{limits.globalRemaining} of {limits.globalDailyLimit} available</span>
+                    </div>
                   </div>
-                  <div className="bg-slate-900/60 p-2 rounded-lg">
-                    <span className="text-[10px] text-slate-400 block">Community Budget</span>
-                    <span className="font-bold text-sky-400">{limits.globalRemaining} of {limits.globalDailyLimit} available</span>
-                  </div>
+                  {typeof limits.estimatedTokensUsedToday === 'number' && (
+                    <div className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5 bg-slate-950/40 py-1.5 px-3 rounded-lg border border-slate-800">
+                      <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                      <span>Tokens consumed today: <strong className="text-slate-200">~{limits.estimatedTokensUsedToday.toLocaleString()} tokens</strong></span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -15,7 +15,8 @@ import {
   LogOut,
   Compass,
   Menu,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { UserProfile } from '../types/learning.ts';
 import { MilestoneBadge } from '../types/milestone.ts';
@@ -69,6 +70,16 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCatStudio
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [warningDismissed, setWarningDismissed] = useState<boolean>(false);
+
+  // 80% AI Quota Warning Threshold Calculations
+  const userDailyLimit = budgetLimits?.userDailyLimit || 30;
+  const userRemaining = budgetLimits?.userRemaining !== undefined ? budgetLimits.userRemaining : userDailyLimit;
+  const userCountToday = budgetLimits?.userCountToday ?? Math.max(0, userDailyLimit - userRemaining);
+  const usagePercent = userDailyLimit > 0 ? Math.min(100, Math.round(((userDailyLimit - userRemaining) / userDailyLimit) * 100)) : 0;
+  // Trigger warning notification when user reaches >= 80% of daily AI quota
+  const isQuotaWarning = userDailyLimit > 0 && (usagePercent >= 80 || userRemaining <= Math.ceil(userDailyLimit * 0.2));
+  const isQuotaExhausted = userRemaining === 0;
 
   const getBadgeIcon = (iconName?: string) => {
     switch (iconName) {
@@ -204,6 +215,18 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* 80% AI Quota Warning Pill */}
+          {isQuotaWarning && (
+            <button
+              onClick={onOpenAuth}
+              title={`Warning: You have reached ${usagePercent}% of your daily AI limit (${userRemaining} of ${userDailyLimit} requests remaining). Click to monitor remaining tokens.`}
+              className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 hover:text-amber-100 text-xs font-bold transition shadow-sm animate-pulse shrink-0"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>{userRemaining}/{userDailyLimit} left</span>
+            </button>
+          )}
+
           {/* Settings Icon */}
           <button
             onClick={onOpenSettings}
@@ -268,6 +291,66 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
+      {/* Warning Notification: Triggers when user reaches >=80% of daily AI quota */}
+      {isQuotaWarning && !warningDismissed && (
+        <div className="bg-gradient-to-r from-amber-950/95 via-amber-900/90 to-orange-950/95 border-t border-b border-amber-500/40 px-3 sm:px-6 py-2.5 text-xs text-amber-200 shadow-lg backdrop-blur-md">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div className="flex items-start sm:items-center space-x-2.5 text-left min-w-0">
+              <div className="w-7 h-7 rounded-xl bg-amber-500/25 border border-amber-500/50 flex items-center justify-center text-amber-400 shrink-0 mt-0.5 sm:mt-0 shadow-inner">
+                <AlertTriangle className="w-4 h-4 animate-pulse text-amber-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 font-bold text-white text-xs">
+                  <span className="text-amber-300 flex items-center gap-1">
+                    <span>⚡</span>
+                    <span>{isQuotaExhausted ? 'Daily AI Quota Depleted' : `80% Daily AI Quota Reached (${usagePercent}% Used)`}</span>
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-200 border border-amber-500/40 font-bold">
+                    {userRemaining} of {userDailyLimit} requests remaining
+                  </span>
+                  {budgetLimits?.estimatedTokensUsedToday !== undefined && (
+                    <span className="text-[11px] text-slate-300 font-normal">
+                      • ~{budgetLimits.estimatedTokensUsedToday.toLocaleString()} tokens consumed today
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-amber-200/90 mt-0.5">
+                  {isQuotaExhausted
+                    ? 'You have used all daily free AI generation queries for today. Practice drills, offline dictionary lookups, and saved memory review remain fully available!'
+                    : `You have reached ${usagePercent}% of your daily AI allowance. Keep an eye on your remaining tokens or connect a personal Gemini key in Settings for unlimited learning.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
+              <button
+                onClick={onOpenAuth}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs transition shadow-md shadow-amber-600/25 flex items-center space-x-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                <span>Monitor Tokens</span>
+              </button>
+              <button
+                onClick={() => setWarningDismissed(true)}
+                className="p-1.5 rounded-xl text-amber-400/80 hover:text-white hover:bg-amber-900/50 transition cursor-pointer"
+                title="Dismiss warning notification"
+                aria-label="Dismiss warning notification"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quota Progress Bar Visual Cue */}
+          <div className="max-w-7xl mx-auto mt-2 w-full bg-slate-900/90 rounded-full h-1.5 overflow-hidden border border-amber-500/30">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${isQuotaExhausted ? 'bg-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
+              style={{ width: `${usagePercent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Second Line: Dedicated Cambridge Dictionary Search Bar */}
       {onSearchVocabulary && (
         <div className="border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-sm px-3 sm:px-6 py-2">
@@ -283,6 +366,29 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Mobile Dropdown Drawer for overflow navigation items */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 space-y-2.5 animate-fadeIn">
+          {/* Mobile Quota Warning Box */}
+          {isQuotaWarning && (
+            <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5 text-amber-300">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>80% AI Quota Reached</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 font-bold border border-amber-500/30">
+                  {userRemaining}/{userDailyLimit} left
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-200/90">
+                {userRemaining} requests remaining today ({usagePercent}% used).
+              </p>
+              <button
+                onClick={() => { setMobileMenuOpen(false); onOpenAuth?.(); }}
+                className="w-full mt-1 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition"
+              >
+                Monitor Remaining Tokens
+              </button>
+            </div>
+          )}
 
           {onOpenCatStudio && (
             <button

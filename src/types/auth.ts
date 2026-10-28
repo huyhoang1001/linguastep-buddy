@@ -15,6 +15,7 @@ export interface BudgetLimits {
   globalRemaining: number;
   userCountToday: number;
   globalCountToday: number;
+  estimatedTokensUsedToday?: number;
 }
 
 export interface AuthSessionResponse {

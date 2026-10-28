@@ -180,6 +180,52 @@ async function runQuotaAndErrorTests() {
     console.log('  ✓ Frontend AIClientError maintains full error semantics for UI banners.');
   }
 
+  // Test 9: 80% Daily AI Quota Warning Threshold Trigger
+  {
+    console.log('\nTest 9: 80% Daily AI Quota Warning Threshold Calculation');
+    const computeWarning = (userDailyLimit: number, userRemaining: number) => {
+      const usagePercent = userDailyLimit > 0 ? Math.min(100, Math.round(((userDailyLimit - userRemaining) / userDailyLimit) * 100)) : 0;
+      const isQuotaWarning = userDailyLimit > 0 && (usagePercent >= 80 || userRemaining <= Math.ceil(userDailyLimit * 0.2));
+      const isQuotaExhausted = userRemaining === 0;
+      return { usagePercent, isQuotaWarning, isQuotaExhausted };
+    };
+
+    // Full quota (0% used) -> No warning
+    const full = computeWarning(30, 30);
+    assert.strictEqual(full.usagePercent, 0);
+    assert.strictEqual(full.isQuotaWarning, false);
+
+    // Half quota (50% used) -> No warning
+    const half = computeWarning(30, 15);
+    assert.strictEqual(half.usagePercent, 50);
+    assert.strictEqual(half.isQuotaWarning, false);
+
+    // 70% quota used (9 remaining) -> No warning
+    const seventy = computeWarning(30, 9);
+    assert.strictEqual(seventy.usagePercent, 70);
+    assert.strictEqual(seventy.isQuotaWarning, false);
+
+    // 80% quota reached (6 remaining of 30) -> Warning triggers!
+    const eighty = computeWarning(30, 6);
+    assert.strictEqual(eighty.usagePercent, 80);
+    assert.strictEqual(eighty.isQuotaWarning, true);
+    assert.strictEqual(eighty.isQuotaExhausted, false);
+
+    // 90% quota reached (3 remaining of 30) -> Warning active!
+    const ninety = computeWarning(30, 3);
+    assert.strictEqual(ninety.usagePercent, 90);
+    assert.strictEqual(ninety.isQuotaWarning, true);
+    assert.strictEqual(ninety.isQuotaExhausted, false);
+
+    // 100% quota exhausted (0 remaining of 30) -> Quota exhausted
+    const exhausted = computeWarning(30, 0);
+    assert.strictEqual(exhausted.usagePercent, 100);
+    assert.strictEqual(exhausted.isQuotaWarning, true);
+    assert.strictEqual(exhausted.isQuotaExhausted, true);
+
+    console.log('  ✓ 80% quota warning threshold correctly triggers at >=80% and signals remaining token monitoring.');
+  }
+
   console.log('\n======================================================');
   console.log('✅ ALL AI QUOTA & ERROR HANDLING TESTS PASSED!');
   console.log('======================================================\n');

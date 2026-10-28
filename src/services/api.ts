@@ -133,6 +133,9 @@ async function parseAIResponse<T>(res: Response, fallbackMessage: string): Promi
         detail: { active: true, reason: fallbackReason }
       }));
     }
+    if (res.ok) {
+      window.dispatchEvent(new CustomEvent('ai-budget-updated'));
+    }
   }
 
   if (!res.ok) {

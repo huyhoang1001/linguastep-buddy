@@ -17,6 +17,9 @@ export interface AuthSessionResponse {
     userRemaining: number;
     globalDailyLimit: number;
     globalRemaining: number;
+    userCountToday?: number;
+    globalCountToday?: number;
+    estimatedTokensUsedToday?: number;
   };
 }
 
