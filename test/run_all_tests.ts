@@ -70,6 +70,20 @@ if (res10.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 11: Weekly Progress & Performance Visualization Tests...');
+const res11 = spawnSync('npx', ['tsx', 'test/weekly_progress_visualization.test.ts'], { stdio: 'inherit' });
+if (res11.status !== 0) {
+  console.error('Weekly progress & performance visualization tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 12: Mastery-Driven Learning Progression & Scheduling Tests...');
+const res12 = spawnSync('npx', ['tsx', 'test/mastery_learning_progression.test.ts'], { stdio: 'inherit' });
+if (res12.status !== 0) {
+  console.error('Mastery-driven learning progression tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

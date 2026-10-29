@@ -29,14 +29,15 @@ export const DiagnosticReportModal: React.FC<DiagnosticReportModalProps> = ({
 }) => {
   const [showEvidence, setShowEvidence] = useState<boolean>(false);
 
-  const getConfidenceBadge = (confidence: 'low' | 'moderate' | 'high') => {
+  const getConfidenceBadge = (confidence?: 'low' | 'moderate' | 'high' | 'provisional') => {
     switch (confidence) {
       case 'high':
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">High Confidence</span>;
       case 'moderate':
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">Moderate Confidence</span>;
+      case 'provisional':
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Preliminary</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Provisional Estimate</span>;
     }
   };
 

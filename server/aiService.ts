@@ -35,6 +35,7 @@ import { polishWritingText } from './fallbacks/lessonFallbacks.js';
 import { buildRuleBasedWordFamily } from './fallbacks/wordFamilyFallbacks.js';
 import { evaluateMultipleChoiceAnswer, normalizeAnswerText, buildFallbackDailySummary, buildFallbackTomorrowPlan } from './evaluators/lessonHelpers.js';
 import { diagnosticService } from './services/diagnosticService.js';
+import { CurriculumScheduler } from '../src/services/curriculumScheduler.js';
 
 export { AIException, classifyGeminiError, type AIErrorCode };
 
@@ -316,6 +317,16 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const paceMode = duration === 10 ? 'quick_10' : duration === 30 ? 'deep_30' : 'standard_20';
     const totalPlannedQuestions = duration === 10 ? 6 : duration === 30 ? 15 : 10;
 
+    // 1. Run deterministic curriculum scheduler to pre-select learning objectives,
+    // prioritizing overdue reviews, weak prerequisites, and recurring mistakes.
+    const blueprint = CurriculumScheduler.scheduleDailyLesson({
+      profile,
+      skillStates,
+      recentErrors,
+      completedLessonsCount: lessonHistory.length,
+      customContext
+    });
+
     const hasCustomConfig = Boolean(
       customContext && (
         (customContext.selectedMistakes && customContext.selectedMistakes.length > 0) ||
@@ -331,7 +342,8 @@ export class GeminiLearningProvider implements LearningModelProvider {
       duration,
       goal: profile.primary_goal,
       lang: profile.explanation_language,
-      historyLength: lessonHistory.length
+      historyLength: lessonHistory.length,
+      objective: blueprint.primary_objective
     });
     const cachedPlan = (lessonHistory.length > 0 || hasCustomConfig) ? null : contentCache.get<LessonPlan>(cacheKey);
     if (cachedPlan) return { ...cachedPlan, lesson_id: `lesson-${Date.now()}`, status: 'in_progress' };
@@ -344,43 +356,85 @@ export class GeminiLearningProvider implements LearningModelProvider {
       paceMode,
       totalPlannedQuestions,
       lessonHistory,
-      customContext
+      customContext,
+      blueprint
     );
-    const prompt = `Create daily lesson plan for ${duration} mins (${paceMode}) advancing forward from previous history.`;
+    const prompt = `Create pedagogical exercise details and scenarios for pre-selected objective: "${blueprint.primary_objective}".`;
 
-    const aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_plan' });
-    if (aiResult && aiResult.sections && aiResult.sections.length > 0) {
-      const parsedSections = aiResult.sections.map((s: any) => ({
-        section: s.section,
-        title: s.title,
-        description: s.description,
-        estimated_minutes: s.estimated_minutes,
-        skill_target: s.skill_target,
-        activity_type: s.activity_type || 'concept_practice',
-        target_questions_count: s.target_questions_count || 2,
-        completed_questions_count: 0,
-        completed: false
-      }));
+    let generatedPlan: LessonPlan | null = null;
+    try {
+      const aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_plan' });
+      if (aiResult && aiResult.sections && aiResult.sections.length > 0) {
+        const parsedSections = aiResult.sections.map((s: any, idx: number) => {
+          const bpSec = blueprint.sections[idx] || blueprint.sections[0];
+          return {
+            section: s.section || bpSec.section,
+            title: s.title || bpSec.title,
+            description: s.description || bpSec.description,
+            estimated_minutes: s.estimated_minutes || bpSec.estimated_minutes,
+            skill_target: s.skill_target || bpSec.skill_target,
+            activity_type: s.activity_type || bpSec.activity_type || 'concept_practice',
+            target_questions_count: s.target_questions_count || bpSec.target_questions_count || 2,
+            pedagogical_focus: bpSec.pedagogical_focus,
+            target_mastery_stage: bpSec.target_mastery_stage,
+            is_progress_check: bpSec.is_progress_check,
+            completed_questions_count: 0,
+            completed: false
+          };
+        });
 
-      const plan: LessonPlan = {
+        generatedPlan = {
+          lesson_id: `lesson-${Date.now()}`,
+          lesson_number: lessonHistory.length + 1,
+          date: new Date().toISOString().split('T')[0],
+          primary_objective: aiResult.primary_objective || blueprint.primary_objective,
+          reason_for_selection: aiResult.reason_for_selection || blueprint.reason_for_selection,
+          estimated_duration_minutes: duration,
+          session_pace_mode: paceMode,
+          total_planned_questions: totalPlannedQuestions,
+          sections: parsedSections,
+          status: 'in_progress'
+        };
+      }
+    } catch (err: any) {
+      if (err instanceof AIException && (err.code === 'QUOTA_EXHAUSTED' || err.code === 'RATE_LIMITED')) {
+        throw err;
+      }
+      console.warn('[AI] Lesson plan generation fallback to deterministic blueprint:', err?.message);
+    }
+
+    // If AI generation was unavailable or timed out, construct directly from deterministic blueprint
+    if (!generatedPlan) {
+      generatedPlan = {
         lesson_id: `lesson-${Date.now()}`,
-        lesson_number: 1,
+        lesson_number: lessonHistory.length + 1,
         date: new Date().toISOString().split('T')[0],
-        primary_objective: aiResult.primary_objective,
-        reason_for_selection: aiResult.reason_for_selection,
+        primary_objective: blueprint.primary_objective,
+        reason_for_selection: blueprint.reason_for_selection,
         estimated_duration_minutes: duration,
         session_pace_mode: paceMode,
         total_planned_questions: totalPlannedQuestions,
-        sections: parsedSections,
+        sections: blueprint.sections.map(s => ({
+          section: s.section,
+          title: s.title,
+          description: s.description,
+          estimated_minutes: s.estimated_minutes,
+          skill_target: s.skill_target,
+          activity_type: s.activity_type,
+          target_questions_count: s.target_questions_count,
+          pedagogical_focus: s.pedagogical_focus,
+          target_mastery_stage: s.target_mastery_stage,
+          is_progress_check: s.is_progress_check,
+          completed_questions_count: 0,
+          completed: false
+        })),
         status: 'in_progress'
       };
-
-      const fullyPopulatedPlan = await this.populatePlanQuestions(plan, profile);
-      contentCache.set(cacheKey, fullyPopulatedPlan, 86400);
-      return fullyPopulatedPlan;
     }
 
-    throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate daily lesson plan from AI.', { retryable: true });
+    const fullyPopulatedPlan = await this.populatePlanQuestions(generatedPlan, profile);
+    contentCache.set(cacheKey, fullyPopulatedPlan, 86400);
+    return fullyPopulatedPlan;
   }
 
   public async populatePlanQuestions(plan: LessonPlan, profile: UserProfile): Promise<LessonPlan> {

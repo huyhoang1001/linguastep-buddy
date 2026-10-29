@@ -5,10 +5,14 @@ import {
   LessonPlan,
   DailySummary,
   Question,
-  AnswerEvaluation
+  AnswerEvaluation,
+  Attempt,
+  LearnerSkillState,
+  VocabularyItem
 } from './types/learning.ts';
 import { UserAccount, BudgetLimits } from './types/auth.ts';
 import { Header } from './components/Header.tsx';
+import { HomeScreen } from './components/HomeScreen.tsx';
 import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { LessonView } from './components/LessonView.tsx';
 import { LessonSummaryModal } from './components/LessonSummaryModal.tsx';
@@ -52,6 +56,32 @@ export default function App() {
   const [activeSummary, setActiveSummary] = useState<DailySummary | null>(null);
   const [mistakesCount, setMistakesCount] = useState<number>(0);
   const [milestonesData, setMilestonesData] = useState<ReturnType<typeof calculateMilestones> | null>(null);
+  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
+  const [recentAttempts, setRecentAttempts] = useState<Attempt[]>([]);
+  const [skills, setSkills] = useState<LearnerSkillState[]>([]);
+  const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+
+  // View state: 'home' is the cozy study desk sanctuary; 'lesson' is active study
+  const [currentView, setCurrentView] = useState<'home' | 'lesson'>('home');
+
+  // Cohesive Light / Dark theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('linguastep_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('linguastep_theme', theme);
+  }, [theme]);
 
   // Modals state
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
@@ -132,6 +162,10 @@ export default function App() {
 
       // 4. Fetch user memory, mistakes count, and milestone badges
       const mem = await getMemory();
+      setDailySummaries(mem.summaries || []);
+      setRecentAttempts(mem.attempts || []);
+      setSkills(mem.skills || []);
+      setVocabulary(mem.vocabulary || []);
       const totalErrors = mem.skills?.flatMap(s => s.recurring_errors)?.length || 0;
       setMistakesCount(totalErrors);
 
@@ -188,6 +222,11 @@ export default function App() {
     setActivePlan(null);
     setActiveSummary(null);
     setMilestonesData(null);
+    setDailySummaries([]);
+    setRecentAttempts([]);
+    setSkills([]);
+    setVocabulary([]);
+    setCurrentView('home');
     setShowOnboarding(false);
     setShowAuthModal(true);
   };
@@ -195,6 +234,10 @@ export default function App() {
   const refreshMilestones = async () => {
     try {
       const mem = await getMemory();
+      setDailySummaries(mem.summaries || []);
+      setRecentAttempts(mem.attempts || []);
+      setSkills(mem.skills || []);
+      setVocabulary(mem.vocabulary || []);
       const computed = calculateMilestones(mem);
       setMilestonesData(computed);
       const totalErrors = mem.skills?.flatMap(s => s.recurring_errors)?.length || 0;
@@ -215,6 +258,7 @@ export default function App() {
       setProfile(userProfile);
       const newPlan = await generateLessonPlan(userProfile.daily_minutes, true);
       setActivePlan(newPlan);
+      setCurrentView('home');
       await refreshMilestones();
     } catch (err) {
       console.error('Failed to create initial lesson plan:', err);
@@ -257,6 +301,7 @@ export default function App() {
       // Pass forceRegenerate = true when explicitly clicking "Start New Lesson"
       const newPlan = await generateLessonPlan(targetMins, true);
       setActivePlan(newPlan);
+      setCurrentView('lesson');
       await refreshMilestones();
     } catch (err) {
       console.error('Failed to generate new plan:', err);
@@ -278,6 +323,7 @@ export default function App() {
       await clearActiveLessonState();
       const newPlan = await generateLessonPlan(customContext.dailyMinutes, true, customContext);
       setActivePlan(newPlan);
+      setCurrentView('lesson');
       setShowCatalogModal(false);
       setShowSummaryModal(false);
       await refreshMilestones();
@@ -294,20 +340,20 @@ export default function App() {
 
   if (isLoading && !profile) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
-        <div className="w-12 h-12 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mb-3" />
+      <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] flex flex-col items-center justify-center text-[#2D312E] dark:text-[#F4F2EC]">
+        <div className="w-12 h-12 border-3 border-[#2D6A4F] border-t-transparent rounded-full animate-spin mb-3" />
         <div className="text-3xl mb-2 animate-bounce">🐱🐾</div>
-        <h2 className="text-base font-bold text-white">Loading MeoMeo Cat Chibi Tutor...</h2>
-        <p className="text-xs text-slate-400 mt-1">Preparing your personalized cat study session</p>
+        <h2 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">Loading LinguaStep Buddy...</h2>
+        <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1">Preparing your cozy study companion session</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className={`min-h-screen bg-slate-950 bg-gradient-to-b ${activeTheme.bgGradient} flex flex-col items-center justify-center text-slate-100 p-4 relative`}>
+      <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] flex flex-col items-center justify-center text-[#2D312E] dark:text-[#F4F2EC] p-4 relative">
         {catConfig.floatingPaws && (
-          <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-15">
+          <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-10">
             <span className="absolute top-12 left-6 text-3xl animate-pulse">🐾</span>
             <span className="absolute top-1/4 right-8 text-4xl animate-bounce-short">🐾</span>
             <span className="absolute bottom-20 left-16 text-4xl animate-pulse">🐾</span>
@@ -327,10 +373,10 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen bg-slate-950 bg-gradient-to-b ${activeTheme.bgGradient} text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden`}>
+    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] text-[#2D312E] dark:text-[#F4F2EC] flex flex-col font-sans selection:bg-[#52B788]/30 selection:text-[#1B4332] relative overflow-x-hidden transition-colors duration-200">
       {/* Background Floating Cat Paw Prints */}
       {catConfig.floatingPaws && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-15">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-10 dark:opacity-5">
           <span className="absolute top-12 left-6 text-3xl animate-pulse">🐾</span>
           <span className="absolute top-1/4 right-8 text-4xl animate-bounce-short">🐾</span>
           <span className="absolute top-1/2 left-4 text-2xl">🐾</span>
@@ -368,6 +414,9 @@ export default function App() {
         isBuildingSession={isBuildingSession}
         onSearchVocabulary={(word) => setActiveDictionaryWord(word)}
         onOpenCatStudio={() => setShowCatCustomizer(true)}
+        theme={theme}
+        onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+        onGoHome={() => setCurrentView('home')}
       />
 
       {/* Main Content Area */}
@@ -383,7 +432,7 @@ export default function App() {
           </div>
         )}
 
-        {activePlan ? (
+        {currentView === 'lesson' && activePlan ? (
           <LessonView
             profile={profile}
             plan={activePlan}
@@ -391,31 +440,27 @@ export default function App() {
             onOpenSummary={() => setShowSummaryModal(true)}
             onBuildNextSession={handleOpenBuildCatalog}
             isBuildingSession={isBuildingSession}
+            onReturnHome={() => setCurrentView('home')}
           />
         ) : (
-          <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 mx-auto flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
-              <span className="text-2xl">✨</span>
-            </div>
-            <h3 className="text-xl font-bold text-white">Ready for Your Next AI Session?</h3>
-            <p className="text-xs text-slate-400">
-              Review and select exactly what you want to learn next—target past mistakes, vocabulary from memory, fresh grammar concepts, and professional topics.
-            </p>
-            <button
-              disabled={isBuildingSession}
-              onClick={handleOpenBuildCatalog}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2 mx-auto"
-            >
-              {isBuildingSession ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Synthesizing Session...</span>
-                </>
-              ) : (
-                <span>Review Context & Build Next Session</span>
-              )}
-            </button>
-          </div>
+          <HomeScreen
+            profile={profile}
+            activePlan={activePlan}
+            dailySummaries={dailySummaries}
+            skills={skills}
+            vocabulary={vocabulary}
+            catConfig={catConfig}
+            onStartLesson={(mins) => handleStartNewLesson(mins)}
+            onResumeLesson={() => setCurrentView('lesson')}
+            onOpenRoadmap={() => setShowRoadmapModal(true)}
+            onOpenMemory={() => setShowMemoryDrawer(true)}
+            onOpenMilestones={() => setShowMilestonesModal(true)}
+            onOpenCatStudio={() => setShowCatCustomizer(true)}
+            onOpenCatalog={handleOpenBuildCatalog}
+            onOpenSettings={() => setShowSettingsModal(true)}
+            onPracticeWord={(word) => setActiveDictionaryWord(word)}
+            isBuildingSession={isBuildingSession}
+          />
         )}
       </main>
 
@@ -438,6 +483,8 @@ export default function App() {
           allBadges={milestonesData.allBadges}
           unlockedBadges={milestonesData.unlockedBadges}
           stats={milestonesData.stats}
+          summaries={dailySummaries}
+          attempts={recentAttempts}
           onJumpToPractice={() => setShowMilestonesModal(false)}
         />
       )}

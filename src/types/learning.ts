@@ -60,16 +60,34 @@ export interface Skill {
   description: string;
 }
 
+export type SkillMasteryStage =
+  | 'exposure'         // First encountered (1 trial)
+  | 'recognition'      // Identifies correct form with options (multiple choice, guided cloze)
+  | 'active_recall'    // Recalls without options (fill-in-the-blank, open sentence)
+  | 'application'      // Applies in sentence transformations & free production
+  | 'retained_mastery'; // Sustained retention across delayed review intervals
+
 export interface LearnerSkillState {
   skill_id: string;
   skill_name: string;
   category: string;
-  status: 'new' | 'learning' | 'reviewing' | 'mostly_mastered' | 'mastered';
+  status: 'new' | 'learning' | 'reviewing' | 'mostly_mastered' | 'mastered' | 'regressed';
   accuracy_rate: number;
   total_attempts: number;
   last_practiced_at: string;
   next_review_at: string;
   recurring_errors: string[];
+
+  // Multi-stage evidence & spaced mastery tracking
+  mastery_stage?: SkillMasteryStage;
+  mastery_score?: number; // 0 - 100 comprehensive evidence score
+  exercise_types_passed?: string[]; // e.g. ['multiple_choice', 'fill_in_blank', 'sentence_rewrite']
+  consecutive_correct?: number;
+  retention_checks_passed?: number;
+  prerequisite_skill_ids?: string[];
+  difficulty_level?: EnglishLevel;
+  last_retrieval_delay_days?: number;
+  regression_count?: number;
 }
 
 export type VocabExerciseType =
@@ -312,6 +330,49 @@ export interface LessonSectionPlan {
   target_questions_count: number;
   completed_questions_count?: number;
   questions?: Question[];
+  pedagogical_focus?: 'overdue_review' | 'mistake_clinic' | 'prerequisite_reinforcement' | 'new_concept' | 'progress_check' | 'production_application';
+  target_mastery_stage?: SkillMasteryStage;
+  is_progress_check?: boolean;
+}
+
+export interface DeterministicSectionBlueprint {
+  section: SectionType;
+  title: string;
+  description: string;
+  estimated_minutes: number;
+  target_questions_count: number;
+  skill_target: string;
+  activity_type: ActivityType;
+  pedagogical_focus: 'overdue_review' | 'mistake_clinic' | 'prerequisite_reinforcement' | 'new_concept' | 'progress_check' | 'production_application';
+  target_mastery_stage?: SkillMasteryStage;
+  is_progress_check?: boolean;
+}
+
+export interface DeterministicLessonPlanBlueprint {
+  primary_objective: string;
+  reason_for_selection: string;
+  estimated_duration_minutes: 10 | 20 | 30;
+  session_pace_mode: 'quick_10' | 'standard_20' | 'deep_30';
+  total_planned_questions: number;
+  sections: DeterministicSectionBlueprint[];
+  overdue_reviews_count: number;
+  recurring_mistakes_targeted: string[];
+  progress_check_active?: boolean;
+}
+
+export interface IndependentProgressCheck {
+  id: string;
+  session_id: string;
+  date: string;
+  difficulty_level: EnglishLevel;
+  skill_targets: string[];
+  total_questions: number;
+  correct_count: number;
+  accuracy: number;
+  passed: boolean; // >= 75% accuracy
+  verified_skills: string[];
+  regressed_skills: string[];
+  feedback_summary: string;
 }
 
 export interface LessonPlan {
@@ -326,6 +387,7 @@ export interface LessonPlan {
   total_planned_questions: number; // e.g. 6 for 10m, 10 for 20m, 15 for 30m
   sections: LessonSectionPlan[];
   status: 'planned' | 'in_progress' | 'completed' | 'paused';
+  progress_check?: IndependentProgressCheck;
 }
 
 export interface NextSessionCustomContext {
@@ -442,7 +504,7 @@ export interface WritingRubricScore {
 export interface SkillProficiencyEstimate {
   category: SectionType | 'speaking' | 'listening';
   cefrRange: string; // e.g. "B1-B2", "B2", "C1", "Not Assessed"
-  confidence: 'low' | 'moderate' | 'high';
+  confidence: 'low' | 'moderate' | 'high' | 'provisional';
   evidenceCount: number;
   correctCount: number;
   demonstratedStrengths: string[];
@@ -500,7 +562,7 @@ export interface DiagnosticReport {
   completedAt: string;
   overallScorePercentage?: number; // 0-100%
   overallCEFR: string;
-  overallConfidence: 'low' | 'moderate' | 'high';
+  overallConfidence: 'low' | 'moderate' | 'high' | 'provisional';
   overallSummary: string;
   scoringWeights?: {
     grammar: number;

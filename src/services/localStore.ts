@@ -15,13 +15,15 @@ import {
   VocabMasteryStage,
   WordFormMastery,
   WordFormMasteryStatus,
-  WordFamilyData
+  WordFamilyData,
+  EnglishLevel
 } from '../types/learning.ts';
 import {
   DEFAULT_PROFILE,
   INITIAL_SKILLS,
   INITIAL_VOCABULARY
 } from './localSeed.ts';
+import { MasteryEngine } from './masteryEngine.ts';
 
 const DB_NAME = 'linguastep_local_v1';
 const DB_VERSION = 1;
@@ -400,7 +402,7 @@ class LocalLearningStore {
   public async recordAttempt(attempt: Attempt): Promise<Attempt> {
     await this.setStoreData('attempts', attempt.id, attempt);
 
-    // Update skill mastery locally without server round-trip
+    // Update skill mastery locally with multi-stage cognitive progression
     const isCorrect = attempt.verdict === 'correct';
     const profile = await this.getProfile();
     const isVi = profile.explanation_language === 'vi';
@@ -410,7 +412,17 @@ class LocalLearningStore {
         ? (isVi ? `Đã chọn/nhập "${attempt.user_answer}" thay vì đáp án đúng` : `Selected/wrote "${attempt.user_answer}" instead of expected answer`)
         : (attempt.evaluation.explanation || 'Incorrect response');
     }
-    await this.updateSkillMastery(attempt.question_id, attempt.skill_name, attempt.section, isCorrect, errorTag);
+
+    await this.updateSkillMastery(
+      attempt.question_id,
+      attempt.skill_name,
+      attempt.section,
+      isCorrect,
+      errorTag,
+      undefined,
+      undefined,
+      attempt.created_at
+    );
 
     return attempt;
   }
@@ -424,50 +436,30 @@ class LocalLearningStore {
     skillName: string,
     category: string,
     isCorrect: boolean,
-    errorTag?: string
+    errorTag?: string,
+    questionType?: string,
+    questionDifficulty?: EnglishLevel,
+    attemptTimestamp?: string,
+    isProgressCheck?: boolean
   ): Promise<LearnerSkillState> {
     const skills = await this.getSkills();
-    let skill = skills.find(s => s.skill_id === skillId || s.skill_name.toLowerCase() === skillName.toLowerCase());
+    let currentSkill = skills.find(s => s.skill_id === skillId || s.skill_name.toLowerCase() === skillName.toLowerCase());
 
-    if (!skill) {
-      skill = {
-        skill_id: skillId || `skill-${Date.now()}`,
-        skill_name: skillName,
-        category,
-        status: isCorrect ? 'mostly_mastered' : 'learning',
-        accuracy_rate: isCorrect ? 1.0 : 0.0,
-        total_attempts: 1,
-        last_practiced_at: new Date().toISOString(),
-        next_review_at: new Date(Date.now() + 86400000).toISOString(),
-        recurring_errors: errorTag ? [errorTag] : []
-      };
-    } else {
-      skill.total_attempts += 1;
-      const prevCorrect = Math.round(skill.accuracy_rate * (skill.total_attempts - 1));
-      const currentCorrect = prevCorrect + (isCorrect ? 1 : 0);
-      skill.accuracy_rate = Number((currentCorrect / skill.total_attempts).toFixed(2));
-      skill.last_practiced_at = new Date().toISOString();
+    const result = MasteryEngine.recordSkillEvidence(currentSkill, {
+      skillId,
+      skillName,
+      category,
+      isCorrect,
+      errorTag,
+      questionType,
+      questionDifficulty,
+      attemptTimestamp,
+      isProgressCheck
+    });
 
-      if (skill.accuracy_rate >= 0.85 && skill.total_attempts >= 4) {
-        skill.status = 'mastered';
-        skill.next_review_at = new Date(Date.now() + 86400000 * 14).toISOString();
-      } else if (skill.accuracy_rate >= 0.7) {
-        skill.status = 'mostly_mastered';
-        skill.next_review_at = new Date(Date.now() + 86400000 * 7).toISOString();
-      } else if (!isCorrect) {
-        skill.status = 'learning';
-        skill.next_review_at = new Date(Date.now() + 86400000).toISOString();
-        if (errorTag && !skill.recurring_errors.includes(errorTag)) {
-          skill.recurring_errors.push(errorTag);
-          if (skill.recurring_errors.length > 5) {
-            skill.recurring_errors.shift();
-          }
-        }
-      }
-    }
-
-    await this.setStoreData('skills', skill.skill_id, skill);
-    return skill;
+    const updated = result.updatedSkill;
+    await this.setStoreData('skills', updated.skill_id, updated);
+    return updated;
   }
 
   // =========================================================================

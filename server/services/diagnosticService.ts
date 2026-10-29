@@ -11,6 +11,7 @@ import {
 import { createDiagnosticAssessmentPlan } from '../../src/types/diagnosticPlans.js';
 import { sanitizeAndReconcileQuestion } from '../questionUtils.js';
 import { AIException } from '../aiErrors.js';
+import { CEFREvaluator } from '../../src/services/cefrEvaluator.js';
 
 import {
   buildAdaptiveDiagnosticSystemPrompt,
@@ -163,11 +164,23 @@ export class DiagnosticService {
     const attempts = session.history;
     const totalCount = attempts.length;
     const correctCount = attempts.filter(a => a.verdict === 'correct').length;
-    const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 75;
-    const placedLevel = percentage >= 85 ? 'C1' : percentage >= 70 ? 'B2' : percentage >= 50 ? 'B1' : 'A2';
+
+    // Use difficulty-weighted, coverage-aware CEFR assessment
+    const cefrResult = CEFREvaluator.evaluateAttempts(attempts.map(a => ({
+      question: {
+        section: a.question.section,
+        difficulty: a.question.difficulty,
+        skill_name: a.question.skill_name
+      },
+      verdict: a.verdict
+    })));
+
+    const placedLevel = cefrResult.placedLevel;
+    const percentage = cefrResult.compositeScore;
+    const confidence = cefrResult.confidence;
 
     const systemPrompt = buildDiagnosticReportSystemPrompt(session, profile, percentage, placedLevel as any);
-    const prompt = `Compute diagnostic report for learner at ${placedLevel}.`;
+    const prompt = `Compute diagnostic report for learner at ${placedLevel} based on evidence: ${cefrResult.rationale}`;
 
     try {
       const aiReport = await callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'diagnostic_report' });
@@ -177,10 +190,10 @@ export class DiagnosticService {
           sessionId: session.sessionId,
           mode: session.mode,
           completedAt: new Date().toISOString(),
-          overallCEFR: aiReport.overallLevel || placedLevel,
+          overallCEFR: placedLevel,
           overallScorePercentage: percentage,
-          overallConfidence: 'high',
-          overallSummary: aiReport.summary,
+          overallConfidence: confidence,
+          overallSummary: aiReport.summary || cefrResult.rationale,
           skillEstimates: session.currentEstimates,
           demonstratedStrengths: aiReport.strengths || [],
           priorityWeaknesses: aiReport.weaknesses || [],
@@ -193,7 +206,12 @@ export class DiagnosticService {
       console.warn('[AI] computeDiagnosticReport fallback:', err?.message);
     }
 
-    return buildFallbackDiagnosticReport(session, profile, totalCount, correctCount, placedLevel, percentage);
+    const fallback = buildFallbackDiagnosticReport(session, profile, totalCount, correctCount, placedLevel, percentage);
+    return {
+      ...fallback,
+      overallConfidence: confidence,
+      overallSummary: `${fallback.overallSummary} ${cefrResult.rationale}`
+    };
   }
 
   public async generatePersonalizedStudyPlan(

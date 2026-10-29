@@ -63,6 +63,7 @@ interface LessonViewProps {
   onOpenSummary: () => void;
   onBuildNextSession?: () => void;
   isBuildingSession?: boolean;
+  onReturnHome?: () => void;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
@@ -71,7 +72,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   onFinishLesson,
   onOpenSummary,
   onBuildNextSession,
-  isBuildingSession
+  isBuildingSession,
+  onReturnHome
 }) => {
   // Current section & question navigation
   const [currentSectionIndex, setCurrentSectionIndex] = useState<number>(0);
@@ -572,18 +574,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Top lesson pace & duration banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-4">
+      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 shadow-xs space-y-4 text-[#2D312E] dark:text-[#F4F2EC]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center space-x-1.5 ${
-              paceMode === 'quick_10'
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                : paceMode === 'deep_30'
-                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-                : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
-            }`}>
+            <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] text-[#1B4332] dark:text-[#84A98C] flex items-center space-x-1.5">
               <span>
                 {paceMode === 'quick_10'
                   ? '⚡ 10-Min Quick Practice'
@@ -595,17 +591,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
             <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-xl border transition-all ${
               isNearlyOut
-                ? 'bg-rose-950/70 border-rose-500/60 text-rose-300 animate-pulse ring-1 ring-rose-500/50'
-                : 'bg-slate-800/80 border-slate-700/60 text-slate-300'
+                ? 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] text-[#B84728] dark:text-[#F28482] animate-pulse'
+                : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#354037] text-[#5C645E] dark:text-[#A7ABA4]'
             }`}>
-              <span className={`w-2 h-2 rounded-full mr-1 ${isNearlyOut ? 'bg-rose-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
+              <span className={`w-2 h-2 rounded-full mr-1 ${isNearlyOut ? 'bg-[#E07A5F] animate-ping' : 'bg-[#52B788]'}`} />
               <span>{formatTimer(secondsElapsed)}</span>
-              <span className="text-slate-500">/ ~{durationTarget}m target</span>
+              <span className="text-[#8A938C] dark:text-[#8E978F]">/ ~{durationTarget}m target</span>
               {extraMinutesAdded > 0 && (
-                <span className="text-amber-400 font-bold ml-1">(+{extraMinutesAdded}m)</span>
+                <span className="text-[#E9A825] font-bold ml-1">(+{extraMinutesAdded}m)</span>
               )}
               {isNearlyOut && (
-                <span className="text-rose-400 font-bold ml-1 animate-bounce">
+                <span className="text-[#E07A5F] font-bold ml-1 animate-bounce">
                   (Còn {remainingSeconds}s! 🐾)
                 </span>
               )}
@@ -613,6 +609,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
+            {onReturnHome && (
+              <button
+                type="button"
+                onClick={onReturnHome}
+                className="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
+                title="Pause and return to home desk"
+              >
+                <span>🐾 Desk</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 const nextIsShort = !isShortSession;
@@ -625,21 +632,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   loadQuestionForSection(newSecIdx, 0);
                 }
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition cursor-pointer ${
                 isShortSession
-                  ? 'bg-amber-950/40 border-amber-600/60 text-amber-300'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white'
+                  ? 'bg-[#FEF7E6] dark:bg-[#342A1D] border-[#F5DC9A] text-[#D48B16]'
+                  : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#354037] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
               title="Toggle shortened 2-part session"
             >
-              {isShortSession ? '⚡ Shortened (Active)' : '⚡ Shorten today'}
+              {isShortSession ? '⚡ Shortened' : '⚡ Shorten'}
             </button>
-
-
 
             <button
               onClick={handleFinishEarly}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
               title="Pause and complete lesson now"
             >
               <PauseCircle className="w-3.5 h-3.5" />
@@ -651,24 +656,24 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {/* Global Progress Bar */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-400 font-medium">
+            <span className="text-[#5C645E] dark:text-[#A7ABA4] font-medium">
               Activity {currentSectionIndex + 1} of {activeSections.length}:{' '}
-              <strong className="text-white">{activeSectionPlan.title}</strong>
+              <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{activeSectionPlan.title}</strong>
             </span>
-            <span className="text-indigo-300 font-bold">
+            <span className="text-[#2D6A4F] dark:text-[#52B788] font-bold">
               Question {Math.min(totalPlannedQuestions, totalAnsweredCount + (evaluation ? 0 : 1))} of {totalPlannedQuestions} ({progressPercent}%)
             </span>
           </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2C332E] h-2 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-indigo-500 to-sky-400 h-full rounded-full transition-all duration-300"
+              className="bg-[#2D6A4F] dark:bg-[#52B788] h-full rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
         {/* Section Tabs with Questions Completed Badges */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#F4EFEB] dark:border-[#2C332E]">
           {activeSections.map((sec, idx) => {
             const isActive = idx === currentSectionIndex;
             const targetCount = sec.target_questions_count || 1;
@@ -679,18 +684,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSelectSection(idx)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-2 transition ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-2 transition cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-[#1B4332] dark:bg-[#52B788] text-white dark:text-[#0F291E] shadow-2xs'
                     : isSecDone
-                    ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-800/40'
-                    : 'bg-slate-800/60 text-slate-400 border border-slate-700/40 hover:text-slate-200'
+                    ? 'bg-[#EFF6F1] dark:bg-[#1C2C23] text-[#2D6A4F] dark:text-[#84A98C] border border-[#C2DBC7] dark:border-[#2F4738]'
+                    : 'bg-[#FAF7F2] dark:bg-[#242A25] text-[#5C645E] dark:text-[#8A938C] border border-[#EBE4D7] dark:border-[#313B33] hover:text-[#1B4332] dark:hover:text-[#F4F2EC]'
                 }`}
               >
                 {isSecDone ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <Check className="w-3.5 h-3.5 text-[#52B788]" />
                 ) : (
-                  <span className="w-4 h-4 rounded-full bg-slate-700/80 flex items-center justify-center text-[10px]">
+                  <span className="w-4 h-4 rounded-full bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC] flex items-center justify-center text-[10px]">
                     {idx + 1}
                   </span>
                 )}
@@ -698,10 +703,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-md ${
                     isActive
-                      ? 'bg-indigo-700 text-indigo-100'
+                      ? 'bg-[#143826] dark:bg-[#40916C] text-white'
                       : isSecDone
-                      ? 'bg-emerald-900/60 text-emerald-300'
-                      : 'bg-slate-700 text-slate-300'
+                      ? 'bg-[#DCEDE1] dark:bg-[#264232] text-[#2D6A4F] dark:text-[#84A98C]'
+                      : 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#5C645E] dark:text-[#A7ABA4]'
                   }`}
                 >
                   {doneCount}/{targetCount}
@@ -850,17 +855,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
           )}
 
           {/* Question Card: ONE QUESTION AT A TIME */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-slate-100 space-y-6">
+          <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 md:p-8 shadow-xs text-[#2D312E] dark:text-[#F4F2EC] space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] uppercase tracking-wider block">
                   Active Question
                 </span>
-                <span className="text-[10px] text-sky-400/80 font-medium flex items-center space-x-1">
+                <span className="text-[10px] text-[#52796F] dark:text-[#84A98C] font-medium flex items-center space-x-1">
                   <span>💡 Click any word to learn & practice</span>
                 </span>
               </div>
-              <div className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
+              <div className="text-base md:text-lg font-serif font-medium text-[#1B4332] dark:text-[#F4F2EC] whitespace-pre-line leading-relaxed">
                 <ClickableSentenceText
                   text={currentQuestion.prompt}
                   onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -871,11 +876,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {/* Context sentence callout if available and distinct from prompt */}
             {currentQuestion.context_sentence &&
               !currentQuestion.prompt.toLowerCase().includes(currentQuestion.context_sentence.toLowerCase().trim()) && (
-              <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-2xl p-4 md:p-5 shadow-inner">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">
+              <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 md:p-5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] block mb-1">
                   Sentence to Complete
                 </span>
-                <div className="text-base md:text-lg font-medium text-white italic">
+                <div className="text-base md:text-lg font-medium text-[#1B4332] dark:text-[#F4F2EC] italic">
                   "<ClickableSentenceText
                     text={currentQuestion.context_sentence}
                     onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -903,23 +908,23 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   );
                   const isWrongSelected = Boolean(evaluation && isSelected && evaluation.verdict !== 'correct');
 
-                  let buttonClass = 'bg-slate-800/50 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white';
-                  let badgeClass = 'bg-slate-700 text-slate-300';
+                  let buttonClass = 'bg-[#FAF7F2] dark:bg-[#242A25] border-[#EBE4D7] dark:border-[#313B33] text-[#2D312E] dark:text-[#E8ECE9] hover:border-[#74A892] dark:hover:border-[#52B788]';
+                  let badgeClass = 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC]';
 
                   if (evaluation) {
                     if (isExpectedOpt) {
-                      buttonClass = 'bg-emerald-950/50 border-emerald-500 ring-1 ring-emerald-500 text-white';
-                      badgeClass = 'bg-emerald-500 text-white font-bold';
+                      buttonClass = 'bg-[#EFF6F1] dark:bg-[#182F22] border-[#2D6A4F] dark:border-[#40916C] ring-1 ring-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC]';
+                      badgeClass = 'bg-[#2D6A4F] text-white font-bold';
                     } else if (isWrongSelected) {
-                      buttonClass = 'bg-rose-950/50 border-rose-500 ring-1 ring-rose-500 text-white';
-                      badgeClass = 'bg-rose-500 text-white font-bold';
+                      buttonClass = 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] ring-1 ring-[#E07A5F] text-[#B84728] dark:text-[#F28482]';
+                      badgeClass = 'bg-[#E07A5F] text-white font-bold';
                     } else {
-                      buttonClass = 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-60';
-                      badgeClass = 'bg-slate-800 text-slate-500';
+                      buttonClass = 'bg-[#FAF7F2] dark:bg-[#202522] border-[#EBE4D7] dark:border-[#2E3730] text-[#8A938C] dark:text-[#7A827A] opacity-60';
+                      badgeClass = 'bg-[#EBE4D7] dark:bg-[#2C332E] text-[#8A938C]';
                     }
                   } else if (isSelected) {
-                    buttonClass = 'bg-indigo-950/60 border-indigo-500 ring-1 ring-indigo-500 text-white';
-                    badgeClass = 'bg-indigo-500 text-white font-bold';
+                    buttonClass = 'bg-[#EFF6F1] dark:bg-[#1C2C23] border-[#2D6A4F] dark:border-[#52B788] ring-1 ring-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC]';
+                    badgeClass = 'bg-[#2D6A4F] dark:bg-[#52B788] text-white dark:text-[#0F291E] font-bold';
                   }
 
                   return (
@@ -957,12 +962,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       </div>
 
                       {evaluation && isExpectedOpt && (
-                        <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30 shrink-0">
-                          ✓ Correct Answer
+                        <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#52B788] bg-[#DCEDE1] dark:bg-[#203D2D] px-2.5 py-1 rounded-lg border border-[#C2DBC7] dark:border-[#2F4738] shrink-0">
+                          ✓ Correct
                         </span>
                       )}
                       {evaluation && isWrongSelected && (
-                        <span className="text-xs font-bold text-rose-400 bg-rose-950/80 px-2.5 py-1 rounded-lg border border-rose-500/30 shrink-0">
+                        <span className="text-xs font-bold text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#3B2521] px-2.5 py-1 rounded-lg border border-[#F3B3A2] dark:border-[#5C342C] shrink-0">
                           ✗ Your Choice
                         </span>
                       )}
@@ -986,7 +991,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       handleSubmitAnswer();
                     }
                   }}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl px-4 py-3 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
                 />
               </div>
             )}
@@ -1001,15 +1006,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     placeholder="Write 2 to 3 sentences in English..."
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base leading-relaxed"
+                    className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed"
                   />
                   {speechSupported && !evaluation && (
                     <button
                       onClick={handleToggleVoiceInput}
                       className={`absolute right-3 bottom-3 p-2 rounded-xl transition ${
                         isRecording
-                          ? 'bg-rose-600 text-white animate-pulse'
-                          : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                          ? 'bg-[#E07A5F] text-white animate-pulse'
+                          : 'bg-[#FAF7F2] dark:bg-[#2C352E] hover:bg-[#EBE4D7] text-[#5C645E] dark:text-[#A7ABA4]'
                       }`}
                       title={isRecording ? 'Listening (click to stop)' : 'Speak your answer (Speech-to-Text)'}
                     >
@@ -1018,10 +1023,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>Sentences: <strong className="text-slate-200">{countSentences(userAnswer)}</strong> (target: 2-3)</span>
+                <div className="flex items-center justify-between text-xs text-[#5C645E] dark:text-[#A7ABA4]">
+                  <span>Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: 2-3)</span>
                   {speechSupported && (
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-[#8A938C]">
                       Mic uses browser voice dictation
                     </span>
                   )}
@@ -1035,7 +1040,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <button
                   disabled={!userAnswer.trim() || isSubmitting}
                   onClick={() => handleSubmitAnswer()}
-                  className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
+                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] dark:text-[#0F291E] disabled:opacity-50 text-white font-bold text-sm transition shadow-xs flex items-center space-x-2 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
@@ -1188,41 +1193,41 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* FEEDBACK STATE: AFTER ANSWER IS SUBMITTED */}
           {evaluation && (
-            <div className={`rounded-3xl p-6 md:p-8 border shadow-2xl space-y-5 transition-all ${
+            <div className={`rounded-3xl p-6 md:p-8 border shadow-xs space-y-5 transition-all ${
               evaluation.verdict === 'correct'
-                ? 'bg-emerald-950/20 border-emerald-500/40 text-slate-100'
+                ? 'bg-[#EFF6F1] dark:bg-[#182C20] border-[#C2DBC7] dark:border-[#2C4A38] text-[#1B4332] dark:text-[#F4F2EC]'
                 : evaluation.verdict === 'partially_correct'
-                ? 'bg-amber-950/20 border-amber-500/40 text-slate-100'
+                ? 'bg-[#FEF7E6] dark:bg-[#2C2417] border-[#F5DC9A] dark:border-[#524128] text-[#2D312E] dark:text-[#F4F2EC]'
                 : evaluation.verdict === 'ambiguous'
-                ? 'bg-sky-950/20 border-sky-500/40 text-slate-100'
-                : 'bg-rose-950/20 border-rose-500/40 text-slate-100'
+                ? 'bg-[#FAF7F2] dark:bg-[#1E2521] border-[#EBE4D7] dark:border-[#2E3C32] text-[#2D312E] dark:text-[#F4F2EC]'
+                : 'bg-[#FFF8F6] dark:bg-[#2A1D1A] border-[#F3B3A2] dark:border-[#4E2B24] text-[#2D312E] dark:text-[#F4F2EC]'
             }`}>
               {/* Verdict header */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
                 <div className="flex items-center space-x-3">
                   {evaluation.verdict === 'correct' ? (
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#DCEDE1] dark:bg-[#203D2D] border border-[#C2DBC7] dark:border-[#2F4738] flex items-center justify-center text-[#2D6A4F] dark:text-[#52B788]">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                   ) : evaluation.verdict === 'partially_correct' ? (
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FEF7E6] dark:bg-[#342A1D] border border-[#F5DC9A] flex items-center justify-center text-[#D48B16]">
                       <AlertTriangle className="w-6 h-6" />
                     </div>
                   ) : evaluation.verdict === 'ambiguous' ? (
-                    <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#EFF6F1] dark:bg-[#242F28] border border-[#C2DBC7] flex items-center justify-center text-[#52796F]">
                       <HelpCircle className="w-6 h-6" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FDF0ED] dark:bg-[#3B2521] border border-[#F3B3A2] dark:border-[#5C342C] flex items-center justify-center text-[#E07A5F]">
                       <XCircle className="w-6 h-6" />
                     </div>
                   )}
 
                   <div>
-                    <h3 className="text-lg font-bold text-white capitalize">
+                    <h3 className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] capitalize">
                       {evaluation.verdict.replace('_', ' ')}
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                       {evaluation.verdict === 'correct'
                         ? 'Accurate and natural usage.'
                         : 'Review the decisive rule and example below.'}
@@ -1233,22 +1238,22 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Complete Correct Sentence & Meaning Translation */}
               {evaluation.full_correct_sentence && (
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+                <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-400">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788]">
                       Complete Sentence
                     </span>
                     <button
                       onClick={() => playEnglishSpeech(evaluation.full_correct_sentence.replace(/\*/g, ''))}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#FAF7F2] dark:bg-[#27302A] hover:bg-[#EBE4D7] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#354037] text-xs transition cursor-pointer"
                       title="Listen to full correct sentence"
                     >
-                      <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <Volume2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                       <span>Listen</span>
                     </button>
                   </div>
 
-                  <div className="text-base font-semibold text-white leading-relaxed">
+                  <div className="text-base font-serif font-semibold text-[#1B4332] dark:text-[#F4F2EC] leading-relaxed">
                     <ClickableSentenceText
                       text={evaluation.full_correct_sentence}
                       onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -1257,13 +1262,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                   {/* Sentence Meaning / Translation */}
                   {(evaluation.sentence_translation || currentQuestion?.sentence_translation || currentQuestion?.vocab_card?.meaning) && (
-                    <div className="pt-2 border-t border-slate-800/80 flex items-start space-x-2 text-xs text-slate-300">
-                      <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="pt-2 border-t border-[#F4EFEB] dark:border-[#2C332E] flex items-start space-x-2 text-xs text-[#5C645E] dark:text-[#A7ABA4]">
+                      <Globe className="w-3.5 h-3.5 text-[#52796F] shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
+                        <span className="text-[#8A938C] dark:text-[#8E978F] font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
                           Ý nghĩa câu / Sentence Meaning:
                         </span>
-                        <div className="text-slate-200 italic font-medium leading-relaxed">
+                        <div className="text-[#2D312E] dark:text-[#D1D7CE] italic font-medium leading-relaxed">
                           <ClickableSentenceText
                             text={evaluation.sentence_translation || currentQuestion?.sentence_translation || currentQuestion?.vocab_card?.meaning || ''}
                             contextSentence={evaluation.full_correct_sentence || currentQuestion?.context_sentence || currentQuestion?.prompt}
@@ -1278,8 +1283,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Contrast explanation for distractors */}
               {evaluation.contrast_explanation && (
-                <div className="bg-rose-950/30 border border-rose-500/30 rounded-2xl p-4 text-xs text-rose-200 leading-relaxed">
-                  <span className="text-rose-400 font-bold uppercase tracking-wider block mb-1">
+                <div className="bg-[#FFF8F6] dark:bg-[#271E1C] border border-[#F3B3A2] dark:border-[#4A2D27] rounded-2xl p-4 text-xs text-[#B84728] dark:text-[#F28482] leading-relaxed">
+                  <span className="font-bold uppercase tracking-wider block mb-1">
                     Why your choice was not suitable
                   </span>
                   <div>
@@ -1292,13 +1297,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Single Clear Explanation (No Duplicate Decisive Clue) */}
+              {/* Single Clear Explanation */}
               {evaluation.explanation && (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-1.5">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block mb-1">
+                <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 space-y-1.5">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#52796F] dark:text-[#84A98C] block mb-1">
                     Explanation
                   </span>
-                  <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-medium">
+                  <div className="text-sm text-[#2D312E] dark:text-[#D1D7CE] leading-relaxed whitespace-pre-line font-medium">
                     <ClickableSentenceText
                       text={evaluation.explanation}
                       contextSentence={evaluation.full_correct_sentence || currentQuestion?.context_sentence || currentQuestion?.prompt}
@@ -1308,32 +1313,32 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Writing specific feedback: Natural version + corrections */}
+              {/* Writing specific feedback */}
               {evaluation.corrected_text && (
-                <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-2xl p-4 space-y-3">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block">
-                    Natural Native Phrasing (Preserving your voice)
+                <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 space-y-3">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] block">
+                    Natural Native Phrasing
                   </span>
-                  <p className="text-sm text-indigo-100 italic">
+                  <p className="text-sm text-[#1B4332] dark:text-[#F4F2EC] italic font-serif">
                     "{evaluation.corrected_text}"
                   </p>
 
                   {evaluation.key_corrections && evaluation.key_corrections.length > 0 && (
-                    <div className="space-y-1.5 pt-2 border-t border-indigo-900/50">
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase">Key Adjustments:</span>
+                    <div className="space-y-1.5 pt-2 border-t border-[#C2DBC7]/50 dark:border-[#2C4A38]">
+                      <span className="text-[11px] font-semibold text-[#5C645E] dark:text-[#A7ABA4] uppercase">Key Adjustments:</span>
                       {evaluation.key_corrections.map((kc, i) => (
-                        <div key={i} className="text-xs text-slate-300 flex items-start space-x-2">
-                          <span className="text-rose-400 line-through">{kc.original}</span>
+                        <div key={i} className="text-xs text-[#2D312E] dark:text-[#D1D7CE] flex items-start space-x-2">
+                          <span className="text-[#E07A5F] line-through">{kc.original}</span>
                           <span>→</span>
-                          <span className="text-emerald-300 font-semibold">{kc.corrected}</span>
-                          <span className="text-slate-400">({kc.reason})</span>
+                          <span className="text-[#2D6A4F] dark:text-[#52B788] font-semibold">{kc.corrected}</span>
+                          <span className="text-[#8A938C]">({kc.reason})</span>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {evaluation.reusable_pattern && (
-                    <div className="pt-2 text-xs text-amber-300">
+                    <div className="pt-2 text-xs text-[#E9A825]">
                       <strong>Reusable Pattern: </strong>
                       <code>{evaluation.reusable_pattern}</code>
                     </div>
@@ -1343,24 +1348,24 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Dynamic Useful Phrases for your Passage / Exercise */}
               {evaluation.useful_phrases && evaluation.useful_phrases.length > 0 && (
-                <div className="bg-emerald-950/20 border border-emerald-800/40 rounded-2xl p-4 space-y-2.5">
-                  <span className="text-xs uppercase font-bold tracking-wider text-emerald-300 flex items-center space-x-1.5">
+                <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 space-y-2.5">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Useful Collocations & Phrases for this Context</span>
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                     {evaluation.useful_phrases.map((up, i) => (
-                      <div key={i} className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                        <div className="text-xs font-bold text-white flex items-center justify-between">
-                          <span className="text-emerald-300 font-mono">{typeof up === 'string' ? up : up.phrase}</span>
+                      <div key={i} className="p-3 rounded-xl bg-white dark:bg-[#242E27] border border-[#EBE4D7] dark:border-[#313E34] space-y-1">
+                        <div className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] flex items-center justify-between">
+                          <span className="text-[#2D6A4F] dark:text-[#52B788] font-mono">{typeof up === 'string' ? up : up.phrase}</span>
                         </div>
                         {typeof up !== 'string' && up.meaning && (
-                          <p className="text-[11px] text-slate-300">
-                            <span className="text-slate-400">Meaning: </span>{up.meaning}
+                          <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4]">
+                            <span className="text-[#8A938C]">Meaning: </span>{up.meaning}
                           </p>
                         )}
                         {typeof up !== 'string' && up.how_to_use && (
-                          <p className="text-[10px] text-slate-400 italic">
+                          <p className="text-[10px] text-[#8A938C] italic">
                             Tip: {up.how_to_use}
                           </p>
                         )}
@@ -1370,31 +1375,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-
-
               {/* Revealed Vocabulary Card & Usage Notes (Shown AFTER answering) */}
               {currentQuestion.vocab_card && (
-                <div className="mt-6 pt-6 border-t border-slate-800">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block mb-3">
+                <div className="mt-6 pt-6 border-t border-[#EBE4D7] dark:border-[#2C332E]">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#52796F] dark:text-[#84A98C] block mb-3">
                     Vocabulary Learning Card & Definitions (Revealed)
                   </span>
                   <VocabularyCard vocab={currentQuestion.vocab_card} />
-                </div>
-              )}
-
-              {/* Reinforcement Prompt (Shown AFTER answering) */}
-              {currentQuestion.reinforcement_prompt && (
-                <div className="bg-indigo-950/40 border border-indigo-800/50 rounded-2xl p-4 space-y-2 mt-4">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 flex items-center space-x-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Reinforcement & Further Application</span>
-                  </span>
-                  <p className="text-sm text-slate-200">
-                    <strong className="text-indigo-200">Secondary Context:</strong> "{currentQuestion.reinforcement_prompt.secondary_context}"
-                  </p>
-                  <p className="text-sm text-slate-200">
-                    <strong className="text-indigo-200">Application Tip:</strong> {currentQuestion.reinforcement_prompt.application_prompt} — {currentQuestion.reinforcement_prompt.expected_usage_tip}
-                  </p>
                 </div>
               )}
 
@@ -1406,11 +1393,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
               />
 
               {/* Action buttons: Next question / Retry */}
-              <div className="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
+              <div className="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#EBE4D7] dark:border-[#2C332E]">
                 {evaluation.verdict !== 'correct' ? (
                   <button
                     onClick={handleRetryQuestion}
-                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold transition flex items-center space-x-2"
+                    className="px-5 py-2.5 rounded-2xl bg-white dark:bg-[#242A25] hover:bg-[#FAF7F2] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#313B33] text-sm font-semibold transition flex items-center space-x-2 cursor-pointer"
                   >
                     <RotateCcw className="w-4 h-4" />
                     <span>Try Again</span>
@@ -1419,7 +1406,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                 <button
                   onClick={handleNextQuestionOrSection}
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
+                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] dark:text-[#0F291E] text-white text-sm font-bold transition shadow-xs flex items-center space-x-2 cursor-pointer"
                 >
                   <span>
                     {questionIndexInSection < targetQuestionsInSection - 1

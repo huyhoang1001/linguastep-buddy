@@ -14,6 +14,7 @@ import {
   PersonalizedStudyPlan
 } from '../src/types/learning.js';
 import { UserAccount } from './authTypes.js';
+import { MasteryEngine } from '../src/services/masteryEngine.js';
 
 export interface UserLearningData {
   account: UserAccount;
@@ -314,47 +315,26 @@ export class MultiUserMemoryStore {
     const u = this.users.get(userId);
     if (!u) throw new Error(`User not found: ${userId}`);
 
-    let skill = u.skills.find(s => s.skill_id === skillId);
-    if (!skill) {
-      skill = {
-        skill_id: skillId,
-        skill_name: skillName,
-        category,
-        status: isCorrect ? 'mostly_mastered' : 'learning',
-        accuracy_rate: isCorrect ? 1.0 : 0.0,
-        total_attempts: 1,
-        last_practiced_at: new Date().toISOString(),
-        next_review_at: new Date(Date.now() + 86400000).toISOString(),
-        recurring_errors: errorTag ? [errorTag] : []
-      };
-      u.skills.push(skill);
-    } else {
-      skill.total_attempts += 1;
-      const prevCorrect = Math.round(skill.accuracy_rate * (skill.total_attempts - 1));
-      const currentCorrect = prevCorrect + (isCorrect ? 1 : 0);
-      skill.accuracy_rate = Number((currentCorrect / skill.total_attempts).toFixed(2));
-      skill.last_practiced_at = new Date().toISOString();
+    let currentSkill = u.skills.find(s => s.skill_id === skillId || s.skill_name.toLowerCase() === skillName.toLowerCase());
 
-      if (skill.accuracy_rate >= 0.85 && skill.total_attempts >= 4) {
-        skill.status = 'mastered';
-        skill.next_review_at = new Date(Date.now() + 86400000 * 14).toISOString();
-      } else if (skill.accuracy_rate >= 0.7) {
-        skill.status = 'mostly_mastered';
-        skill.next_review_at = new Date(Date.now() + 86400000 * 7).toISOString();
-      } else if (!isCorrect) {
-        skill.status = 'learning';
-        skill.next_review_at = new Date(Date.now() + 86400000).toISOString();
-        if (errorTag && !skill.recurring_errors.includes(errorTag)) {
-          skill.recurring_errors.push(errorTag);
-          if (skill.recurring_errors.length > 5) {
-            skill.recurring_errors.shift();
-          }
-        }
-      }
+    const result = MasteryEngine.recordSkillEvidence(currentSkill, {
+      skillId,
+      skillName,
+      category,
+      isCorrect,
+      errorTag
+    });
+
+    const updated = result.updatedSkill;
+    const existingIndex = u.skills.findIndex(s => s.skill_id === updated.skill_id || s.skill_name.toLowerCase() === updated.skill_name.toLowerCase());
+    if (existingIndex >= 0) {
+      u.skills[existingIndex] = updated;
+    } else {
+      u.skills.push(updated);
     }
 
     this.persistAtomic();
-    return { ...skill };
+    return { ...updated };
   }
 
   // Vocabulary

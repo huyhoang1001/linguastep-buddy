@@ -8,7 +8,8 @@ export function buildLessonPlanSystemPrompt(
   paceMode: 'quick_10' | 'standard_20' | 'deep_30',
   totalPlannedQuestions: number,
   lessonHistory: any[] = [],
-  customContext?: NextSessionCustomContext
+  customContext?: NextSessionCustomContext,
+  blueprint?: any
 ): string {
   const generalRatio = customContext?.generalVsWorkRatio !== undefined
     ? customContext.generalVsWorkRatio
@@ -48,8 +49,17 @@ Balance: ${generalRatio}% general English, ${workRatio}% workplace/technical Eng
 SELECTED DAILY STUDY TIME: ${duration} minutes per day (${paceMode}).
 TARGET QUESTIONS PLANNED: exactly ${totalPlannedQuestions} questions total across activities.
 
-LEARNER PREVIOUS LESSON HISTORY (ALREADY COMPLETED):
+LEARNER PREVIOUS LESSON HISTORY:
 ${JSON.stringify(lessonHistory, null, 2)}
+
+${blueprint ? `DETERMINISTIC CURRICULUM BLUEPRINT (PRE-SELECTED LEARNING OBJECTIVES):
+The pedagogical scheduler has pre-selected the following targets based on spaced repetition intervals and prerequisite mastery:
+- Primary Objective: ${blueprint.primary_objective}
+- Selection Rationale: ${blueprint.reason_for_selection}
+- Planned Sections & Targets:
+${JSON.stringify(blueprint.sections, null, 2)}
+You MUST generate exercise context, realistic scenarios, and question prompts aligned with these exact section targets.
+` : ''}
 
 ${customContext?.selectedVocabWords && customContext.selectedVocabWords.length > 0 ? `CRITICAL LEARNER SELECTION - VOCABULARY TO REVIEW:
 The learner specifically selected these vocabulary words from their memory review catalog:
@@ -75,18 +85,18 @@ Incorporate this learner request into the topic, examples, and exercise prompts.
 ` : ''}
 
 CRITICAL CURRICULUM PROGRESSION & STRUCTURE INSTRUCTIONS:
-- FORWARD PROGRESSION: Review the learner's completed lessonHistory above. You MUST NOT repeat grammar topics or themes that were already covered in previous sessions unless selected by the learner above. Advance immediately along the proficiency roadmap.
+- MASTERY-BASED PROGRESSION & SYSTEMATIC REVIEW: Exercises must systematically reinforce past skills that require spaced review, mistake correction, or prerequisite strengthening alongside new concepts. Previously covered skills remain eligible and essential for active recall and delayed retrieval practice.
 - STRUCTURE OF EVERY NEW SESSION: Every generated session plan must include:
   1. Warm-up & Review (revisiting vocabulary & grammar concepts from past sessions).
-  2. New Grammar (introducing the target grammar rule).
+  2. New Grammar / Prerequisite Focus (introducing or strengthening the target grammar rule).
   3. New Vocabulary & Collocations (professional or technical terminology).
-  4. New Topic & Practical Application (fresh real-world topic/context).
+  4. Practical Application / Progress Check (fresh real-world topic/context).
 - Provide MULTIPLE questions per activity (2 to 4 items per section) so the learner gets thorough practice.
 
 DURATION SPECIFIC ALLOCATION:
-- 10 minutes (Quick Practice): 3 activities totaling 6 questions (2 Warm-up/Review, 3 Core Grammar across 2 rules, 1 Exit check).
-- 20 minutes (Standard Practice): 4 activities totaling 10 questions (2 Warm-up, 4 Core Grammar across 2-3 rules, 2 Vocab & Collocations, 2 Workplace Writing/Reading).
-- 30 minutes (Deep Practice): 5 activities totaling 15 questions (3 Mistake Clinic, 6 Core Grammar across 3 rules, 3 Vocab & Collocations, 3 Contextual Reading & Workplace Production).
+- 10 minutes (Quick Practice): 3 activities totaling 6 questions (2 Warm-up/Review, 3 Core Target across 2 rules, 1 Exit check).
+- 20 minutes (Standard Practice): 4 activities totaling 10 questions (2 Warm-up/Spaced Review, 4 Core Concept/Clinic, 2 Vocab & Collocations, 2 Workplace Writing/Reading or Progress Check).
+- 30 minutes (Deep Practice): 5 activities totaling 15 questions (3 Mistake Clinic, 3 Overdue Spaced Retrieval, 4 Core Grammar, 2 Vocab & Collocations, 3 Contextual Writing/Progress Check).
 
 Recent error patterns to address: ${JSON.stringify(activeErrors)}.
 Target skills needing practice: ${JSON.stringify(activeSkills)}.
@@ -103,7 +113,8 @@ Output strictly JSON:
       "description": string,
       "estimated_minutes": number,
       "target_questions_count": number,
-      "skill_target": string
+      "skill_target": string,
+      "pedagogical_focus": string
     }
   ]
 }`;

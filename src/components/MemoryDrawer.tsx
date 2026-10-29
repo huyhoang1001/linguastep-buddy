@@ -509,33 +509,65 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
                   </div>
 
                   {skills.map(s => {
-                    const statusColor =
-                      s.status === 'mastered'
-                        ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800/40'
-                        : s.status === 'mostly_mastered'
-                        ? 'text-sky-400 bg-sky-950/40 border-sky-800/40'
-                        : 'text-amber-400 bg-amber-950/40 border-amber-800/40';
+                    const stage = s.mastery_stage || (s.status === 'mastered' ? 'retained_mastery' : s.status === 'mostly_mastered' ? 'application' : 'recognition');
+                    const isRegressed = s.status === 'regressed';
+
+                    let statusColor = 'text-amber-300 bg-amber-950/40 border-amber-800/40';
+                    let stageLabel = 'Exposure';
+
+                    if (isRegressed) {
+                      statusColor = 'text-rose-300 bg-rose-950/50 border-rose-500/40 animate-pulse';
+                      stageLabel = '⚠️ Regressed';
+                    } else if (stage === 'retained_mastery') {
+                      statusColor = 'text-emerald-300 bg-emerald-950/50 border-emerald-500/50';
+                      stageLabel = 'Retained Mastery 🏆';
+                    } else if (stage === 'application') {
+                      statusColor = 'text-indigo-300 bg-indigo-950/50 border-indigo-500/50';
+                      stageLabel = 'Application ✨';
+                    } else if (stage === 'active_recall') {
+                      statusColor = 'text-sky-300 bg-sky-950/50 border-sky-500/50';
+                      stageLabel = 'Active Recall';
+                    } else if (stage === 'recognition') {
+                      statusColor = 'text-amber-300 bg-amber-950/50 border-amber-600/40';
+                      stageLabel = 'Recognition';
+                    }
+
+                    const nextReviewDate = s.next_review_at ? new Date(s.next_review_at).toLocaleDateString() : 'Tomorrow';
+                    const isOverdue = s.next_review_at && new Date(s.next_review_at).getTime() <= Date.now();
 
                     return (
                       <div
                         key={s.skill_id}
-                        className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between"
+                        className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                       >
-                        <div>
+                        <div className="space-y-1">
                           <div className="flex items-center space-x-2">
                             <h4 className="text-sm font-semibold text-white">{s.skill_name}</h4>
-                            <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-700 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] uppercase font-bold text-slate-300 bg-slate-700/80 px-1.5 py-0.5 rounded">
                               {s.category}
                             </span>
                           </div>
-                          <span className="text-xs text-slate-400 block mt-1">
-                            Accuracy: {Math.round(s.accuracy_rate * 100)}% ({s.total_attempts} attempts)
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                            <span>Accuracy: <strong className="text-slate-200">{Math.round(s.accuracy_rate * 100)}%</strong> ({s.total_attempts} attempts)</span>
+                            {s.mastery_score !== undefined && (
+                              <span>• Evidence Score: <strong className="text-indigo-300">{s.mastery_score}/100</strong></span>
+                            )}
+                            <span className={isOverdue ? 'text-amber-400 font-bold' : 'text-slate-400'}>
+                              • Spaced Review: {isOverdue ? 'Overdue' : nextReviewDate}
+                            </span>
+                          </div>
+                          {s.recurring_errors && s.recurring_errors.length > 0 && (
+                            <div className="text-[11px] text-rose-300/90 pt-0.5">
+                              <span>Clinic Note: {s.recurring_errors[s.recurring_errors.length - 1]}</span>
+                            </div>
+                          )}
                         </div>
 
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border capitalize ${statusColor}`}>
-                          {s.status.replace('_', ' ')}
-                        </span>
+                        <div className="flex items-center space-x-2 self-start sm:self-center shrink-0">
+                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border capitalize ${statusColor}`}>
+                            {stageLabel}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}

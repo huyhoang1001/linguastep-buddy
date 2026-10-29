@@ -129,65 +129,65 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl text-slate-100 max-h-[90vh] overflow-y-auto space-y-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm">
+      <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[90vh] overflow-y-auto space-y-6 relative font-sans">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+          className="absolute top-5 right-5 p-2 rounded-xl bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#364038] text-[#8A938C] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] transition cursor-pointer"
           title="Close Roadmap"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center space-x-3 pb-4 border-b border-slate-800">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shrink-0">
+        <div className="flex items-center space-x-3 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
+          <div className="w-12 h-12 rounded-2xl bg-[#2D6A4F] flex items-center justify-center text-[#FAF7F2] shadow-sm shrink-0">
             <Compass className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-              <span>{isVi ? 'Lộ Trình Học & Kế Hoạch Ngày Mai' : 'Learning Plan & Tomorrow\'s Preview'}</span>
+            <h2 className="text-xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] flex items-center space-x-2">
+              <span>{isVi ? 'Lộ Trình Học & Kế Hoạch Tiếp Theo' : 'Learning Roadmap & Next Plan'}</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {isVi ? 'Được cá nhân hóa theo mục tiêu và kết quả thực hành' : 'Personalized based on your goals and performance history'}
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
+              {isVi ? 'Được cá nhân hóa theo mục tiêu và kết quả thực hành' : 'Evidence-based mastery progression and spaced retention schedule'}
             </p>
           </div>
         </div>
 
         {/* Tomorrow's Session Preview Card */}
-        <div className="bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-600/60 rounded-2xl p-4 md:p-5 space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-indigo-800/40 pb-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-sky-400" />
-              <span>{isVi ? 'Nội Dung Cho Phiên Tiếp Theo' : 'Tomorrow\'s Session Plan'}</span>
+        <div className="bg-[#EFF6F1] dark:bg-[#242E27] border border-[#CDE1D4] dark:border-[#334237] rounded-2xl p-4 md:p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#CDE1D4] dark:border-[#334237] pb-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#84A98C] flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-[#52B788]" />
+              <span>{isVi ? 'Nội Dung Cho Phiên Tiếp Theo' : 'Next Session Plan'}</span>
             </span>
-            <span className="text-xs font-bold text-indigo-200 bg-indigo-900/80 border border-indigo-700/60 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] bg-white/80 dark:bg-[#1C231F] border border-[#CDE1D4] dark:border-[#334237] px-2.5 py-0.5 rounded-full">
               ~{tomorrowPlan.estimated_minutes} {isVi ? 'phút' : 'mins'}
             </span>
           </div>
 
           <div>
-            <h3 className="text-base font-bold text-white flex items-center space-x-2">
-              <Target className="w-4 h-4 text-amber-400 shrink-0" />
+            <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] flex items-center space-x-2">
+              <Target className="w-4 h-4 text-[#E07A5F] shrink-0" />
               <span>{tomorrowPlan.focus_title}</span>
             </h3>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
               {tomorrowPlan.preview_summary}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             {/* Review Section */}
-            <div className="bg-slate-900/90 border border-amber-800/40 rounded-xl p-3 space-y-2">
-              <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
-                <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <div className="bg-[#FDF0ED] dark:bg-[#2D2320] border border-[#F5D5CC] dark:border-[#4B342E] rounded-xl p-3 space-y-2">
+              <span className="text-[11px] font-bold text-[#E07A5F] uppercase tracking-wider flex items-center space-x-1.5">
+                <RotateCcw className="w-3.5 h-3.5 text-[#E07A5F] shrink-0" />
                 <span>{isVi ? 'Cần Ôn Tập Lại' : 'What We\'ll Review'}</span>
               </span>
-              <ul className="space-y-1 text-xs text-slate-300">
+              <ul className="space-y-1 text-xs text-[#5C645E] dark:text-[#D1ABA2]">
                 {tomorrowPlan.review_topics.map((item, idx) => (
                   <li key={idx} className="flex items-start space-x-1.5">
-                    <span className="text-amber-400 font-bold">•</span>
+                    <span className="text-[#E07A5F] font-bold">•</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -195,15 +195,15 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
             </div>
 
             {/* New Skills Section */}
-            <div className="bg-slate-900/90 border border-emerald-800/40 rounded-xl p-3 space-y-2">
-              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider flex items-center space-x-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <div className="bg-white/80 dark:bg-[#1D2620] border border-[#CDE1D4] dark:border-[#304033] rounded-xl p-3 space-y-2">
+              <span className="text-[11px] font-bold text-[#2D6A4F] dark:text-[#84A98C] uppercase tracking-wider flex items-center space-x-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#52B788] shrink-0" />
                 <span>{isVi ? 'Kiến Thức Mới Tiếp Theo' : 'New Concepts & Skills'}</span>
               </span>
-              <ul className="space-y-1 text-xs text-slate-300">
+              <ul className="space-y-1 text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                 {tomorrowPlan.new_skills.map((item, idx) => (
                   <li key={idx} className="flex items-start space-x-1.5">
-                    <span className="text-emerald-400 font-bold">+</span>
+                    <span className="text-[#52B788] font-bold">+</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -215,12 +215,12 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
         {/* Multi-Day Learning Roadmap Timeline */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-              <Layers className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] flex items-center space-x-1.5">
+              <Layers className="w-4 h-4 text-[#2D6A4F] dark:text-[#84A98C]" />
               <span>{isVi ? 'Khung Lộ Trình 5 Ngày' : '5-Day Curriculum Roadmap'}</span>
             </span>
-            <span className="text-[11px] text-slate-400">
-              {isVi ? 'Cấp độ:' : 'Target:'} <strong className="text-white">{profile.current_level} → {profile.target_level}</strong>
+            <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4]">
+              {isVi ? 'Cấp độ:' : 'Target:'} <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{profile.current_level} → {profile.target_level}</strong>
             </span>
           </div>
 
@@ -230,22 +230,22 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
                 key={item.day}
                 className={`p-3.5 rounded-2xl border transition ${
                   item.status === 'completed'
-                    ? 'bg-slate-900/50 border-emerald-800/40 text-slate-300'
+                    ? 'bg-white/80 dark:bg-[#252C26] border-[#CDE1D4] dark:border-[#323D34] text-[#5C645E] dark:text-[#A7ABA4]'
                     : item.status === 'current'
-                    ? 'bg-indigo-950/40 border-indigo-600/70 text-white ring-1 ring-indigo-500/30'
-                    : 'bg-slate-900/30 border-slate-800 text-slate-400'
+                    ? 'bg-[#EFF6F1] dark:bg-[#27352B] border-[#74A892] dark:border-[#52B788] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#52B788]/30 shadow-sm'
+                    : 'bg-white/40 dark:bg-[#1C211D] border-[#EBE4D7] dark:border-[#2C332E] text-[#8A938C]'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
                     {item.status === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#52B788] shrink-0" />
                     ) : item.status === 'current' ? (
-                      <div className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0 animate-pulse">
+                      <div className="w-4 h-4 rounded-full bg-[#2D6A4F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                         {item.day}
                       </div>
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[10px] text-slate-500 shrink-0">
+                      <div className="w-4 h-4 rounded-full border border-[#C5BFB3] dark:border-[#4B554D] flex items-center justify-center text-[10px] text-[#8A938C] shrink-0">
                         {item.day}
                       </div>
                     )}
@@ -255,16 +255,16 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
                   </div>
 
                   {item.status === 'current' && (
-                    <span className="text-[10px] font-bold bg-indigo-600/80 text-white px-2 py-0.5 rounded-full uppercase border border-indigo-400/40">
+                    <span className="text-[10px] font-bold bg-[#2D6A4F] text-white px-2 py-0.5 rounded-full uppercase">
                       {isVi ? 'Hiện tại' : 'Active'}
                     </span>
                   )}
                   {item.day === 5 && (
-                    <Award className="w-4 h-4 text-amber-400 shrink-0" />
+                    <Award className="w-4 h-4 text-[#E9A825] shrink-0" />
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-400 mt-1 pl-7">
+                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-1 pl-7 leading-relaxed">
                   {item.focus}
                 </p>
               </div>
@@ -273,10 +273,10 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
         </div>
 
         {/* Start Next Lesson Action */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#EBE4D7] dark:border-[#2C332E]">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 transition"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] bg-white dark:bg-[#272E29] text-xs font-semibold border border-[#EBE4D7] dark:border-[#364038] transition cursor-pointer"
           >
             {isVi ? 'Đóng Lộ Trình' : 'Close Roadmap'}
           </button>
@@ -292,7 +292,7 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
                 setIsBuilding(false);
               }
             }}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] disabled:opacity-50 text-white text-xs font-bold transition shadow-sm hover:shadow-md flex items-center justify-center space-x-2 cursor-pointer"
           >
             {isBuilding ? (
               <>
@@ -301,8 +301,8 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>{isVi ? `Xây Dựng Phiên Học AI Tiếp Theo (${targetMins} phút)` : `Build Next AI Session (${targetMins} mins)`}</span>
+                <Sparkles className="w-4 h-4 text-[#FAF7F2]" />
+                <span>{isVi ? `Bắt Đầu Phiên Học (${targetMins} phút)` : `Build Next AI Session (${targetMins} mins)`}</span>
               </>
             )}
           </button>

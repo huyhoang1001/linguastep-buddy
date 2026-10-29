@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Cozy Warm Cream Canvas */
+  --color-cream-50: #FAF7F2;
+  --color-cream-100: #F4EFEB;
+  --color-cream-200: #EBE4D7;
+  --color-cream-300: #DECFA;
+
+  /* Forest Green - Grounded Brand & Trust */
+  --color-forest-950: #0F291E;
+  --color-forest-900: #163828;
+  --color-forest-800: #245740;
+  --color-forest-700: #2D6A4F;
+  --color-forest-600: #40916C;
+  --color-forest-500: #52B788;
+  --color-forest-100: #E6F3EC;
+
+  /* Sage Green - Calm Progression */
+  --color-sage-900: #2A3630;
+  --color-sage-800: #3D4E45;
+  --color-sage-700: #526B5F;
+  --color-sage-600: #6B8B7C;
+  --color-sage-500: #84A98C;
+  --color-sage-400: #A2C4AA;
+  --color-sage-300: #C2DBC7;
+  --color-sage-200: #DCEDE1;
+  --color-sage-100: #EFF6F1;
+  --color-sage-50: #F7FAF8;
+
+  /* Subtle Warm Coral - Playful Spark & Motivation */
+  --color-coral-700: #B84728;
+  --color-coral-600: #CC5836;
+  --color-coral-500: #E07A5F;
+  --color-coral-400: #EA9077;
+  --color-coral-300: #F3B3A2;
+  --color-coral-100: #FDF0ED;
+  --color-coral-50: #FFF8F6;
+
+  /* Honey & Amber - Companion Warmth */
+  --color-amber-warm: #E6A23C;
+  --color-amber-soft: #FDF6EC;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
