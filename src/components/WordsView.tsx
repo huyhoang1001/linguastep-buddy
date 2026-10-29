@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Volume2,
   Search,
@@ -43,20 +43,30 @@ export const WordsView: React.FC<WordsViewProps> = ({
   const solidCount = vocabulary.filter(isSolid).length;
   const familiesCount = vocabulary.filter(hasFamily).length;
 
-  const filteredVocab = vocabulary.filter(v => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchWord = v.word.toLowerCase().includes(q);
-      const matchMeaning = v.meaning.toLowerCase().includes(q);
-      const matchColloc = v.collocation_pattern?.toLowerCase().includes(q);
-      const matchFamily = v.word_family?.family_root?.toLowerCase().includes(q);
-      if (!matchWord && !matchMeaning && !matchColloc && !matchFamily) return false;
-    }
-    if (vocabFilter === 'due') return isOverdue(v);
-    if (vocabFilter === 'solid') return isSolid(v);
-    if (vocabFilter === 'families') return hasFamily(v);
-    return true;
-  });
+  const filteredVocab: VocabularyItem[] = useMemo(() => {
+    const list = vocabulary.filter(v => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchWord = v.word.toLowerCase().includes(q);
+        const matchMeaning = v.meaning.toLowerCase().includes(q);
+        const matchColloc = v.collocation_pattern?.toLowerCase().includes(q);
+        const matchFamily = v.word_family?.family_root?.toLowerCase().includes(q);
+        if (!matchWord && !matchMeaning && !matchColloc && !matchFamily) return false;
+      }
+      if (vocabFilter === 'due') return isOverdue(v);
+      if (vocabFilter === 'solid') return isSolid(v);
+      if (vocabFilter === 'families') return hasFamily(v);
+      return true;
+    });
+
+    const seenKeys = new Set<string>();
+    return list.filter(v => {
+      const key = (v.id || v.word || '').toLowerCase();
+      if (!key || seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
+  }, [vocabulary, searchQuery, vocabFilter]);
 
   const handleExport = async () => {
     try {
@@ -248,12 +258,12 @@ export const WordsView: React.FC<WordsViewProps> = ({
           </InfoCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredVocab.map(v => {
+            {filteredVocab.map((v: VocabularyItem, idx: number) => {
               const overdue = isOverdue(v);
 
               return (
                 <InteractiveCard
-                  key={v.id}
+                  key={v.id ? `${v.id}-${idx}` : `${v.word}-${idx}`}
                   onClick={() => onPracticeWord(v.word)}
                   className="p-5 shadow-xs flex flex-col justify-between space-y-3"
                 >
@@ -319,7 +329,7 @@ export const WordsView: React.FC<WordsViewProps> = ({
                           Word Family Forms:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
-                          {v.word_family.members.map((m, idx) => (
+                          {v.word_family.members.map((m: any, idx: number) => (
                             <ActionChip
                               key={idx}
                               variant="subtle"

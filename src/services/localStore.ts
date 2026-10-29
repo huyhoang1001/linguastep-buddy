@@ -162,15 +162,23 @@ class LocalLearningStore {
     try {
       const db = await this.openDB();
       if (!db) {
-        const results: T[] = [];
-        for (const [k, v] of this.memoryStore.entries()) {
-          if (k.startsWith(`${storeName}:${prefix}`)) {
-            results.push(v);
-          } else if (this.activeAccountId === 'learner-primary' && k.startsWith(`${storeName}:`) && !k.slice(storeName.length + 1).includes('::')) {
-            results.push(v);
+        const itemMap = new Map<string, T>();
+        // Process un-scoped first if learner-primary, so scoped can overwrite
+        if (this.activeAccountId === 'learner-primary') {
+          for (const [k, v] of this.memoryStore.entries()) {
+            if (k.startsWith(`${storeName}:`) && !k.slice(storeName.length + 1).includes('::')) {
+              const baseId = k.slice(storeName.length + 1);
+              itemMap.set(baseId, v);
+            }
           }
         }
-        return results;
+        for (const [k, v] of this.memoryStore.entries()) {
+          if (k.startsWith(`${storeName}:${prefix}`)) {
+            const baseId = k.slice(`${storeName}:${prefix}`.length);
+            itemMap.set(baseId, v);
+          }
+        }
+        return Array.from(itemMap.values());
       }
 
       return new Promise((resolve, reject) => {
@@ -179,15 +187,23 @@ class LocalLearningStore {
         const req = store.getAll();
 
         req.onsuccess = () => {
-          const list = (req.result || [])
-            .filter((item: any) => {
-              if (typeof item.id !== 'string') return false;
-              if (item.id.startsWith(prefix)) return true;
-              if (this.activeAccountId === 'learner-primary' && !item.id.includes('::')) return true;
-              return false;
-            })
-            .map((item: any) => item.data);
-          resolve(list);
+          const itemMap = new Map<string, T>();
+          // First pass: legacy un-scoped items if learner-primary
+          if (this.activeAccountId === 'learner-primary') {
+            for (const item of (req.result || [])) {
+              if (item && typeof item.id === 'string' && !item.id.includes('::')) {
+                itemMap.set(item.id, item.data);
+              }
+            }
+          }
+          // Second pass: scoped items (these overwrite any legacy items with same baseId)
+          for (const item of (req.result || [])) {
+            if (item && typeof item.id === 'string' && item.id.startsWith(prefix)) {
+              const baseId = item.id.slice(prefix.length);
+              itemMap.set(baseId, item.data);
+            }
+          }
+          resolve(Array.from(itemMap.values()));
         };
         req.onerror = () => reject(req.error);
       });
@@ -469,7 +485,25 @@ class LocalLearningStore {
   // =========================================================================
 
   public async getVocabulary(): Promise<VocabularyItem[]> {
-    return this.getAllStoreData<VocabularyItem>('vocabulary');
+    const raw = await this.getAllStoreData<VocabularyItem>('vocabulary');
+    const seenIds = new Set<string>();
+    const seenWords = new Set<string>();
+    const unique: VocabularyItem[] = [];
+
+    for (const item of raw) {
+      if (!item) continue;
+      const idKey = item.id ? String(item.id).trim() : '';
+      const wordKey = item.word ? String(item.word).trim().toLowerCase() : '';
+
+      if (!idKey && !wordKey) continue;
+      if ((idKey && seenIds.has(idKey)) || (wordKey && seenWords.has(wordKey))) {
+        continue;
+      }
+      if (idKey) seenIds.add(idKey);
+      if (wordKey) seenWords.add(wordKey);
+      unique.push(item);
+    }
+    return unique;
   }
 
   public async saveVocabularyItem(item: Partial<VocabularyItem> & { word: string }): Promise<VocabularyItem> {
@@ -485,8 +519,9 @@ class LocalLearningStore {
       await this.setStoreData('vocabulary', updated.id, updated);
       return updated;
     } else {
+      const randomSuffix = Math.random().toString(36).substring(2, 9);
       const newItem: VocabularyItem = {
-        id: item.id || `vocab-${Date.now()}`,
+        id: item.id || `vocab-${Date.now()}-${randomSuffix}`,
         word: item.word,
         part_of_speech: item.part_of_speech || 'noun',
         ipa: item.ipa || '',
@@ -950,8 +985,19 @@ class LocalLearningStore {
     // Save vocabulary
     await this.clearStore('vocabulary');
     if (Array.isArray(data.vocabulary)) {
+      const seenIds = new Set<string>();
+      const seenWords = new Set<string>();
       for (const v of data.vocabulary) {
-        await this.setStoreData('vocabulary', v.id, v);
+        if (!v || !v.word) continue;
+        const normWord = v.word.trim().toLowerCase();
+        if (seenWords.has(normWord)) continue;
+        seenWords.add(normWord);
+
+        const validId = v.id && !seenIds.has(v.id)
+          ? v.id
+          : `vocab-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        seenIds.add(validId);
+        await this.setStoreData('vocabulary', validId, { ...v, id: validId });
       }
     }
 

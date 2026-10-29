@@ -299,6 +299,41 @@ async function runLocalFirstStoreTests() {
   assert(typeof status.type === 'string', 'Storage reports storage engine type');
   assert(Boolean(status.lastSavedAt), 'Storage reports last saved timestamp');
 
+  // =========================================================================
+  // TEST 9: Vocabulary Deduplication & Collision Prevention
+  // =========================================================================
+  console.log('\n--- Test 9: Vocabulary Deduplication & Collision Prevention ---');
+  // 9a: Save items without ID - ensure unique collision-resistant IDs
+  const v1 = await store.saveVocabularyItem({ word: 'serendipity', meaning: 'pleasant surprise' });
+  const v2 = await store.saveVocabularyItem({ word: 'resilience', meaning: 'capacity to recover quickly' });
+  assert(v1.id !== v2.id, 'Distinct words receive distinct unique IDs');
+  assert(v1.id.startsWith('vocab-'), 'Generated ID starts with vocab-');
+
+  // 9b: Update same word - must not create duplicate entry
+  const v1Updated = await store.saveVocabularyItem({ word: 'serendipity', meaning: 'finding good things without looking' });
+  assert(v1Updated.id === v1.id, 'Re-saving word preserves existing ID');
+  const allVocab = await store.getVocabulary();
+  const serendipityMatches = allVocab.filter(v => v.word.toLowerCase() === 'serendipity');
+  assert(serendipityMatches.length === 1, 'Only exactly 1 entry exists for serendipity');
+
+  // 9c: Legacy un-scoped and scoped collision resolution
+  // Inject legacy un-scoped and scoped keys into memory store
+  (store as any).memoryStore.set('vocabulary:vocab-test-legacy-123', {
+    id: 'vocab-test-legacy-123',
+    word: 'ubiquitous',
+    meaning: 'present everywhere (legacy)'
+  });
+  (store as any).memoryStore.set('vocabulary:learner-primary::vocab-test-legacy-123', {
+    id: 'vocab-test-legacy-123',
+    word: 'ubiquitous',
+    meaning: 'present everywhere (scoped)'
+  });
+
+  const vocabAfterCollision = await store.getVocabulary();
+  const ubiquitousMatches = vocabAfterCollision.filter(v => v.id === 'vocab-test-legacy-123');
+  assert(ubiquitousMatches.length === 1, 'getAllStoreData deduplicates unscoped and scoped records');
+  assert(ubiquitousMatches[0].meaning === 'present everywhere (scoped)', 'Scoped record overwrites legacy unscoped version');
+
   console.log('\n========================================');
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('========================================');

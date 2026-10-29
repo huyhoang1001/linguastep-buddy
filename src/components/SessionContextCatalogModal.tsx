@@ -793,11 +793,11 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                   {/* Vocabulary List */}
                   {vocabulary.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
-                      {vocabulary.map(item => {
+                      {vocabulary.map((item, index) => {
                         const isSelected = selectedVocabWords.includes(item.word);
                         return (
                           <div
-                            key={item.word}
+                            key={item.id ? `${item.id}-${index}` : `${item.word}-${index}`}
                             onClick={() => toggleVocab(item.word)}
                             className={`p-3 rounded-2xl border transition cursor-pointer flex flex-col justify-between space-y-2 ${
                               isSelected

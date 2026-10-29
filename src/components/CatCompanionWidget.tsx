@@ -9,7 +9,7 @@ import {
   CatMood
 } from '../types/catTheme.ts';
 import { CompanionChatMessage, CompanionChatContext } from '../types/learning.ts';
-import { playMeowSound, playPurrSound } from '../services/catSoundService.ts';
+import { playMeowSound, playPurrSound, playPatHeadSound, playBabyCatMeow } from '../services/catSoundService.ts';
 import { requestCompanionChat, localStore } from '../services/api.ts';
 
 interface CatCompanionWidgetProps {
@@ -45,6 +45,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const companion = CAT_COMPANIONS[config.companionId] || CAT_COMPANIONS.mikan;
+  const activeTheme = CAT_THEMES[config.themeId] || CAT_THEMES.calico;
   const activeUserId = localStore.getActiveAccount();
 
   // Load chat history from localStore on mount or account switch
@@ -137,7 +138,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
   const handlePetCat = () => {
     setMood('purring');
     if (!soundMuted) {
-      playPurrSound();
+      playPatHeadSound();
     }
 
     const heartId = Date.now();
@@ -292,7 +293,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       {isChatOpen && (
         <div className="mb-3 w-[340px] sm:w-[380px] h-[480px] sm:h-[520px] max-h-[80vh] bg-[#FAF7F2] dark:bg-[#1C211E] border border-[#EBE4D7] dark:border-[#333B35] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp transition-all">
           {/* Drawer Header */}
-          <div className="p-3.5 bg-white dark:bg-[#222824] border-b border-[#EBE4D7] dark:border-[#333B35] flex items-center justify-between">
+          <div className={`p-3.5 border-b flex items-center justify-between bg-gradient-to-r ${activeTheme.bannerGradient} ${activeTheme.borderColor}`}>
             <div className="flex items-center space-x-2.5">
               <div
                 onClick={handlePetCat}
@@ -456,7 +457,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       )}
 
       {/* Main Floating Cat Widget Control Box */}
-      <div className="bg-[#161A17]/90 dark:bg-[#161A17]/95 border border-[#2C332E] hover:border-[#52B788]/60 p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition group">
+      <div className={`bg-[#161A17]/90 dark:bg-[#161A17]/95 border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition group`}>
         {/* Cat Avatar Button - Click opens chat or pets */}
         <div
           onClick={() => {

@@ -13,9 +13,9 @@ import {
   Cat
 } from 'lucide-react';
 import { UserProfile, LessonPlan, DailySummary, VocabularyItem, LearnerSkillState } from '../types/learning.ts';
-import { CatCustomizationConfig, CAT_COMPANIONS, CatMood } from '../types/catTheme.ts';
+import { CatCustomizationConfig, CAT_COMPANIONS, CAT_THEMES, CatMood } from '../types/catTheme.ts';
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
-import { playPurrSound } from '../services/catSoundService.ts';
+import { playPatHeadSound } from '../services/catSoundService.ts';
 import { playEnglishSpeech } from '../services/api.ts';
 import { AppButton, InfoCard, FilterChip, ActionChip, StatusBadge, IconButton } from './ui/index.ts';
 
@@ -62,6 +62,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [catMood, setCatMood] = useState<CatMood>('studying');
   const [catBubble, setCatBubble] = useState<string>('');
   const [isPetting, setIsPetting] = useState<boolean>(false);
+  const activeTheme = CAT_THEMES[catConfig.themeId] || CAT_THEMES.calico;
 
   // Time-based greeting
   const getGreeting = () => {
@@ -89,7 +90,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     setIsPetting(true);
     setCatMood('purring');
     if (catConfig.soundEnabled) {
-      playPurrSound();
+      playPatHeadSound();
     }
 
     const tips = [
@@ -177,7 +178,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 type="button"
                 onClick={handlePetCompanion}
                 title={`Pet ${catConfig.catName} for good luck and a study tip!`}
-                className="group relative cursor-pointer p-4 rounded-2xl bg-white/70 dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#364038] hover:border-[#74A892] dark:hover:border-[#52B788] transition duration-200 text-center"
+                className={`group relative cursor-pointer p-4 rounded-2xl bg-gradient-to-b ${activeTheme.bannerGradient} border ${activeTheme.borderColor} hover:border-[#74A892] dark:hover:border-[#52B788] transition duration-200 text-center shadow-xs`}
               >
                 <div className="relative flex justify-center mb-1">
                   <CatChibiAvatar
@@ -197,7 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">
                       {catConfig.catName}
                     </span>
-                    <span className="text-[10px] text-[#74A892] font-semibold">&middot; Study Buddy</span>
+                    <span className={`text-[10px] ${activeTheme.accentColor} font-semibold`}>&middot; Study Buddy</span>
                   </div>
                   <span className="text-[10px] text-[#8A938C] dark:text-[#8E978F] block">
                     Click to pet &amp; get study tips 🐾

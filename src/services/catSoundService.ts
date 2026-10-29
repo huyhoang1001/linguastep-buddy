@@ -73,7 +73,62 @@ export function playCorrectMeowChime() {
 }
 
 /**
+ * Plays an adorable baby kitten vocalization: high-sweet "Meww~!"
+ */
+export function playBabyCatMeow(pitchMultiplier = 1.0) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    // Sweet baby kitten formant filter
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1750, now);
+    filter.Q.setValueAtTime(2.6, now);
+
+    osc.type = 'triangle';
+
+    // Cute baby kitten pitch: high, cheerful, with a sweet affectionate upward chirp
+    const baseFreq = 820 * pitchMultiplier;
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.48, now + 0.09);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.92, now + 0.30);
+
+    // Dynamic amplitude envelope: soft attack, adorable rounded chirp
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.11, now + 0.16);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.36);
+  } catch (err) {
+    console.warn('Baby cat audio synthesis note:', err);
+  }
+}
+
+/**
+ * Plays a dedicated baby-kitten petting interaction sound: cute soft baby mew followed by a gentle warm purr
+ */
+export function playPatHeadSound() {
+  playBabyCatMeow(1.15);
+  setTimeout(() => {
+    playPurrSound();
+  }, 180);
+}
+
+/**
  * Plays a gentle, calming rhythmic purr sound: "*Purrrr~*"
+ * Engineered with audible harmonics (135Hz + 270Hz) and rhythmic 25Hz chest vibration,
+ * ensuring rich, realistic audibility on all laptop, mobile, and desktop speakers.
  */
 export function playPurrSound() {
   try {
@@ -81,36 +136,55 @@ export function playPurrSound() {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const duration = 0.8;
+    const duration = 1.1;
 
-    // Carrier oscillator: deep low frequency
+    // 1. Primary chest motor carrier (audible 135 Hz low-mid)
     const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(48, now);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(135, now);
 
-    // Modulator oscillator: rhythmic purr vibrato (22-26 Hz)
+    // 2. Warm harmonic overtone (270 Hz)
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(270, now);
+
+    // 3. Feline purr LFO flutter modulator (25 Hz standard feline purr pulse)
     const mod = ctx.createOscillator();
     mod.type = 'sine';
-    mod.frequency.setValueAtTime(24, now);
+    mod.frequency.setValueAtTime(25, now);
 
     const modGain = ctx.createGain();
-    modGain.gain.setValueAtTime(15, now);
-
+    modGain.gain.setValueAtTime(28, now);
     mod.connect(osc.frequency);
+    mod.connect(osc2.frequency);
 
+    // 4. Throat formant filter for warm vibrating feline purr
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(320, now);
+
+    // 5. Volume amplitude shaping with two gentle rhythmic breath cycles
     const mainGain = ctx.createGain();
     mainGain.gain.setValueAtTime(0.001, now);
-    mainGain.gain.linearRampToValueAtTime(0.14, now + 0.1);
+    // Breath 1
+    mainGain.gain.linearRampToValueAtTime(0.18, now + 0.12);
+    mainGain.gain.exponentialRampToValueAtTime(0.08, now + 0.48);
+    // Breath 2
+    mainGain.gain.linearRampToValueAtTime(0.20, now + 0.65);
     mainGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    osc.connect(mainGain);
+    osc.connect(filter);
+    osc2.connect(filter);
+    filter.connect(mainGain);
     mainGain.connect(ctx.destination);
 
     mod.start(now);
     osc.start(now);
+    osc2.start(now);
 
     mod.stop(now + duration);
     osc.stop(now + duration);
+    osc2.stop(now + duration);
   } catch (err) {
     console.warn('Purr synthesis note:', err);
   }

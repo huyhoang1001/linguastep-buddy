@@ -6,7 +6,13 @@ import {
   CatCustomizationConfig
 } from '../src/types/catTheme.js';
 import { catCustomizationStore } from '../src/services/catCustomizationStore.js';
-import { playMeowSound, playPurrSound, playCorrectMeowChime } from '../src/services/catSoundService.js';
+import {
+  playMeowSound,
+  playBabyCatMeow,
+  playPatHeadSound,
+  playPurrSound,
+  playCorrectMeowChime
+} from '../src/services/catSoundService.js';
 
 let passed = 0;
 let failed = 0;
@@ -103,6 +109,8 @@ async function runCatChibiTests() {
   let soundThrew = false;
   try {
     playMeowSound(1.0);
+    playBabyCatMeow(1.2);
+    playPatHeadSound();
     playCorrectMeowChime();
     playPurrSound();
   } catch (e) {

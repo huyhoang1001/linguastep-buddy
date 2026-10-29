@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Brain,
   BookMarked,
@@ -185,20 +185,30 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
   const solidCount = vocabulary.filter(isSolid).length;
   const familiesCount = vocabulary.filter(hasFamily).length;
 
-  const filteredVocab = vocabulary.filter(v => {
-    if (vocabSearch.trim()) {
-      const q = vocabSearch.toLowerCase().trim();
-      const matchWord = v.word.toLowerCase().includes(q);
-      const matchMeaning = v.meaning.toLowerCase().includes(q);
-      const matchColloc = v.collocation_pattern?.toLowerCase().includes(q);
-      const matchFamily = v.word_family?.family_root?.toLowerCase().includes(q);
-      if (!matchWord && !matchMeaning && !matchColloc && !matchFamily) return false;
-    }
-    if (vocabFilter === 'due') return isOverdue(v);
-    if (vocabFilter === 'solid') return isSolid(v);
-    if (vocabFilter === 'families') return hasFamily(v);
-    return true;
-  });
+  const filteredVocab = useMemo(() => {
+    const list = vocabulary.filter(v => {
+      if (vocabSearch.trim()) {
+        const q = vocabSearch.toLowerCase().trim();
+        const matchWord = v.word.toLowerCase().includes(q);
+        const matchMeaning = v.meaning.toLowerCase().includes(q);
+        const matchColloc = v.collocation_pattern?.toLowerCase().includes(q);
+        const matchFamily = v.word_family?.family_root?.toLowerCase().includes(q);
+        if (!matchWord && !matchMeaning && !matchColloc && !matchFamily) return false;
+      }
+      if (vocabFilter === 'due') return isOverdue(v);
+      if (vocabFilter === 'solid') return isSolid(v);
+      if (vocabFilter === 'families') return hasFamily(v);
+      return true;
+    });
+
+    const seenKeys = new Set<string>();
+    return list.filter(v => {
+      const key = (v.id || v.word || '').toLowerCase();
+      if (!key || seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
+  }, [vocabulary, vocabSearch, vocabFilter]);
 
   if (!isOpen) return null;
 
@@ -422,13 +432,13 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {filteredVocab.map(v => {
+                      {filteredVocab.map((v, idx) => {
                         const overdue = isOverdue(v);
                         const nextDate = v.next_review_at ? new Date(v.next_review_at).toLocaleDateString() : 'Tomorrow';
 
                         return (
                           <div
-                            key={v.id}
+                            key={v.id ? `${v.id}-${idx}` : `${v.word}-${idx}`}
                             className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-2xl p-4 space-y-3 shadow-sm hover:border-[#74A892] dark:hover:border-[#52B788] transition duration-150"
                           >
                             <div className="flex items-start justify-between gap-3">

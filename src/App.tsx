@@ -416,6 +416,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] text-[#2D312E] dark:text-[#F4F2EC] flex flex-col font-sans relative overflow-x-hidden transition-colors duration-200">
+      {/* Dynamic Cat Theme Accent Indicator at top edge */}
+      <div className={`h-1 w-full bg-gradient-to-r ${activeTheme.primaryGradient} transition-all duration-500 shrink-0`} />
+
       {/* Background Floating Cat Paw Prints */}
       {catConfig.floatingPaws && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-10 dark:opacity-5">

@@ -148,58 +148,145 @@ export const CatChibiAvatar: React.FC<CatChibiAvatarProps> = ({
 
         {/* Eyes according to Mood */}
         {mood === 'happy' && (
-          <g stroke="#0F172A" strokeWidth="3.5" strokeLinecap="round">
-            {/* Happy Curved Eyes */}
-            <path d="M32 54 C35 48 41 48 44 54" fill="none" />
-            <path d="M56 54 C59 48 65 48 68 54" fill="none" />
+          <g>
+            {/* Expressive Cute Eyebrows */}
+            <path d="M31.5 43 Q36 40.5 40.5 43" fill="none" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+            <path d="M59.5 43 Q64 40.5 68.5 43" fill="none" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+
+            {/* Left Eye - Big Cute Chibi Boba Eye */}
+            <ellipse cx="36" cy="52" rx="6.5" ry="7.5" fill="#0F172A" />
+            {/* Luminous Lower Iris */}
+            <ellipse cx="36" cy="53.5" rx="5.5" ry="5.2" fill={companion.eyeColor} />
+            {/* Lower Rim Reflection */}
+            <path d="M31.5 54 C32 58 40 58 40.5 54 C39.5 56.5 32.5 56.5 31.5 54 Z" fill="#FFFFFF" opacity="0.45" />
+            {/* Deep Pupil */}
+            <ellipse cx="36" cy="52" rx="3" ry="4.2" fill="#0B1120" />
+            {/* Glossy Anime Catchlights */}
+            <ellipse cx="33.8" cy="48.8" rx="2.4" ry="2" fill="#FFFFFF" transform="rotate(-15 33.8 48.8)" />
+            <circle cx="38.5" cy="55.2" r="1.2" fill="#FFFFFF" opacity="0.9" />
+            <circle cx="34.2" cy="55" r="0.75" fill="#FFFFFF" opacity="0.75" />
+            {/* Upper Lash Line with Anime Flick */}
+            <path d="M29 50.5 C31 44.5 41 44.5 43.2 50.5" fill="none" stroke="#0F172A" strokeWidth="2.8" strokeLinecap="round" />
+            <path d="M42.5 49.5 C44.5 48.2 45.8 46.5 46.5 44.5" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
+
+            {/* Right Eye - Symmetrical Cute Chibi Boba Eye */}
+            <ellipse cx="64" cy="52" rx="6.5" ry="7.5" fill="#0F172A" />
+            {/* Luminous Lower Iris */}
+            <ellipse cx="64" cy="53.5" rx="5.5" ry="5.2" fill={companion.eyeColor} />
+            {/* Lower Rim Reflection */}
+            <path d="M59.5 54 C60 58 68 58 68.5 54 C67.5 56.5 60.5 56.5 59.5 54 Z" fill="#FFFFFF" opacity="0.45" />
+            {/* Deep Pupil */}
+            <ellipse cx="64" cy="52" rx="3" ry="4.2" fill="#0B1120" />
+            {/* Glossy Anime Catchlights */}
+            <ellipse cx="61.8" cy="48.8" rx="2.4" ry="2" fill="#FFFFFF" transform="rotate(-15 61.8 48.8)" />
+            <circle cx="66.5" cy="55.2" r="1.2" fill="#FFFFFF" opacity="0.9" />
+            <circle cx="62.2" cy="55" r="0.75" fill="#FFFFFF" opacity="0.75" />
+            {/* Upper Lash Line with Anime Flick */}
+            <path d="M56.8 50.5 C59 44.5 69 44.5 71 50.5" fill="none" stroke="#0F172A" strokeWidth="2.8" strokeLinecap="round" />
+            <path d="M57.5 49.5 C55.5 48.2 54.2 46.5 53.5 44.5" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
           </g>
         )}
 
         {mood === 'purring' && (
-          <g stroke="#0F172A" strokeWidth="3.5" strokeLinecap="round">
-            {/* Soft closed bliss eyes */}
-            <path d="M32 53 C36 57 42 57 44 53" fill="none" />
-            <path d="M56 53 C60 57 66 57 68 53" fill="none" />
+          <g stroke="#0F172A" strokeLinecap="round">
+            {/* Happy Arched Brows */}
+            <path d="M31 43 Q36 40.5 41 43" fill="none" strokeWidth="1.8" opacity="0.6" />
+            <path d="M59 43 Q64 40.5 69 43" fill="none" strokeWidth="1.8" opacity="0.6" />
+
+            {/* Blissful Curved Happy Cat Eyes */}
+            <path d="M29 52 C32.5 58 39.5 58 43 52" fill="none" strokeWidth="3.2" />
+            <path d="M42.5 52.5 L45.2 49.5" fill="none" strokeWidth="2" />
+            <path d="M40 54.5 L42.5 52.5" fill="none" strokeWidth="1.8" />
+
+            <path d="M57 52 C60.5 58 67.5 58 71 52" fill="none" strokeWidth="3.2" />
+            <path d="M57.5 52.5 L54.8 49.5" fill="none" strokeWidth="2" />
+            <path d="M60 54.5 L57.5 52.5" fill="none" strokeWidth="1.8" />
+
             {/* Cute Little Floating Heart */}
             <path
               d="M50 20 C50 17 46 15 44 18 C42 15 38 17 38 20 C38 24 44 27 44 27 C44 27 50 24 50 20 Z"
               fill="#F43F5E"
-              opacity="0.9"
+              opacity="0.95"
             />
           </g>
         )}
 
         {mood === 'studying' && (
           <g>
-            {/* Focused Round Eyes */}
-            <circle cx="38" cy="53" r="5" fill={companion.eyeColor} stroke="#0F172A" strokeWidth="2.5" />
-            <circle cx="62" cy="53" r="5" fill={companion.eyeColor} stroke="#0F172A" strokeWidth="2.5" />
-            {/* Eye glint */}
-            <circle cx="36" cy="51" r="1.8" fill="#FFFFFF" />
-            <circle cx="60" cy="51" r="1.8" fill="#FFFFFF" />
+            {/* Inquisitive Scholar Eyebrows */}
+            <path d="M31 41 Q36 38 41 42" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" fill="none" />
+            <path d="M59 42 Q64 39 69 41" stroke="#0F172A" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" fill="none" />
+
+            {/* Left Eye - Focused Smart Eyes */}
+            <ellipse cx="36" cy="52" rx="6.5" ry="7.2" fill="#0F172A" />
+            <ellipse cx="36" cy="53.5" rx="5.5" ry="5" fill={companion.eyeColor} />
+            <ellipse cx="36" cy="52" rx="2.8" ry="3.8" fill="#0B1120" />
+            <circle cx="34" cy="49.5" r="2" fill="#FFFFFF" />
+            <circle cx="38" cy="54.5" r="1.1" fill="#FFFFFF" opacity="0.85" />
+            <path d="M29.5 50.5 C31.5 45 40.5 45 42.5 50.5" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" />
+
+            {/* Right Eye - Focused Smart Eyes */}
+            <ellipse cx="64" cy="52" rx="6.5" ry="7.2" fill="#0F172A" />
+            <ellipse cx="64" cy="53.5" rx="5.5" ry="5" fill={companion.eyeColor} />
+            <ellipse cx="64" cy="52" rx="2.8" ry="3.8" fill="#0B1120" />
+            <circle cx="62" cy="49.5" r="2" fill="#FFFFFF" />
+            <circle cx="66" cy="54.5" r="1.1" fill="#FFFFFF" opacity="0.85" />
+            <path d="M57.5 50.5 C59.5 45 68.5 45 70.5 50.5" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" />
+
             {/* Cute Scholar Spectacles */}
-            <circle cx="38" cy="53" r="8" fill="none" stroke="#6366F1" strokeWidth="2" opacity="0.9" />
-            <circle cx="62" cy="53" r="8" fill="none" stroke="#6366F1" strokeWidth="2" opacity="0.9" />
-            <line x1="46" y1="53" x2="54" y2="53" stroke="#6366F1" strokeWidth="2" />
+            <circle cx="36" cy="52" r="9.5" fill="none" stroke="#6366F1" strokeWidth="2.2" />
+            <circle cx="64" cy="52" r="9.5" fill="none" stroke="#6366F1" strokeWidth="2.2" />
+            <path d="M45.5 52 Q50 49.5 54.5 52" fill="none" stroke="#6366F1" strokeWidth="2.2" strokeLinecap="round" />
+            {/* Spectacle Glare Reflection Lines */}
+            <line x1="39" y1="46" x2="43" y2="50" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+            <line x1="67" y1="46" x2="71" y2="50" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
           </g>
         )}
 
         {mood === 'excited' && (
           <g>
-            {/* Starry Eyes */}
-            <circle cx="38" cy="53" r="6" fill={companion.eyeColor} stroke="#0F172A" strokeWidth="2" />
-            <circle cx="62" cy="53" r="6" fill={companion.eyeColor} stroke="#0F172A" strokeWidth="2" />
-            {/* Star glints */}
-            <path d="M38 49 L39 52 L42 53 L39 54 L38 57 L37 54 L34 53 L37 52 Z" fill="#FDE047" />
-            <path d="M62 49 L63 52 L66 53 L63 54 L62 57 L61 54 L58 53 L61 52 Z" fill="#FDE047" />
+            {/* Wide Joyful Eyebrows */}
+            <path d="M30 40 Q36 36 42 40" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M58 40 Q64 36 70 40" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+            {/* Extra Big Sparkling Starry Eyes */}
+            <ellipse cx="36" cy="52" rx="7.5" ry="8.2" fill="#0F172A" />
+            <ellipse cx="36" cy="53.5" rx="6.5" ry="6" fill={companion.eyeColor} />
+            {/* Star Glint inside Left Eye */}
+            <path d="M36 46.5 L37.5 50.5 L41.5 52 L37.5 53.5 L36 57.5 L34.5 53.5 L30.5 52 L34.5 50.5 Z" fill="#FBBF24" stroke="#FDE68A" strokeWidth="0.6" />
+            <circle cx="36" cy="52" r="1.5" fill="#FEF08A" />
+            <circle cx="33" cy="48" r="2.2" fill="#FFFFFF" />
+            <circle cx="39" cy="55.5" r="1.3" fill="#FFFFFF" />
+
+            {/* Extra Big Sparkling Starry Eyes */}
+            <ellipse cx="64" cy="52" rx="7.5" ry="8.2" fill="#0F172A" />
+            <ellipse cx="64" cy="53.5" rx="6.5" ry="6" fill={companion.eyeColor} />
+            {/* Star Glint inside Right Eye */}
+            <path d="M64 46.5 L65.5 50.5 L69.5 52 L65.5 53.5 L64 57.5 L62.5 53.5 L58.5 52 L62.5 50.5 Z" fill="#FBBF24" stroke="#FDE68A" strokeWidth="0.6" />
+            <circle cx="64" cy="52" r="1.5" fill="#FEF08A" />
+            <circle cx="61" cy="48" r="2.2" fill="#FFFFFF" />
+            <circle cx="67" cy="55.5" r="1.3" fill="#FFFFFF" />
           </g>
         )}
 
         {mood === 'sleepy' && (
-          <g stroke="#0F172A" strokeWidth="3" strokeLinecap="round">
-            {/* Straight relaxed eyes */}
-            <line x1="33" y1="54" x2="43" y2="54" />
-            <line x1="57" y1="54" x2="67" y2="54" />
+          <g strokeLinecap="round">
+            {/* Drowsy Relaxed Brows */}
+            <path d="M32 44 Q36 45 40 43" stroke="#0F172A" strokeWidth="1.8" opacity="0.5" fill="none" />
+            <path d="M60 43 Q64 45 68 44" stroke="#0F172A" strokeWidth="1.8" opacity="0.5" fill="none" />
+
+            {/* Peeking Glimpse of Iris */}
+            <path d="M29 53 Q36 58 43 53 Q36 55 29 53 Z" fill={companion.eyeColor} opacity="0.85" />
+            <circle cx="36" cy="54" r="1.6" fill="#0F172A" />
+            {/* Cozy Sleepy Downward Eyelids */}
+            <path d="M28.5 52.5 Q36 57 43.5 52.5" fill="none" stroke="#0F172A" strokeWidth="3.2" />
+            <path d="M43 53.5 L45 56" fill="none" stroke="#0F172A" strokeWidth="2" />
+
+            <path d="M57 53 Q64 58 71 53 Q64 55 57 53 Z" fill={companion.eyeColor} opacity="0.85" />
+            <circle cx="64" cy="54" r="1.6" fill="#0F172A" />
+            <path d="M56.5 52.5 Q64 57 71.5 52.5" fill="none" stroke="#0F172A" strokeWidth="3.2" />
+            <path d="M57 53.5 L55 56" fill="none" stroke="#0F172A" strokeWidth="2" />
+
             {/* Little zZz */}
             <text x="76" y="32" fill="#818CF8" fontSize="12" fontWeight="bold">z</text>
             <text x="84" y="24" fill="#A5B4FC" fontSize="9" fontWeight="bold">Z</text>
