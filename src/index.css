@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
+/* Global Theme-Aware Text Selection Tokens */
+:root {
+  --selection-bg: #2D6A4F;
+  --selection-text: #ffffff;
+}
+
+.dark {
+  --selection-bg: #a7d9bb;
+  --selection-text: #14251b;
+}
+
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+::-moz-selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text);
+}
+
 @theme {
   --font-serif: "Fraunces", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;

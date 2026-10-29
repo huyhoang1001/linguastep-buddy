@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import {
-  Trophy,
   CheckCircle2,
   Sparkles,
   BookOpen,
   AlertCircle,
-  ArrowRight,
   Volume2,
   ThumbsUp,
   Smile,
   Frown,
   RotateCcw,
   Compass,
-  Calendar
+  Calendar,
+  X,
+  Coffee,
+  ArrowRight
 } from 'lucide-react';
 import { DailySummary } from '../types/learning.ts';
 import { playEnglishSpeech } from '../services/api.ts';
@@ -37,118 +38,136 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
   const [nextMinutes, setNextMinutes] = useState<number>(summary.target_duration_minutes || 20);
 
   const durationOptions = [
-    { mins: 10, label: '10m', sub: '8 Qs' },
-    { mins: 15, label: '15m', sub: '12 Qs' },
-    { mins: 20, label: '20m', sub: '15 Qs' },
-    { mins: 25, label: '25m', sub: '19 Qs' },
-    { mins: 30, label: '30m', sub: '23 Qs' },
-    { mins: 35, label: '35m', sub: '27 Qs' },
-    { mins: 45, label: '45m', sub: '34 Qs' }
+    { mins: 10, label: '10m', sub: 'Quick check' },
+    { mins: 15, label: '15m', sub: 'Targeted' },
+    { mins: 20, label: '20m', sub: 'Standard' },
+    { mins: 30, label: '30m', sub: 'Deep dive' }
   ];
 
+  const accuracyPercent = Math.round(summary.accuracy_rate * 100);
+  const isHighAccuracy = accuracyPercent >= 80;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
-        {/* Celebration Header */}
-        <div className="text-center pb-4 border-b border-slate-800 space-y-2">
-          <div className="flex justify-center items-center space-x-3 mb-1">
-            <CatChibiAvatar
-              companionId={catConfig.companionId}
-              accessoryId={catConfig.accessoryId}
-              mood="happy"
-              size="md"
-            />
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-xl shadow-amber-500/20">
-              <Trophy className="w-6 h-6" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm">
+      <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[90vh] overflow-y-auto space-y-6 relative font-sans">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-2 rounded-xl bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#364038] text-[#8A938C] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] transition cursor-pointer"
+          title="Close summary"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Debrief Header */}
+        <div className="space-y-3 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C]">
+            <span>Session #{summary.lesson_number} Debrief</span>
+            <span aria-hidden="true">&middot;</span>
+            <span>{new Date(summary.completed_at).toLocaleDateString()}</span>
+            <span aria-hidden="true">&middot;</span>
+            <span>{summary.time_spent_minutes || summary.target_duration_minutes || 20}m logged</span>
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
+                Today&apos;s Field Notes
+              </h2>
+              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
+                Objective: <span className="font-medium text-[#1B4332] dark:text-[#EAE6DF]">{summary.primary_objective}</span>
+              </p>
+            </div>
+
+            {/* Subtle Cat Desk Note */}
+            <div className="hidden sm:flex items-center gap-2 shrink-0 p-2 rounded-2xl bg-white/70 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35]">
+              <CatChibiAvatar
+                companionId={catConfig.companionId}
+                accessoryId={catConfig.accessoryId}
+                mood={isHighAccuracy ? 'happy' : 'studying'}
+                size="sm"
+              />
+              <span className="text-[11px] font-medium text-[#5C645E] dark:text-[#A7ABA4] max-w-[120px] leading-tight">
+                {isHighAccuracy ? 'Sharp focus today.' : 'Solid effort. Tricky concepts.'}
+              </span>
             </div>
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/15 px-3 py-0.5 rounded-full border border-amber-400/40">
-            🐾 {catConfig.catName} Chúc Mừng Bạn Đã Hoàn Thành! 🐟
-          </span>
-          <h2 className="text-2xl font-black text-white">Daily Session Complete! 🏆</h2>
-          <p className="text-xs text-slate-400">
-            Lesson #{summary.lesson_number} • {new Date(summary.completed_at).toLocaleDateString()} • {summary.time_spent_minutes || summary.target_duration_minutes || 20}m đã học hôm nay
-          </p>
         </div>
 
-        {/* Primary Objective */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4">
-          <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 block mb-1">
-            Today's Focus
-          </span>
-          <p className="text-sm font-semibold text-white">
-            {summary.primary_objective}
-          </p>
-        </div>
-
-        {/* Session Pace Badge */}
-        <div className="flex items-center justify-center">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-            summary.session_pace_mode === 'quick_10' || summary.target_duration_minutes === 10
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-              : summary.session_pace_mode === 'deep_30' || summary.target_duration_minutes === 30
-              ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-              : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
-          }`}>
-            {summary.session_pace_mode === 'quick_10' || summary.target_duration_minutes === 10
-              ? '⚡ Quick Practice Session (10 Mins)'
-              : summary.session_pace_mode === 'deep_30' || summary.target_duration_minutes === 30
-              ? '🔬 Deep Practice Session (30 Mins)'
-              : '🎯 Standard Practice Session (20 Mins)'}
-          </span>
-        </div>
-
-        {/* Score & Time & Questions */}
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 text-center">
-            <span className="text-[11px] text-slate-400 block mb-0.5">Time Spent</span>
-            <strong className="text-base font-bold text-amber-300">
+        {/* Real Performance Metrics (No fabricated level jumps or fake scores) */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
+            <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">Time Logged</span>
+            <strong className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
               {summary.time_spent_minutes || summary.target_duration_minutes || 20}m
             </strong>
-            <span className="text-[10px] text-slate-500 block">/ {summary.target_duration_minutes || 20}m target</span>
+            <span className="text-[10px] text-[#8A938C] block">of {summary.target_duration_minutes || 20}m plan</span>
           </div>
-          <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 text-center">
-            <span className="text-[11px] text-slate-400 block mb-0.5">Questions</span>
-            <strong className="text-base font-bold text-emerald-400">
+
+          <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
+            <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">Exercises</span>
+            <strong className="text-lg font-serif font-bold text-[#2D6A4F] dark:text-[#52B788]">
               {summary.questions_answered}
             </strong>
-            <span className="text-[10px] text-slate-500 block">
-              / {summary.total_planned_questions || summary.questions_answered} planned
+            <span className="text-[10px] text-[#8A938C] block">
+              of {summary.total_planned_questions || summary.questions_answered} completed
             </span>
           </div>
-          <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 text-center">
-            <span className="text-[11px] text-slate-400 block mb-0.5">Accuracy</span>
-            <strong className="text-base font-bold text-sky-400">
-              {Math.round(summary.accuracy_rate * 100)}%
+
+          <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
+            <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">First-Try Accuracy</span>
+            <strong className="text-lg font-serif font-bold text-[#E07A5F]">
+              {accuracyPercent}%
             </strong>
-            <span className="text-[10px] text-slate-500 block">first attempt</span>
+            <span className="text-[10px] text-[#8A938C] block">verified attempts</span>
           </div>
         </div>
 
-        {/* Key Takeaways */}
+        {/* Key Patterns & Anchor Points */}
         {summary.key_takeaways && summary.key_takeaways.length > 0 && (
-          <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Key Patterns & Takeaways</span>
+          <div className="space-y-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] flex items-center space-x-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
+              <span>Key Patterns Anchored</span>
             </span>
-            <ul className="space-y-2">
+            <div className="space-y-2">
               {summary.key_takeaways.map((point, i) => (
-                <li key={i} className="text-xs md:text-sm text-slate-200 flex items-start space-x-2.5 bg-slate-800/30 p-2.5 rounded-xl border border-slate-800">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div key={i} className="text-xs text-[#2D312E] dark:text-[#EAE6DF] flex items-start space-x-2.5 bg-white/70 dark:bg-[#242A25] p-3 rounded-2xl border border-[#EBE4D7] dark:border-[#313B33] leading-relaxed">
+                  <CheckCircle2 className="w-4 h-4 text-[#52B788] shrink-0 mt-0.5" />
                   <span>{point}</span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
-        {/* Vocabulary learned with IPA & audio */}
+        {/* The stuff that tripped you up */}
+        {summary.recurring_mistakes_flagged && summary.recurring_mistakes_flagged.length > 0 && (
+          <div className="bg-[#FDF0ED] dark:bg-[#2D2320] border border-[#F5D5CC] dark:border-[#4B342E] rounded-2xl p-4 text-xs space-y-2">
+            <div className="flex items-center space-x-1.5 font-bold text-[#E07A5F]">
+              <AlertCircle className="w-4 h-4" />
+              <span>The stuff that tripped you up:</span>
+            </div>
+            <p className="text-[11px] text-[#8A938C] dark:text-[#BCA39C]">
+              We&apos;ve flagged these patterns. They&apos;ll resurface naturally in future warm-ups until they feel effortless.
+            </p>
+            <div className="space-y-1 pt-1">
+              {summary.recurring_mistakes_flagged.map((err, i) => (
+                <div key={i} className="text-[#2D312E] dark:text-[#F4F2EC] flex items-start gap-1.5">
+                  <span className="text-[#E07A5F] font-bold">&bull;</span>
+                  <span>{err}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Words added to stash */}
         {summary.vocabulary_learned && summary.vocabulary_learned.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Vocabulary Practiced Today</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] flex items-center space-x-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#84A98C]" />
+              <span>Words Added to Your Stash</span>
             </span>
             <div className="flex flex-wrap gap-2">
               {summary.vocabulary_learned.map((wordStr, i) => {
@@ -156,15 +175,16 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
                 return (
                   <div
                     key={i}
-                    className="flex items-center space-x-2 bg-indigo-950/40 border border-indigo-800/40 px-3 py-1.5 rounded-xl text-xs font-medium text-indigo-200"
+                    className="flex items-center space-x-2 bg-white dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] px-3 py-1.5 rounded-xl text-xs font-medium text-[#1B4332] dark:text-[#F4F2EC]"
                   >
                     <span>{wordStr}</span>
                     <button
+                      type="button"
                       onClick={() => playEnglishSpeech(cleanWord)}
                       title="Pronounce word"
-                      className="p-1 rounded-md hover:bg-indigo-800/50 text-indigo-400 hover:text-white"
+                      className="p-1 rounded-md text-[#74A892] hover:text-[#1B4332] dark:hover:text-white transition cursor-pointer"
                     >
-                      <Volume2 className="w-3 h-3" />
+                      <Volume2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 );
@@ -173,40 +193,25 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         )}
 
-        {/* Recurring mistakes flagged */}
-        {summary.recurring_mistakes_flagged && summary.recurring_mistakes_flagged.length > 0 && (
-          <div className="bg-rose-950/20 border border-rose-800/30 rounded-2xl p-4 text-xs space-y-1.5">
-            <div className="flex items-center space-x-1.5 font-bold text-rose-400">
-              <AlertCircle className="w-4 h-4" />
-              <span>Keep In Mind for Next Sessions:</span>
-            </div>
-            {summary.recurring_mistakes_flagged.map((err, i) => (
-              <p key={i} className="text-slate-300">
-                • {err}
-              </p>
-            ))}
-          </div>
-        )}
-
-        {/* Tomorrow's Plan & Preview Section */}
+        {/* Next Session Flight Plan */}
         {summary.tomorrow_plan && (
-          <div className="bg-gradient-to-br from-indigo-950/70 via-slate-900 to-slate-900 border border-indigo-700/50 rounded-2xl p-4 md:p-5 space-y-3.5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-indigo-800/40 pb-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-sky-400" />
-                <span>Plan for Tomorrow's Session</span>
+          <div className="bg-[#EFF6F1] dark:bg-[#242E27] border border-[#CDE1D4] dark:border-[#334237] rounded-2xl p-4 md:p-5 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between border-b border-[#CDE1D4] dark:border-[#334237] pb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#84A98C] flex items-center space-x-2">
+                <Calendar className="w-4 h-4 text-[#52B788]" />
+                <span>Next Session Flight Plan</span>
               </span>
-              <span className="text-[11px] font-semibold text-indigo-300 bg-indigo-900/60 border border-indigo-700/50 px-2.5 py-0.5 rounded-full">
+              <span className="text-[11px] font-semibold text-[#2D6A4F] dark:text-[#84A98C] bg-white/80 dark:bg-[#1C231F] border border-[#CDE1D4] dark:border-[#334237] px-2.5 py-0.5 rounded-full">
                 ~{summary.tomorrow_plan.estimated_minutes || 20} mins
               </span>
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-white flex items-center space-x-1.5">
-                <Compass className="w-4 h-4 text-amber-400 shrink-0" />
+              <h4 className="text-sm font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] flex items-center space-x-1.5">
+                <Compass className="w-4 h-4 text-[#E07A5F] shrink-0" />
                 <span>{summary.tomorrow_plan.focus_title}</span>
               </h4>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
                 {summary.tomorrow_plan.preview_summary}
               </p>
             </div>
@@ -214,15 +219,15 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               {/* Review Topics */}
               {summary.tomorrow_plan.review_topics && summary.tomorrow_plan.review_topics.length > 0 && (
-                <div className="bg-slate-900/80 border border-amber-900/40 rounded-xl p-3 space-y-1.5">
-                  <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                    <span>What We'll Review Tomorrow</span>
+                <div className="bg-[#FDF0ED] dark:bg-[#2D2320] border border-[#F5D5CC] dark:border-[#4B342E] rounded-xl p-3 space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#E07A5F] uppercase tracking-wider flex items-center space-x-1.5">
+                    <RotateCcw className="w-3.5 h-3.5 text-[#E07A5F]" />
+                    <span>Scheduled Review</span>
                   </span>
-                  <ul className="space-y-1 text-xs text-slate-300">
+                  <ul className="space-y-1 text-xs text-[#5C645E] dark:text-[#D1ABA2]">
                     {summary.tomorrow_plan.review_topics.map((rev, idx) => (
                       <li key={idx} className="flex items-start space-x-1.5">
-                        <span className="text-amber-400 font-bold">•</span>
+                        <span className="text-[#E07A5F] font-bold">&bull;</span>
                         <span>{rev}</span>
                       </li>
                     ))}
@@ -232,15 +237,15 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
 
               {/* New Skills */}
               {summary.tomorrow_plan.new_skills && summary.tomorrow_plan.new_skills.length > 0 && (
-                <div className="bg-slate-900/80 border border-emerald-900/40 rounded-xl p-3 space-y-1.5">
-                  <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider flex items-center space-x-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>New Concepts & Skills</span>
+                <div className="bg-white/80 dark:bg-[#1D2620] border border-[#CDE1D4] dark:border-[#304033] rounded-xl p-3 space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#2D6A4F] dark:text-[#84A98C] uppercase tracking-wider flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#52B788]" />
+                    <span>New Concepts Ahead</span>
                   </span>
-                  <ul className="space-y-1 text-xs text-slate-300">
+                  <ul className="space-y-1 text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                     {summary.tomorrow_plan.new_skills.map((nsk, idx) => (
                       <li key={idx} className="flex items-start space-x-1.5">
-                        <span className="text-emerald-400 font-bold">+</span>
+                        <span className="text-[#52B788] font-bold">+</span>
                         <span>{nsk}</span>
                       </li>
                     ))}
@@ -251,27 +256,28 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         )}
 
-        {/* Difficulty Feedback Rating */}
+        {/* Difficulty Calibration */}
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-            How was today's difficulty?
+          <span className="text-xs font-bold uppercase tracking-wider text-[#8A938C] dark:text-[#8E978F] block mb-2">
+            How was today&apos;s pacing?
           </span>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { id: 'too_easy', label: 'Too Easy', icon: Smile },
-              { id: 'about_right', label: 'About Right', icon: ThumbsUp },
-              { id: 'too_difficult', label: 'Too Difficult', icon: Frown }
+              { id: 'too_easy', label: 'Breeze', icon: Smile },
+              { id: 'about_right', label: 'Sweet spot', icon: ThumbsUp },
+              { id: 'too_difficult', label: 'Bit of a stretch', icon: Frown }
             ].map(item => {
               const Icon = item.icon;
               const isSelected = rating === item.id;
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => setRating(item.id as any)}
-                  className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center space-x-1.5 transition ${
+                  className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center space-x-1.5 transition cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                      ? 'bg-[#2D6A4F] border-[#2D6A4F] text-white font-bold shadow-sm'
+                      : 'bg-white dark:bg-[#252C26] border-[#EBE4D7] dark:border-[#333D35] text-[#5C645E] dark:text-[#A7ABA4] hover:border-[#74A892]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -283,29 +289,29 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
         </div>
 
         {/* Next Session Duration Picker */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-2.5">
+        <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-4 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-              Set Next Session Duration
+            <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C]">
+              Next Session Time Budget
             </span>
-            <span className="text-xs font-bold text-white bg-indigo-600/80 px-2 py-0.5 rounded-lg border border-indigo-500/40">
+            <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] bg-[#EFF6F1] dark:bg-[#1E2721] px-2 py-0.5 rounded-lg border border-[#CDE1D4] dark:border-[#334237]">
               {nextMinutes} mins
             </span>
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {durationOptions.map(opt => (
               <button
                 key={opt.mins}
                 type="button"
                 onClick={() => setNextMinutes(opt.mins)}
-                className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center ${
+                className={`p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
                   nextMinutes === opt.mins
-                    ? 'bg-indigo-600 border-indigo-400 text-white font-bold shadow-md'
-                    : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-slate-500'
+                    ? 'bg-[#2D6A4F] border-[#2D6A4F] text-white font-bold shadow-sm'
+                    : 'bg-[#FAF7F2] dark:bg-[#1E231F] border-[#EBE4D7] dark:border-[#333D35] text-[#5C645E] dark:text-[#A7ABA4] hover:border-[#74A892]'
                 }`}
               >
-                <span className="text-xs">{opt.label}</span>
-                <span className={`text-[10px] ${nextMinutes === opt.mins ? 'text-indigo-200' : 'text-slate-400'}`}>
+                <span className="text-xs font-bold">{opt.label}</span>
+                <span className={`text-[10px] ${nextMinutes === opt.mins ? 'text-[#EFF6F1]' : 'text-[#8A938C]'}`}>
                   {opt.sub}
                 </span>
               </button>
@@ -313,25 +319,28 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         </div>
 
-        {/* Action buttons: Take a Break vs Continue Studying */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Action Buttons: Call it a day vs Jump into next session */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#EBE4D7] dark:border-[#2C332E]">
           <button
+            type="button"
             onClick={onClose}
-            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-750 text-xs font-bold border border-slate-700 transition flex items-center justify-center space-x-2 shadow-sm"
+            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] bg-white dark:bg-[#252C26] hover:bg-[#FAF7F2] text-xs font-bold border border-[#EBE4D7] dark:border-[#333D35] transition flex items-center justify-center space-x-2 cursor-pointer"
           >
-            <span className="text-base">😴</span>
-            <span>Nghỉ Ngơi & Mai Tiếp Tục 🐾</span>
+            <Coffee className="w-4 h-4 text-[#8A938C]" />
+            <span>Call it a day &amp; return Home</span>
           </button>
 
           <button
+            type="button"
             onClick={() => {
               onClose();
               onStartNewLesson(nextMinutes);
             }}
-            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold transition shadow-sm hover:shadow-md flex items-center justify-center space-x-2 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Học Tiếp Session Mới ({nextMinutes}m) 🚀</span>
+            <Sparkles className="w-4 h-4 text-[#FAF7F2]" />
+            <span>Start Next Session ({nextMinutes}m)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

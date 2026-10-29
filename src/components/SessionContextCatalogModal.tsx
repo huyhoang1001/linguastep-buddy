@@ -386,33 +386,33 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#161A17]/70 backdrop-blur-sm animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="catalog-modal-title"
     >
-      <div className="relative w-full max-w-4xl max-h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[#2D312E] dark:text-[#F4F2EC]">
         
         {/* Header with Title and Tab Navigation */}
-        <div className="p-5 md:p-6 border-b border-slate-800 bg-slate-900/90 shrink-0 space-y-4">
+        <div className="p-5 md:p-6 border-b border-[#EBE4D7] dark:border-[#2C332E] bg-[#FAF7F2]/90 dark:bg-[#1E231F]/90 shrink-0 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-8 h-8 rounded-xl bg-[#2D6A4F] flex items-center justify-center text-white shadow-sm">
                   <Sliders className="w-4 h-4" />
                 </span>
-                <h2 id="catalog-modal-title" className="text-lg md:text-xl font-bold text-white tracking-tight">
+                <h2 id="catalog-modal-title" className="text-lg md:text-xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
                   Next Session Context Catalog & Reviewer
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
                 Review and customize the exact topics, past mistakes, vocabulary, and grammar rules the AI will synthesize into your next session.
               </p>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-2 rounded-xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white hover:bg-white dark:hover:bg-[#262F28] transition cursor-pointer"
               title="Close catalog"
             >
               <X className="w-5 h-5" />
@@ -423,10 +423,10 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
           <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-[#2D6A4F] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
             >
               <Briefcase className="w-3.5 h-3.5" />
@@ -435,16 +435,16 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
             <button
               onClick={() => setActiveTab('mistakes')}
-              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 cursor-pointer ${
                 activeTab === 'mistakes'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-[#2D6A4F] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              <AlertTriangle className="w-3.5 h-3.5 text-[#E07A5F]" />
               <span>2. Mistakes Clinic</span>
               {selectedMistakes.length > 0 && (
-                <span className="font-mono text-[10px] bg-slate-900/80 px-1.5 py-0.2 rounded-md text-amber-300 font-bold">
+                <span className="font-mono text-[10px] bg-[#FAF7F2] dark:bg-[#1E231F] px-1.5 py-0.2 rounded-md text-[#E07A5F] font-bold">
                   {selectedMistakes.length}
                 </span>
               )}
@@ -452,16 +452,16 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
             <button
               onClick={() => setActiveTab('vocabulary')}
-              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 cursor-pointer ${
                 activeTab === 'vocabulary'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-[#2D6A4F] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+              <BookOpen className="w-3.5 h-3.5 text-[#52796F]" />
               <span>3. Vocab to Review</span>
               {selectedVocabWords.length > 0 && (
-                <span className="font-mono text-[10px] bg-slate-900/80 px-1.5 py-0.2 rounded-md text-sky-300 font-bold">
+                <span className="font-mono text-[10px] bg-[#FAF7F2] dark:bg-[#1E231F] px-1.5 py-0.2 rounded-md text-[#52796F] dark:text-[#74A892] font-bold">
                   {selectedVocabWords.length}
                 </span>
               )}
@@ -469,16 +469,16 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
             <button
               onClick={() => setActiveTab('skills')}
-              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 cursor-pointer ${
                 activeTab === 'skills'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-[#2D6A4F] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
             >
-              <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+              <GraduationCap className="w-3.5 h-3.5 text-[#2D6A4F]" />
               <span>4. New Grammar & Skills</span>
               {selectedNewSkills.length > 0 && (
-                <span className="font-mono text-[10px] bg-slate-900/80 px-1.5 py-0.2 rounded-md text-emerald-300 font-bold">
+                <span className="font-mono text-[10px] bg-[#FAF7F2] dark:bg-[#1E231F] px-1.5 py-0.2 rounded-md text-[#2D6A4F] dark:text-[#74A892] font-bold">
                   {selectedNewSkills.length}
                 </span>
               )}
@@ -486,16 +486,16 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
             <button
               onClick={() => setActiveTab('notes')}
-              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-2 shrink-0 cursor-pointer ${
                 activeTab === 'notes'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-[#2D6A4F] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <Sparkles className="w-3.5 h-3.5 text-[#D4A373]" />
               <span>5. Tutor Notes</span>
               {customInstructions.trim() && (
-                <span className="w-2 h-2 rounded-full bg-purple-400" />
+                <span className="w-2 h-2 rounded-full bg-[#2D6A4F]" />
               )}
             </button>
           </div>
@@ -987,18 +987,18 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
         </div>
 
         {/* Footer with Selection Summary and Confirmation Actions */}
-        <div className="p-4 md:p-5 border-t border-slate-800 bg-slate-900/95 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 md:p-5 border-t border-[#EBE4D7] dark:border-[#2C332E] bg-[#FAF7F2]/95 dark:bg-[#1E231F]/95 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Summary counters with zero-pill discipline */}
-          <div className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5">
-            <span className="text-white font-semibold">{getEffectiveMajorName()}</span>
+          <div className="text-xs text-[#5C645E] dark:text-[#A7ABA4] flex flex-wrap items-center gap-1.5 font-mono">
+            <span className="text-[#1B4332] dark:text-[#F4F2EC] font-semibold">{getEffectiveMajorName()}</span>
             <span aria-hidden="true">·</span>
             <span>{dailyMinutes} mins</span>
             <span aria-hidden="true">·</span>
-            <span className="text-amber-300 font-medium">{selectedMistakes.length} mistakes to clinic</span>
+            <span className="text-[#E07A5F] font-medium">{selectedMistakes.length} mistakes to clinic</span>
             <span aria-hidden="true">·</span>
-            <span className="text-sky-300 font-medium">{selectedVocabWords.length} vocab</span>
+            <span className="text-[#52796F] dark:text-[#74A892] font-medium">{selectedVocabWords.length} vocab</span>
             <span aria-hidden="true">·</span>
-            <span className="text-emerald-300 font-medium">{selectedNewSkills.length} new grammar</span>
+            <span className="text-[#2D6A4F] dark:text-[#74A892] font-medium">{selectedNewSkills.length} new grammar</span>
           </div>
 
           <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
@@ -1006,7 +1006,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
               type="button"
               onClick={onClose}
               disabled={isBuilding}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition"
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#262F28] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white text-xs font-semibold transition cursor-pointer"
             >
               Cancel
             </button>
@@ -1015,7 +1015,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
               type="button"
               onClick={handleConfirm}
               disabled={isBuilding}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center space-x-2 disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:opacity-50 cursor-pointer"
             >
               {isBuilding ? (
                 <>

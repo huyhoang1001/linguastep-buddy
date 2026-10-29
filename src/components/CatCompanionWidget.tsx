@@ -115,7 +115,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
   if (!config.showCompanionWidget) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 select-none animate-fadeIn flex flex-col items-end">
+    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 select-none animate-fadeIn flex flex-col items-end">
       {/* Speech Bubble */}
       {speechBubble && !isMinimized && (
         <div className="relative mb-2 max-w-[260px] bg-slate-900/95 border-2 border-amber-400/50 text-white text-xs p-3 rounded-2xl shadow-2xl backdrop-blur-md animate-bounce-short">

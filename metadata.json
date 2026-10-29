@@ -1,6 +1,6 @@
 {
-  "name": "Remix LinguaStep - Personal English Learning Tutor",
-  "description": "An adaptive, patient English tutor delivering one-question-at-a-time lessons, natural explanations in Vietnamese and English, vocabulary with IPA, reading, and workplace writing practice.",
+  "name": "MeoMeo — Cozy Study Companion",
+  "description": "MeoMeo — Your adorable cat chibi adaptive English learning companion with personalized lessons, Cambridge dictionary word family discovery, and customizable feline themes.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

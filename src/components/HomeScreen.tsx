@@ -489,7 +489,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <section className="p-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-[#5C645E] dark:text-[#A7ABA4]">
           <Cat className="w-4 h-4 text-[#E9A825]" />
-          <span>LinguaStep Companion Desk</span>
+          <span>MeoMeo Companion Desk</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

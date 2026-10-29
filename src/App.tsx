@@ -11,10 +11,13 @@ import {
   VocabularyItem
 } from './types/learning.ts';
 import { UserAccount, BudgetLimits } from './types/auth.ts';
-import { Header } from './components/Header.tsx';
+import { Header, NavigationDestination } from './components/Header.tsx';
 import { HomeScreen } from './components/HomeScreen.tsx';
 import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { LessonView } from './components/LessonView.tsx';
+import { WordsView } from './components/WordsView.tsx';
+import { ProgressView } from './components/ProgressView.tsx';
+import { CommandPaletteModal } from './components/CommandPaletteModal.tsx';
 import { LessonSummaryModal } from './components/LessonSummaryModal.tsx';
 import { MemoryDrawer } from './components/MemoryDrawer.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
@@ -61,10 +64,23 @@ export default function App() {
   const [skills, setSkills] = useState<LearnerSkillState[]>([]);
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
 
-  // View state: 'home' is the cozy study desk sanctuary; 'lesson' is active study
-  const [currentView, setCurrentView] = useState<'home' | 'lesson'>('home');
+  // Navigation state: 'home' | 'learn' | 'words' | 'progress'
+  const [navigationDestination, setNavigationDestination] = useState<NavigationDestination>('home');
+  const [showCommandPalette, setShowCommandPalette] = useState<boolean>(false);
 
-  // Cohesive Light / Dark theme state
+  // Global Cmd+K / Ctrl+K shortcut for command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Cohesive Light / Dark theme state with instant DOM sync & system listener
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('linguastep_theme');
@@ -74,14 +90,40 @@ export default function App() {
     return 'light';
   });
 
+  // Keep DOM .dark class in sync with theme state
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('linguastep_theme', theme);
   }, [theme]);
+
+  // Listen for system theme changes if user hasn't explicitly saved a preference
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      const saved = localStorage.getItem('linguastep_theme');
+      if (!saved) {
+        const nextTheme = e.matches ? 'dark' : 'light';
+        setTheme(nextTheme);
+      }
+    };
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('linguastep_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   // Modals state
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
@@ -226,7 +268,7 @@ export default function App() {
     setRecentAttempts([]);
     setSkills([]);
     setVocabulary([]);
-    setCurrentView('home');
+    setNavigationDestination('home');
     setShowOnboarding(false);
     setShowAuthModal(true);
   };
@@ -258,7 +300,7 @@ export default function App() {
       setProfile(userProfile);
       const newPlan = await generateLessonPlan(userProfile.daily_minutes, true);
       setActivePlan(newPlan);
-      setCurrentView('home');
+      setNavigationDestination('home');
       await refreshMilestones();
     } catch (err) {
       console.error('Failed to create initial lesson plan:', err);
@@ -301,7 +343,7 @@ export default function App() {
       // Pass forceRegenerate = true when explicitly clicking "Start New Lesson"
       const newPlan = await generateLessonPlan(targetMins, true);
       setActivePlan(newPlan);
-      setCurrentView('lesson');
+      setNavigationDestination('learn');
       await refreshMilestones();
     } catch (err) {
       console.error('Failed to generate new plan:', err);
@@ -323,7 +365,7 @@ export default function App() {
       await clearActiveLessonState();
       const newPlan = await generateLessonPlan(customContext.dailyMinutes, true, customContext);
       setActivePlan(newPlan);
-      setCurrentView('lesson');
+      setNavigationDestination('learn');
       setShowCatalogModal(false);
       setShowSummaryModal(false);
       await refreshMilestones();
@@ -343,7 +385,7 @@ export default function App() {
       <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] flex flex-col items-center justify-center text-[#2D312E] dark:text-[#F4F2EC]">
         <div className="w-12 h-12 border-3 border-[#2D6A4F] border-t-transparent rounded-full animate-spin mb-3" />
         <div className="text-3xl mb-2 animate-bounce">🐱🐾</div>
-        <h2 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">Loading LinguaStep Buddy...</h2>
+        <h2 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">Loading MeoMeo...</h2>
         <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1">Preparing your cozy study companion session</p>
       </div>
     );
@@ -373,7 +415,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] text-[#2D312E] dark:text-[#F4F2EC] flex flex-col font-sans selection:bg-[#52B788]/30 selection:text-[#1B4332] relative overflow-x-hidden transition-colors duration-200">
+    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#161A17] text-[#2D312E] dark:text-[#F4F2EC] flex flex-col font-sans relative overflow-x-hidden transition-colors duration-200">
       {/* Background Floating Cat Paw Prints */}
       {catConfig.floatingPaws && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-10 dark:opacity-5">
@@ -389,38 +431,25 @@ export default function App() {
       <AIFallbackBanner />
 
       {/* App Header with Milestone Progress Badge, Budget & Auth */}
+      {/* App Header with MeoMeo Minimal Navigation, Overdue Words Count & Profile */}
       <Header
+        currentDestination={navigationDestination}
+        onNavigate={(dest) => setNavigationDestination(dest)}
         profile={profile}
-        mistakesCount={mistakesCount}
-        featuredBadge={milestonesData?.featuredBadge || null}
-        nextBadge={milestonesData?.nextBadge || null}
-        unlockedCount={milestonesData?.unlockedBadges.length || 0}
-        totalBadgesCount={milestonesData?.allBadges.length || 10}
+        overdueWordsCount={vocabulary.filter(v => v.next_review_at && new Date(v.next_review_at).getTime() <= Date.now()).length}
         currentUser={currentUser}
         budgetLimits={budgetLimits}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenCatStudio={() => setShowCatCustomizer(true)}
         onOpenAuth={() => setShowAuthModal(true)}
         onLogout={handleLogout}
-        onOpenMilestones={() => setShowMilestonesModal(true)}
-        onOpenMemory={() => setShowMemoryDrawer(true)}
-        onOpenSettings={() => setShowSettingsModal(true)}
-        onOpenSummary={() => setShowSummaryModal(true)}
-        hasActiveSummary={Boolean(activeSummary)}
-        onOpenRoadmap={() => setShowRoadmapModal(true)}
-        onRestartOnboarding={() => {
-          setOnboardingPhase('discovery');
-          setShowOnboarding(true);
-        }}
-        onBuildNextSession={handleOpenBuildCatalog}
-        isBuildingSession={isBuildingSession}
-        onSearchVocabulary={(word) => setActiveDictionaryWord(word)}
-        onOpenCatStudio={() => setShowCatCustomizer(true)}
-        theme={theme}
-        onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-        onGoHome={() => setCurrentView('home')}
+        onOpenSearchPalette={() => setShowCommandPalette(true)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 pb-16">
+      {/* Main Content Area with 4 Primary Destinations */}
+      <main className="flex-1 pb-20 md:pb-8">
         {appError && (
           <div className="max-w-4xl mx-auto px-4 pt-4">
             <AIErrorAlert
@@ -432,15 +461,75 @@ export default function App() {
           </div>
         )}
 
-        {currentView === 'lesson' && activePlan ? (
-          <LessonView
+        {navigationDestination === 'learn' ? (
+          activePlan ? (
+            <LessonView
+              profile={profile}
+              plan={activePlan}
+              onFinishLesson={handleLessonFinished}
+              onOpenSummary={() => setShowSummaryModal(true)}
+              onBuildNextSession={handleOpenBuildCatalog}
+              isBuildingSession={isBuildingSession}
+              onReturnHome={() => setNavigationDestination('home')}
+            />
+          ) : (
+            <div className="max-w-xl mx-auto px-4 py-16 text-center">
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] shadow-sm">
+                <div className="text-4xl mb-3 animate-bounce-short">🐾</div>
+                <h2 className="text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] mb-2">
+                  Ready for today's session?
+                </h2>
+                <p className="text-sm text-[#5C645E] dark:text-[#A7ABA4] mb-6 max-w-md mx-auto leading-relaxed">
+                  Start an adaptive session curated to your current CEFR tier, overdue spaced reviews, and workplace English goals.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleStartNewLesson(10)}
+                    disabled={isBuildingSession}
+                    className="px-5 py-2.5 rounded-xl bg-[#2D6A4F] text-white font-semibold text-sm hover:bg-[#1B4332] transition cursor-pointer"
+                  >
+                    Quick 10m Session
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStartNewLesson(20)}
+                    disabled={isBuildingSession}
+                    className="px-5 py-2.5 rounded-xl bg-[#52796F] text-white font-semibold text-sm hover:bg-[#2D6A4F] transition cursor-pointer"
+                  >
+                    Core 20m Session
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenBuildCatalog}
+                    disabled={isBuildingSession}
+                    className="px-5 py-2.5 rounded-xl border border-[#D8CFBF] dark:border-[#3C443E] text-[#2D312E] dark:text-[#F4F2EC] hover:bg-[#FAF7F2] dark:hover:bg-[#262F28] font-semibold text-sm transition cursor-pointer"
+                  >
+                    Custom Objectives
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        ) : navigationDestination === 'words' ? (
+          <WordsView
+            vocabulary={vocabulary}
+            onPracticeWord={(word) => setActiveDictionaryWord(word)}
+            onRefreshMemory={refreshMilestones}
+            examMajor={profile.major_or_subject}
+          />
+        ) : navigationDestination === 'progress' ? (
+          <ProgressView
             profile={profile}
-            plan={activePlan}
-            onFinishLesson={handleLessonFinished}
-            onOpenSummary={() => setShowSummaryModal(true)}
-            onBuildNextSession={handleOpenBuildCatalog}
-            isBuildingSession={isBuildingSession}
-            onReturnHome={() => setCurrentView('home')}
+            skills={skills}
+            summaries={dailySummaries}
+            attempts={recentAttempts}
+            allBadges={milestonesData?.allBadges || []}
+            unlockedBadges={milestonesData?.unlockedBadges || []}
+            onStartNewLesson={() => {
+              setNavigationDestination('learn');
+              handleOpenBuildCatalog();
+            }}
           />
         ) : (
           <HomeScreen
@@ -450,11 +539,14 @@ export default function App() {
             skills={skills}
             vocabulary={vocabulary}
             catConfig={catConfig}
-            onStartLesson={(mins) => handleStartNewLesson(mins)}
-            onResumeLesson={() => setCurrentView('lesson')}
-            onOpenRoadmap={() => setShowRoadmapModal(true)}
-            onOpenMemory={() => setShowMemoryDrawer(true)}
-            onOpenMilestones={() => setShowMilestonesModal(true)}
+            onStartLesson={(mins) => {
+              handleStartNewLesson(mins);
+              setNavigationDestination('learn');
+            }}
+            onResumeLesson={() => setNavigationDestination('learn')}
+            onOpenRoadmap={() => setNavigationDestination('progress')}
+            onOpenMemory={() => setNavigationDestination('words')}
+            onOpenMilestones={() => setNavigationDestination('progress')}
             onOpenCatStudio={() => setShowCatCustomizer(true)}
             onOpenCatalog={handleOpenBuildCatalog}
             onOpenSettings={() => setShowSettingsModal(true)}
@@ -594,6 +686,28 @@ export default function App() {
         onClose={() => setShowCatCustomizer(false)}
         currentConfig={catConfig}
         onSaveConfig={(newCfg) => setCatConfig(newCfg)}
+      />
+
+      {/* MeoMeo Command Palette Modal (Ctrl/Cmd + K) */}
+      <CommandPaletteModal
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigate={(dest) => {
+          setNavigationDestination(dest);
+          setShowCommandPalette(false);
+        }}
+        onPracticeWord={(word) => {
+          setShowCommandPalette(false);
+          setActiveDictionaryWord(word);
+        }}
+        onOpenSettings={() => {
+          setShowCommandPalette(false);
+          setShowSettingsModal(true);
+        }}
+        onOpenCatStudio={() => {
+          setShowCommandPalette(false);
+          setShowCatCustomizer(true);
+        }}
       />
 
       {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}

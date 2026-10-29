@@ -324,36 +324,38 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex justify-end animate-fadeIn"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex justify-end animate-fadeIn"
     >
-      <div className="w-full max-w-3xl min-h-screen bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col justify-between text-slate-100">
+      <div className="w-full max-w-3xl min-h-screen bg-[#FAF7F2] dark:bg-[#1A1F1B] border-l border-[#EBE4D7] dark:border-[#2C332E] shadow-2xl flex flex-col justify-between text-[#2D312E] dark:text-[#F4F2EC] font-sans">
         {/* Top Sticky Header with Return Button & Cambridge Search */}
-        <div className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur border-b border-slate-800 p-3.5 md:p-4 space-y-2.5">
+        <div className="sticky top-0 z-10 bg-[#FAF7F2]/95 dark:bg-[#1A1F1B]/95 backdrop-blur border-b border-[#EBE4D7] dark:border-[#2C332E] p-3.5 md:p-4 space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center space-x-2.5">
               <button
+                type="button"
                 onClick={onClose}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#272E29] hover:bg-[#EFF6F1] dark:hover:bg-[#323D34] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#38423A] text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
                 title="Return to your previous screen"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-indigo-400" />
+                <ArrowLeft className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                 <span>Return</span>
               </button>
 
               {currentQuestionIndex && totalQuestions ? (
-                <span className="text-xs text-slate-400 hidden sm:inline">
+                <span className="text-xs text-[#5C645E] dark:text-[#A7ABA4] hidden sm:inline">
                   Exam Question <strong>{currentQuestionIndex}</strong> of {totalQuestions}
                 </span>
               ) : (
-                <span className="text-xs text-slate-400 hidden sm:inline">
-                  Cambridge Dictionary · Word Family Discovery & Mastery
+                <span className="text-xs text-[#5C645E] dark:text-[#A7ABA4] hidden sm:inline">
+                  Cambridge Dictionary · Word Family Discovery &amp; Mastery
                 </span>
               )}
             </div>
 
             <button
+              type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700/60"
+              className="w-8 h-8 rounded-xl bg-white dark:bg-[#272E29] hover:bg-[#EFF6F1] dark:hover:bg-[#323D34] text-[#8A938C] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] flex items-center justify-center transition border border-[#EBE4D7] dark:border-[#38423A] cursor-pointer"
               title="Close panel"
             >
               ✕
@@ -374,19 +376,20 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         <div className="p-5 md:p-8 space-y-6 flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="py-24 flex flex-col items-center justify-center space-y-3">
-              <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-slate-300 font-medium">
-                Analyzing word family morphology for "<strong>{activeWord}</strong>"...
+              <div className="w-8 h-8 border-2 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-[#5C645E] dark:text-[#A7ABA4] font-medium">
+                Analyzing word family morphology for &ldquo;<strong>{activeWord}</strong>&rdquo;...
               </p>
             </div>
           ) : error || !data ? (
-            <div className="bg-rose-950/30 border border-rose-500/40 rounded-3xl p-6 text-center space-y-3">
-              <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto" />
-              <h3 className="text-base font-bold text-white">Could Not Load Practice</h3>
-              <p className="text-xs text-rose-200">{error || 'Unable to connect to dictionary service.'}</p>
+            <div className="bg-[#FDF0ED] dark:bg-[#2D2320] border border-[#F5D5CC] dark:border-[#4B342E] rounded-3xl p-6 text-center space-y-3">
+              <AlertTriangle className="w-8 h-8 text-[#E07A5F] mx-auto" />
+              <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">Could Not Load Practice</h3>
+              <p className="text-xs text-[#E07A5F]">{error || 'Unable to connect to dictionary service.'}</p>
               <button
+                type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#38423A] text-[#2D312E] dark:text-[#F4F2EC] text-xs font-semibold cursor-pointer"
               >
                 Return to Exam
               </button>
@@ -394,47 +397,49 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
           ) : (
             <>
               {/* 1. Main Word Profile Card */}
-              <div className="bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-3xl p-6 shadow-xl space-y-4">
+              <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-3xl p-6 shadow-sm space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center space-x-3">
-                      <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                      <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
                         {data.word}
                       </h2>
                       <button
+                        type="button"
                         onClick={() => playSpeech(data.cleaned_word || data.word)}
-                        className="p-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 transition"
+                        className="p-2 rounded-xl bg-[#EFF6F1] dark:bg-[#252F28] hover:bg-[#E2EFE6] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#334237] transition cursor-pointer"
                         title="Listen to pronunciation"
                       >
                         <Volume2 className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="flex items-center space-x-2 text-xs text-indigo-300 mt-1 font-mono">
+                    <div className="flex items-center space-x-2 text-xs text-[#52796F] dark:text-[#84A98C] mt-1 font-mono">
                       <span>{data.ipa}</span>
-                      <span>·</span>
-                      <span className="italic capitalize text-slate-300">{data.part_of_speech}</span>
+                      <span>&middot;</span>
+                      <span className="italic capitalize text-[#5C645E] dark:text-[#A7ABA4]">{data.part_of_speech}</span>
                     </div>
                   </div>
 
-                  {/* Bookmark / Save to Memory Button */}
+                  {/* Bookmark / Save to Stash Button */}
                   <button
+                    type="button"
                     onClick={handleToggleSaveMemory}
-                    className={`px-3.5 py-2 rounded-2xl border text-xs font-bold transition flex items-center space-x-1.5 shadow-sm ${
+                    className={`px-3.5 py-2 rounded-2xl border text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer ${
                       isSavedToMemory
-                        ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
-                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 hover:text-white'
+                        ? 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237] text-[#2D6A4F] dark:text-[#52B788]'
+                        : 'bg-white dark:bg-[#272E29] hover:bg-[#FAF7F2] border-[#EBE4D7] dark:border-[#38423A] text-[#5C645E] dark:text-[#A7ABA4]'
                     }`}
                   >
                     {isSavedToMemory ? (
                       <>
-                        <BookmarkCheck className="w-4 h-4 text-emerald-400" />
-                        <span>Saved to Review Memory</span>
+                        <BookmarkCheck className="w-4 h-4 text-[#52B788]" />
+                        <span>Saved to Word Stash</span>
                       </>
                     ) : (
                       <>
-                        <Bookmark className="w-4 h-4 text-slate-400" />
-                        <span>Save to Review Memory</span>
+                        <Bookmark className="w-4 h-4 text-[#8A938C]" />
+                        <span>Save to Word Stash</span>
                       </>
                     )}
                   </button>
@@ -442,24 +447,24 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                 {/* Meanings */}
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-sm md:text-base font-semibold text-white leading-relaxed">
+                  <div className="text-sm md:text-base font-semibold text-[#1B4332] dark:text-[#95D5B2] leading-relaxed">
                     {data.meaning_vi}
                   </div>
                   {data.meaning_en && (
-                    <p className="text-xs text-slate-400 italic">
-                      "{data.meaning_en}"
+                    <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] italic">
+                      &ldquo;{data.meaning_en}&rdquo;
                     </p>
                   )}
                 </div>
 
                 {/* Where encountered in the exam */}
                 {data.context_in_exam && (
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-300 space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block">
+                  <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-3.5 text-xs text-[#5C645E] dark:text-[#A7ABA4] space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#84A98C] block">
                       Encountered Context:
                     </span>
-                    <p className="italic text-slate-200 leading-relaxed font-normal">
-                      "{data.context_in_exam}"
+                    <p className="italic text-[#2D312E] dark:text-[#EAE6DF] leading-relaxed font-normal">
+                      &ldquo;{data.context_in_exam}&rdquo;
                     </p>
                   </div>
                 )}
@@ -467,26 +472,26 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
               {/* 2. WORD FAMILY DISCOVERY TABLE */}
               {data.word_family && data.word_family.members && data.word_family.members.length > 0 && (
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-lg space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-3xl p-5 md:p-6 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EBE4D7] dark:border-[#303B33] pb-3">
                     <div className="flex items-center space-x-2">
-                      <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                      <div className="w-7 h-7 rounded-lg bg-[#EFF6F1] dark:bg-[#28352C] flex items-center justify-center text-[#2D6A4F] dark:text-[#52B788]">
                         <Layers className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-white tracking-tight flex items-center space-x-2">
+                        <h3 className="text-sm font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight flex items-center space-x-2">
                           <span>Word Family Discovery</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#FAF7F2] dark:bg-[#1A1F1B] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#303B33]">
                             Root: {data.word_family.family_root || data.cleaned_word}
                           </span>
                         </h3>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                           Explore derivational forms, suffix patterns, and natural sentences
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-[#8A938C]">
                       {data.word_family.members.length} forms identified
                     </span>
                   </div>
@@ -495,15 +500,15 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
-                          <th className="pb-2.5 font-semibold">Form & Pronunciation</th>
+                        <tr className="border-b border-[#EBE4D7] dark:border-[#303B33] text-[#8A938C] text-[11px] uppercase tracking-wider">
+                          <th className="pb-2.5 font-semibold">Form &amp; Pronunciation</th>
                           <th className="pb-2.5 font-semibold">Part of Speech</th>
                           <th className="pb-2.5 font-semibold hidden md:table-cell">Pattern / Suffix</th>
-                          <th className="pb-2.5 font-semibold">Meaning & Context</th>
+                          <th className="pb-2.5 font-semibold">Meaning &amp; Context</th>
                           <th className="pb-2.5 font-semibold text-right">Form Mastery</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-[#F4EFEB] dark:divide-[#2B332D]">
                         {data.word_family.members.map((member, idx) => {
                           const isHead = member.is_headword || member.form.toLowerCase() === data.cleaned_word.toLowerCase();
                           return (
@@ -595,21 +600,21 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
               {/* 3. REDESIGNED MICRO-EXAM: WORD FORM SELECTION & GRAMMATICAL MASTERY */}
               {currentExercise && (
-                <div className="bg-slate-900 border-2 border-indigo-500/40 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
+                <div className="bg-white dark:bg-[#222924] border border-[#2D6A4F]/40 dark:border-[#52B788]/40 rounded-3xl p-5 md:p-6 shadow-sm space-y-4">
                   {/* Micro-Exam Header & Exercise Stepper */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EBE4D7] dark:border-[#303B33] pb-3">
                     <div className="flex items-center space-x-2">
-                      <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                      <div className="w-7 h-7 rounded-lg bg-[#EFF6F1] dark:bg-[#28352C] flex items-center justify-center text-[#2D6A4F] dark:text-[#52B788]">
                         <Sparkles className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-2">
                           <span>Micro-Exam: {formatExerciseTypeLabel(currentExercise.exercise_type)}</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/40">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EFF6F1] dark:bg-[#28352C] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#344439]">
                             Testing Form: {currentExercise.target_part_of_speech}
                           </span>
                         </h4>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4]">
                           Select the grammatically correct word form for this context
                         </span>
                       </div>
@@ -618,18 +623,19 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                     <div className="flex items-center space-x-2">
                       {/* Exercise Stepper if multiple exercises available */}
                       {currentExercises.length > 1 && (
-                        <div className="flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+                        <div className="flex items-center space-x-1 bg-[#FAF7F2] dark:bg-[#1A1F1B] p-1 rounded-xl border border-[#EBE4D7] dark:border-[#303B33]">
                           {currentExercises.map((_, i) => (
                             <button
                               key={i}
+                              type="button"
                               onClick={() => {
                                 setActiveExerciseIndex(i);
                                 setShowHint(false);
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                                 activeExerciseIndex === i
-                                  ? 'bg-indigo-600 text-white shadow-sm'
-                                  : 'text-slate-400 hover:text-white'
+                                  ? 'bg-[#2D6A4F] text-white shadow-sm'
+                                  : 'text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
                               }`}
                             >
                               Ex {i + 1}
@@ -640,10 +646,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                       {currentExercise.hint && (
                         <button
+                          type="button"
                           onClick={() => setShowHint(!showHint)}
-                          className="text-xs text-slate-400 hover:text-slate-200 flex items-center space-x-1"
+                          className="text-xs text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white flex items-center space-x-1 cursor-pointer"
                         >
-                          <HelpCircle className="w-3.5 h-3.5" />
+                          <HelpCircle className="w-3.5 h-3.5 text-[#E6A23C]" />
                           <span>{showHint ? 'Hide Hint' : 'Hint'}</span>
                         </button>
                       )}
@@ -651,7 +658,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   </div>
 
                   {showHint && currentExercise.hint && (
-                    <div className="bg-sky-950/30 border border-sky-800/40 p-3 rounded-xl text-xs text-sky-200 animate-fadeIn">
+                    <div className="bg-[#EFF6F1] dark:bg-[#242E27] border border-[#CDE1D4] dark:border-[#334237] p-3 rounded-xl text-xs text-[#2D6A4F] dark:text-[#84A98C] animate-fadeIn">
                       💡 {currentExercise.hint}
                     </div>
                   )}
@@ -685,7 +692,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   )}
 
                   {/* Question Prompt */}
-                  <p className="text-sm md:text-base font-semibold text-white leading-relaxed whitespace-pre-line">
+                  <p className="text-sm md:text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] leading-relaxed whitespace-pre-line">
                     {currentExercise.prompt}
                   </p>
 
@@ -700,22 +707,23 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                         currentSubmission.isSubmitted && isSelected && !isExpected;
 
                       let btnStyle =
-                        'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:bg-slate-800 hover:text-white';
+                        'bg-[#FAF7F2] dark:bg-[#1E231F] border-[#EBE4D7] dark:border-[#333D35] text-[#2D312E] dark:text-[#F4F2EC] hover:border-[#74A892]';
                       if (currentSubmission.isSubmitted) {
                         if (isExpected) {
-                          btnStyle = 'bg-emerald-950/60 border-emerald-500 text-white ring-1 ring-emerald-500';
+                          btnStyle = 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#52B788] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#52B788]';
                         } else if (isWrongChoice) {
-                          btnStyle = 'bg-rose-950/60 border-rose-500 text-white ring-1 ring-rose-500';
+                          btnStyle = 'bg-[#FDF0ED] dark:bg-[#2D2320] border-[#E07A5F] text-[#2D312E] dark:text-[#F4F2EC] ring-1 ring-[#E07A5F]';
                         } else {
-                          btnStyle = 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-60';
+                          btnStyle = 'bg-white/40 dark:bg-[#1A1F1B] border-[#EBE4D7] dark:border-[#2C332E] text-[#8A938C] opacity-60';
                         }
                       } else if (isSelected) {
-                        btnStyle = 'bg-indigo-950 border-indigo-500 text-white ring-2 ring-indigo-500';
+                        btnStyle = 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#2D6A4F]';
                       }
 
                       return (
                         <button
                           key={opt.id}
+                          type="button"
                           disabled={currentSubmission.isSubmitted}
                           onClick={() => handleSelectOption(opt.id)}
                           className={`w-full text-left p-3.5 rounded-2xl border transition flex items-center justify-between ${btnStyle} ${
@@ -723,13 +731,13 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                           }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <span className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                            <span className="w-7 h-7 rounded-lg bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#38423A] flex items-center justify-center text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] shrink-0">
                               {opt.id}
                             </span>
                             <div className="flex items-center space-x-2">
                               <span className="text-xs md:text-sm font-medium">{opt.text}</span>
                               {opt.part_of_speech && (
-                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-700">
+                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-white dark:bg-[#222924] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#303B33]">
                                   {opt.part_of_speech}
                                 </span>
                               )}
@@ -737,12 +745,12 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                           </div>
 
                           {isExpected && (
-                            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                            <span className="text-[11px] font-bold text-[#2D6A4F] dark:text-[#52B788] bg-[#EFF6F1] dark:bg-[#252F28] px-2 py-0.5 rounded border border-[#CDE1D4] dark:border-[#344439]">
                               ✓ Correct Form
                             </span>
                           )}
                           {isWrongChoice && (
-                            <span className="text-[11px] font-bold text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/30">
+                            <span className="text-[11px] font-bold text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#2D2320] px-2 py-0.5 rounded border border-[#F5D5CC] dark:border-[#4B342E]">
                               ✗ Your Choice
                             </span>
                           )}
@@ -755,11 +763,12 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   {!currentSubmission.isSubmitted ? (
                     <div className="flex justify-end pt-1">
                       <button
+                        type="button"
                         disabled={!currentSubmission.selectedOptionId}
                         onClick={handleSubmitExercise}
-                        className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold transition shadow-md flex items-center space-x-1.5"
+                        className="px-5 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] disabled:opacity-40 text-white text-xs font-bold transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
                       >
-                        <span>Submit Answer</span>
+                        <span>Check Word Form</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>

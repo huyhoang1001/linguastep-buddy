@@ -9,6 +9,21 @@
     <meta property="og:description" content="MeoMeo - Your adorable cat chibi adaptive English learning companion with personalized lessons, Cambridge dictionary word family discovery, and customizable feline themes." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('linguastep_theme');
+          var theme = (saved === 'light' || saved === 'dark')
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />

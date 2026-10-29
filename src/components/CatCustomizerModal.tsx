@@ -63,23 +63,23 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
     >
-      <div className="bg-slate-900 border-2 border-amber-500/30 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-slate-100 max-h-[92vh]">
+      <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh]">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[#EBE4D7] dark:border-[#2C332E] flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-[#D4A373]/25 border border-[#D4A373]/40 flex items-center justify-center text-white shadow-xs">
               <span className="text-xl">🐱</span>
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-extrabold text-white tracking-tight flex items-center space-x-2">
+              <h2 className="text-base sm:text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight flex items-center space-x-2">
                 <span>MeoMeo Cat Studio</span>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#2D6A4F]/10 text-[#2D6A4F] dark:text-[#74A892] border border-[#2D6A4F]/25 font-mono">
                   🐾 Theme & Chibi UI
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                 Tự do tùy chỉnh diện mạo mèo chibi, màu sắc giao diện và âm thanh meo meo!
               </p>
             </div>
@@ -87,16 +87,16 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700"
+            className="w-8 h-8 rounded-xl bg-white dark:bg-[#262F28] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white flex items-center justify-center transition border border-[#EBE4D7] dark:border-[#3C443E] cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Live Preview Card */}
-        <div className="bg-gradient-to-b from-slate-900 to-slate-950 p-4 sm:p-5 border-b border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white dark:bg-[#262F28] p-4 sm:p-5 border-b border-[#EBE4D7] dark:border-[#3C443E] flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="relative group p-2 rounded-2xl bg-slate-800/60 border border-slate-700/60 shadow-inner">
+            <div className="relative group p-2 rounded-2xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] shadow-2xs">
               <CatChibiAvatar
                 companionId={config.companionId}
                 accessoryId={config.accessoryId}
@@ -109,7 +109,7 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                   setPreviewMood(prev => prev === 'purring' ? 'excited' : prev === 'excited' ? 'studying' : 'purring');
                   if (config.soundEnabled) playMeowSound(1.1);
                 }}
-                className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold shadow-md hover:scale-105 transition flex items-center space-x-0.5"
+                className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-[#D4A373] text-white text-[10px] font-bold shadow-xs hover:scale-105 transition flex items-center space-x-0.5 cursor-pointer"
                 title="Đổi biểu cảm mèo"
               >
                 <span>🐾 Chạm</span>
@@ -122,19 +122,19 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                   type="text"
                   value={config.catName}
                   onChange={(e) => setConfig({ ...config, catName: e.target.value.slice(0, 24) })}
-                  className="bg-slate-800/80 border border-slate-700 rounded-xl px-2.5 py-1 text-sm font-bold text-white max-w-[170px] focus:outline-none focus:border-amber-400"
+                  className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] rounded-xl px-2.5 py-1 text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC] max-w-[170px] focus:outline-none focus:border-[#2D6A4F]"
                   placeholder="Đặt tên cho mèo..."
                 />
-                <span className="text-xs text-slate-400">({selectedCompanion.name})</span>
+                <span className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">({selectedCompanion.name})</span>
               </div>
-              <p className="text-xs text-slate-300 italic">
+              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] italic">
                 "{selectedCompanion.vietnameseCatchphrase}"
               </p>
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FAF7F2] dark:bg-[#1E231F] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#2C332E]">
                   Giao diện: {selectedTheme.name}
                 </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FAF7F2] dark:bg-[#1E231F] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#2C332E]">
                   Phụ kiện: {CAT_ACCESSORIES[config.accessoryId]?.name}
                 </span>
               </div>
@@ -145,14 +145,14 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           <div className="flex sm:flex-col gap-2 shrink-0">
             <button
               onClick={() => playMeowSound(1.1)}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700 flex items-center space-x-1.5"
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] dark:hover:bg-[#262F28] text-[#2D312E] dark:text-[#F4F2EC] text-xs font-semibold transition border border-[#EBE4D7] dark:border-[#3C443E] flex items-center space-x-1.5 cursor-pointer shadow-2xs"
             >
               <span>Meow!</span>
               <span>🐱</span>
             </button>
             <button
               onClick={() => playPurrSound()}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700 flex items-center space-x-1.5"
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] dark:hover:bg-[#262F28] text-[#2D312E] dark:text-[#F4F2EC] text-xs font-semibold transition border border-[#EBE4D7] dark:border-[#3C443E] flex items-center space-x-1.5 cursor-pointer shadow-2xs"
             >
               <span>Purrr~</span>
               <span>🐾</span>
@@ -161,13 +161,13 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
         </div>
 
         {/* Customizer Navigation Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-900/60 px-4 pt-2 gap-1 overflow-x-auto text-xs font-semibold">
+        <div className="flex border-b border-[#EBE4D7] dark:border-[#3C443E] bg-[#FAF7F2] dark:bg-[#1E231F] px-4 pt-2 gap-1 overflow-x-auto text-xs font-semibold">
           <button
             onClick={() => setActiveTab('theme')}
-            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 ${
+            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'theme'
-                ? 'border-amber-400 text-amber-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-[#2D6A4F] text-[#2D6A4F] dark:text-[#52B788] font-bold'
+                : 'border-transparent text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
@@ -176,10 +176,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('companion')}
-            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 ${
+            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'companion'
-                ? 'border-amber-400 text-amber-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-[#2D6A4F] text-[#2D6A4F] dark:text-[#52B788] font-bold'
+                : 'border-transparent text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
             }`}
           >
             <span>🐱</span>
@@ -188,10 +188,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('accessory')}
-            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 ${
+            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'accessory'
-                ? 'border-amber-400 text-amber-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-[#2D6A4F] text-[#2D6A4F] dark:text-[#52B788] font-bold'
+                : 'border-transparent text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
             }`}
           >
             <span>🎀</span>
@@ -200,10 +200,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('sound')}
-            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 ${
+            className={`px-3 py-2 border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'sound'
-                ? 'border-amber-400 text-amber-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-[#2D6A4F] text-[#2D6A4F] dark:text-[#52B788] font-bold'
+                : 'border-transparent text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white'
             }`}
           >
             <Volume2 className="w-3.5 h-3.5" />
@@ -216,7 +216,7 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           {/* TAB 1: THEMES */}
           {activeTab === 'theme' && (
             <div className="space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                 Chọn Bảng Màu Cat Chibi cho ứng dụng:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -226,10 +226,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                     <button
                       key={theme.id}
                       onClick={() => setConfig({ ...config, themeId: theme.id })}
-                      className={`text-left p-3.5 rounded-2xl border transition flex items-center justify-between ${
+                      className={`text-left p-3.5 rounded-2xl border transition flex items-center justify-between cursor-pointer ${
                         isSelected
-                          ? 'bg-slate-800 border-amber-400 ring-2 ring-amber-400/40 shadow-lg'
-                          : 'bg-slate-800/50 border-slate-700/80 hover:bg-slate-800 text-slate-300 hover:text-white'
+                          ? 'bg-[#EFF6F1] dark:bg-[#262F28] border-[#2D6A4F] dark:border-[#52B788] ring-2 ring-[#2D6A4F]/30 shadow-md'
+                          : 'bg-white dark:bg-[#262F28] border-[#EBE4D7] dark:border-[#3C443E] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] text-[#2D312E] dark:text-[#F4F2EC]'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -238,13 +238,13 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                         </div>
                         <div>
                           <div className="flex items-center space-x-1.5">
-                            <span className="text-xs font-bold text-white">{theme.name}</span>
+                            <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">{theme.name}</span>
                             {isSelected && (
-                              <Check className="w-3.5 h-3.5 text-amber-400 font-bold" />
+                              <Check className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] font-bold" />
                             )}
                           </div>
-                          <span className="text-[11px] text-slate-400 block">{theme.vietnameseName}</span>
-                          <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">{theme.description}</span>
+                          <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] block">{theme.vietnameseName}</span>
+                          <span className="text-[10px] text-[#8A938C] block leading-tight mt-0.5">{theme.description}</span>
                         </div>
                       </div>
                     </button>
@@ -257,7 +257,7 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           {/* TAB 2: COMPANIONS */}
           {activeTab === 'companion' && (
             <div className="space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                 Chọn Chú Mèo Chibi Đồng Hành cùng bạn:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -274,10 +274,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                         });
                         if (config.soundEnabled) playMeowSound(1.1);
                       }}
-                      className={`text-left p-3.5 rounded-2xl border transition flex items-start space-x-3 ${
+                      className={`text-left p-3.5 rounded-2xl border transition flex items-start space-x-3 cursor-pointer ${
                         isSelected
-                          ? 'bg-slate-800 border-amber-400 ring-2 ring-amber-400/40 shadow-lg'
-                          : 'bg-slate-800/50 border-slate-700/80 hover:bg-slate-800 text-slate-300'
+                          ? 'bg-[#EFF6F1] dark:bg-[#262F28] border-[#2D6A4F] dark:border-[#52B788] ring-2 ring-[#2D6A4F]/30 shadow-md'
+                          : 'bg-white dark:bg-[#262F28] border-[#EBE4D7] dark:border-[#3C443E] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] text-[#2D312E] dark:text-[#F4F2EC]'
                       }`}
                     >
                       <div className="shrink-0 pt-0.5">
@@ -285,13 +285,13 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white">{comp.name}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 font-bold" />}
+                          <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">{comp.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] font-bold" />}
                         </div>
-                        <span className="text-[10px] font-semibold text-amber-400/90 block">
+                        <span className="text-[10px] font-semibold text-[#2D6A4F] dark:text-[#74A892] block">
                           {comp.breedTitle}
                         </span>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                        <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-snug">
                           {comp.description}
                         </p>
                       </div>
@@ -305,7 +305,7 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           {/* TAB 3: ACCESSORIES */}
           {activeTab === 'accessory' && (
             <div className="space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                 Đội Mũ & Trang Trí Phụ Kiện cho mèo:
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -315,15 +315,15 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                     <button
                       key={acc.id}
                       onClick={() => setConfig({ ...config, accessoryId: acc.id })}
-                      className={`text-left p-3 rounded-2xl border transition flex flex-col items-center text-center space-y-1.5 ${
+                      className={`text-left p-3 rounded-2xl border transition flex flex-col items-center text-center space-y-1.5 cursor-pointer ${
                         isSelected
-                          ? 'bg-slate-800 border-amber-400 ring-2 ring-amber-400/40 shadow-md'
-                          : 'bg-slate-800/50 border-slate-700/80 hover:bg-slate-800 text-slate-300'
+                          ? 'bg-[#EFF6F1] dark:bg-[#262F28] border-[#2D6A4F] dark:border-[#52B788] ring-2 ring-[#2D6A4F]/30 shadow-md'
+                          : 'bg-white dark:bg-[#262F28] border-[#EBE4D7] dark:border-[#3C443E] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] text-[#2D312E] dark:text-[#F4F2EC]'
                       }`}
                     >
                       <span className="text-2xl">{acc.icon}</span>
-                      <span className="text-xs font-bold text-white">{acc.name}</span>
-                      <span className="text-[10px] text-slate-400">{acc.description}</span>
+                      <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">{acc.name}</span>
+                      <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4]">{acc.description}</span>
                     </button>
                   );
                 })}
@@ -334,68 +334,68 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           {/* TAB 4: SOUND & UI EFFECTS */}
           {activeTab === 'sound' && (
             <div className="space-y-3.5">
-              <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white">Âm Thanh Meo Meo & Rừ Rừ (Purr)</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">Âm Thanh Meo Meo & Rừ Rừ (Purr)</h4>
+                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
                     Phát tiếng meo meo ngọt ngào mỗi khi tương tác hoặc làm đúng bài tập
                   </p>
                 </div>
                 <button
                   onClick={() => setConfig({ ...config, soundEnabled: !config.soundEnabled })}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
-                    config.soundEnabled ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
+                    config.soundEnabled ? 'bg-[#2D6A4F] justify-end' : 'bg-[#EBE4D7] dark:bg-[#3C443E] justify-start'
                   }`}
                 >
                   <div className="w-4 h-4 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
-              <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white">Meo Khen Thưởng Khi Trả Lời Đúng</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">Meo Khen Thưởng Khi Trả Lời Đúng</h4>
+                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
                     Chú mèo sẽ meo chúc mừng và tặng cá vàng mỗi khi bạn chọn đúng đáp án
                   </p>
                 </div>
                 <button
                   onClick={() => setConfig({ ...config, meowOnCorrect: !config.meowOnCorrect })}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
-                    config.meowOnCorrect ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
+                    config.meowOnCorrect ? 'bg-[#2D6A4F] justify-end' : 'bg-[#EBE4D7] dark:bg-[#3C443E] justify-start'
                   }`}
                 >
                   <div className="w-4 h-4 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
-              <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white">Hiện Bạn Mèo Chibi Góc Màn Hình</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">Hiện Bạn Mèo Chibi Góc Màn Hình</h4>
+                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
                     Tiện ích bạn mèo chibi luôn túc trực, cổ vũ và có thể xoa đầu bất kỳ lúc nào
                   </p>
                 </div>
                 <button
                   onClick={() => setConfig({ ...config, showCompanionWidget: !config.showCompanionWidget })}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
-                    config.showCompanionWidget ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
+                    config.showCompanionWidget ? 'bg-[#2D6A4F] justify-end' : 'bg-[#EBE4D7] dark:bg-[#3C443E] justify-start'
                   }`}
                 >
                   <div className="w-4 h-4 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
-              <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white">Họa Tiết Dấu Chân Mèo (Paw Prints)</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">Họa Tiết Dấu Chân Mèo (Paw Prints)</h4>
+                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
                     Hiển thị các biểu tượng dấu chân mèo chibi bay nhẹ nhàng trang trí nền
                   </p>
                 </div>
                 <button
                   onClick={() => setConfig({ ...config, floatingPaws: !config.floatingPaws })}
-                  className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
-                    config.floatingPaws ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer ${
+                    config.floatingPaws ? 'bg-[#2D6A4F] justify-end' : 'bg-[#EBE4D7] dark:bg-[#3C443E] justify-start'
                   }`}
                 >
                   <div className="w-4 h-4 rounded-full bg-white shadow-md" />
@@ -406,10 +406,10 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-slate-900 border-t border-slate-800 p-4 flex items-center justify-between gap-2">
+        <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border-t border-[#EBE4D7] dark:border-[#2C332E] p-4 flex items-center justify-between gap-2">
           <button
             onClick={handleResetDefaults}
-            className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold hover:bg-slate-800 transition flex items-center space-x-1.5"
+            className="px-3.5 py-2 rounded-xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white text-xs font-semibold hover:bg-white dark:hover:bg-[#262F28] transition flex items-center space-x-1.5 cursor-pointer"
             title="Khôi phục mặc định"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -419,13 +419,13 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+              className="px-4 py-2 rounded-xl bg-white dark:bg-[#262F28] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white text-xs font-semibold transition cursor-pointer"
             >
               Hủy
             </button>
             <button
               onClick={handleSave}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20 flex items-center space-x-1.5"
+              className="px-5 py-2 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
             >
               <Check className="w-3.5 h-3.5 font-bold" />
               <span>Áp Dụng Cho MeoMeo</span>

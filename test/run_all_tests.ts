@@ -84,6 +84,13 @@ if (res12.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 13: Theme Persistence & System Preference Tests...');
+const res13 = spawnSync('npx', ['tsx', 'test/theme_persistence.test.ts'], { stdio: 'inherit' });
+if (res13.status !== 0) {
+  console.error('Theme persistence tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

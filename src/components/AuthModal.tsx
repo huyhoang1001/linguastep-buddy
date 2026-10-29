@@ -71,7 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             if (googleBtnContainerRef.current) {
               googleBtnContainerRef.current.innerHTML = '';
               window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
-                theme: 'filled_blue',
+                theme: 'outline',
                 size: 'large',
                 shape: 'rectangular',
                 text: 'signin_with',
@@ -111,14 +111,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-[#161A17]/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-md w-full p-7 shadow-2xl relative text-[#2D312E] dark:text-[#F4F2EC] animate-in fade-in zoom-in-95 duration-150">
         {currentUser && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="absolute top-4 right-4 p-2 rounded-xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white hover:bg-white dark:hover:bg-[#262F28] transition cursor-pointer"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -126,66 +125,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
 
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-indigo-500/20">
+          <div className="w-12 h-12 rounded-2xl bg-[#2D6A4F] flex items-center justify-center text-white mx-auto mb-3 shadow-sm">
             <LogIn className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            {currentUser ? 'Your MeoMeo Account' : 'Sign in to MeoMeo'}
+          <h2 className="text-xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+            {currentUser ? 'Your MeoMeo Account' : 'Welcome to MeoMeo'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Learn with your cat chibi adaptive English tutor. No personal API key required.
+          <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1">
+            Your cozy study companion for adult English learners. No personal API key required.
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="mb-4 p-3 rounded-xl bg-[#E07A5F]/15 border border-[#E07A5F]/30 text-[#E07A5F] text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-[#E07A5F]" />
             <span>{error}</span>
           </div>
         )}
 
         {currentUser ? (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E]">
               <div className="flex items-center gap-3">
                 {currentUser.picture ? (
                   <img
                     src={currentUser.picture}
                     alt={currentUser.name}
-                    className="w-11 h-11 rounded-full border border-indigo-400/50"
+                    className="w-11 h-11 rounded-full border border-[#2D6A4F]/40"
                   />
                 ) : (
-                  <div className="w-11 h-11 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold">
+                  <div className="w-11 h-11 rounded-full bg-[#2D6A4F]/20 border border-[#2D6A4F]/30 flex items-center justify-center text-[#2D6A4F] dark:text-[#74A892] font-serif font-bold">
                     {currentUser.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="overflow-hidden">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-white truncate">{currentUser.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    <span className="font-semibold text-sm text-[#1B4332] dark:text-[#F4F2EC] truncate">{currentUser.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider bg-[#2D6A4F]/10 text-[#2D6A4F] dark:text-[#74A892] border border-[#2D6A4F]/20 font-mono">
                       {currentUser.authProvider}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+                  <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] truncate font-mono">{currentUser.email}</p>
                 </div>
               </div>
 
               {limits && (
-                <div className="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
+                <div className="mt-4 pt-3 border-t border-[#EBE4D7] dark:border-[#3C443E] space-y-2">
                   <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                    <div className="bg-slate-900/60 p-2 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block">Your Daily Quota</span>
-                      <span className="font-bold text-indigo-400">{limits.userRemaining} of {limits.userDailyLimit} available</span>
+                    <div className="bg-[#FAF7F2] dark:bg-[#1E231F] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#2C332E]">
+                      <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block">Your Daily Quota</span>
+                      <span className="font-bold text-[#2D6A4F] dark:text-[#74A892] font-mono">{limits.userRemaining} of {limits.userDailyLimit}</span>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg">
-                      <span className="text-[10px] text-slate-400 block">Community Budget</span>
-                      <span className="font-bold text-sky-400">{limits.globalRemaining} of {limits.globalDailyLimit} available</span>
+                    <div className="bg-[#FAF7F2] dark:bg-[#1E231F] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#2C332E]">
+                      <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block">Community Budget</span>
+                      <span className="font-bold text-[#52796F] dark:text-[#84A98C] font-mono">{limits.globalRemaining} of {limits.globalDailyLimit}</span>
                     </div>
                   </div>
                   {typeof limits.estimatedTokensUsedToday === 'number' && (
-                    <div className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5 bg-slate-950/40 py-1.5 px-3 rounded-lg border border-slate-800">
-                      <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-                      <span>Tokens consumed today: <strong className="text-slate-200">~{limits.estimatedTokensUsedToday.toLocaleString()} tokens</strong></span>
+                    <div className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] text-center flex items-center justify-center gap-1.5 bg-[#FAF7F2] dark:bg-[#1E231F] py-1.5 px-3 rounded-xl border border-[#EBE4D7] dark:border-[#2C332E]">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D4A373] shrink-0" />
+                      <span>Tokens consumed today: <strong className="text-[#2D312E] dark:text-[#F4F2EC] font-mono">~{limits.estimatedTokensUsedToday.toLocaleString()}</strong></span>
                     </div>
                   )}
                 </div>
@@ -194,7 +193,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition"
+              className="w-full py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-semibold text-sm transition cursor-pointer shadow-sm"
             >
               Continue Learning
             </button>
@@ -205,26 +204,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {googleClientIdConfigured ? (
               <div className="flex flex-col items-center gap-2.5">
                 <div ref={googleBtnContainerRef} className="flex justify-center" />
-                <span className="text-[11px] text-slate-400">Sign in with your Google account</span>
+                <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4]">Sign in with your Google account</span>
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-300">
-                <div className="flex items-center gap-2 font-medium text-amber-300 mb-1">
-                  <Shield className="w-4 h-4 text-amber-400" />
-                  <span>Google Client ID not configured</span>
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] text-xs text-[#5C645E] dark:text-[#A7ABA4]">
+                <div className="flex items-center gap-2 font-medium text-[#D4A373] mb-1">
+                  <Shield className="w-4 h-4 text-[#D4A373]" />
+                  <span className="font-semibold text-[#1B4332] dark:text-[#F4F2EC]">Google Client ID not configured</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  To enable 1-click Google Sign-In, add <code className="text-slate-200">GOOGLE_CLIENT_ID</code> in your server environment. You can start immediately below as a Guest learner!
+                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
+                  To enable 1-click Google Sign-In, add <code className="text-[#2D6A4F] dark:text-[#74A892] font-mono">GOOGLE_CLIENT_ID</code> in your server environment. You can start immediately below as a Guest learner!
                 </p>
               </div>
             )}
 
             <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-800" />
+                <div className="w-full border-t border-[#EBE4D7] dark:border-[#2C332E]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-900 px-2 text-slate-500 text-[10px] font-bold">Or</span>
+                <span className="bg-[#FAF7F2] dark:bg-[#1E231F] px-2 text-[#8C938D] text-[10px] font-bold font-mono">Or</span>
               </div>
             </div>
 
@@ -232,25 +231,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               onClick={handleGuestLogin}
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white font-medium text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-[#262F28] hover:bg-[#FAF7F2] dark:hover:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] text-[#2D312E] dark:text-[#F4F2EC] font-semibold text-sm flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
-              <User className="w-4 h-4 text-slate-400" />
+              <User className="w-4 h-4 text-[#52796F]" />
               <span>Continue as Guest Learner</span>
             </button>
 
             {/* Privacy & Safe Usage Badges */}
-            <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1.5">
+            <div className="pt-3 border-t border-[#EBE4D7] dark:border-[#2C332E] text-[11px] text-[#5C645E] dark:text-[#A7ABA4] space-y-1.5">
               <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <Check className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#74A892] shrink-0" />
                 <span>Zero personal API keys required</span>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <Check className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#74A892] shrink-0" />
                 <span>Isolated progress and private learning memory</span>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Protected server-side usage limits (30 AI queries/day)</span>
+                <Check className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#74A892] shrink-0" />
+                <span>Protected daily token allowance (30 AI queries/day)</span>
               </div>
             </div>
           </div>
