@@ -19,7 +19,8 @@ import {
   ChevronUp,
   FileText,
   Loader2,
-  Globe
+  Globe,
+  Home
 } from 'lucide-react';
 import {
   UserProfile,
@@ -29,11 +30,13 @@ import {
   SectionType,
   TutorAssistantResponse
 } from '../types/learning.ts';
+import { isAutoAssessQuestion, AUTO_SUBMIT_NOTE } from '../utils/submissionPolicy.ts';
 import { VocabularyCard } from './VocabularyCard.tsx';
 import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
 import { ClickableSentenceText } from './ClickableSentenceText.tsx';
 import { WordPracticeModal } from './WordPracticeModal.tsx';
+import { AppButton, ActionChip, StatusBadge, IconButton } from './ui/index.ts';
 import {
   generateQuestion,
   generateFullSessionQuestions,
@@ -131,6 +134,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [isTimeExpired, setIsTimeExpired] = useState<boolean>(false);
   const [hurryUpQuote, setHurryUpQuote] = useState<string>('');
   const [catConfig, setCatConfig] = useState(catCustomizationStore.getConfig());
+  const [showMobileActivities, setShowMobileActivities] = useState<boolean>(false);
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -317,7 +321,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   const handleSubmitAnswer = async (overrideAnswer?: string) => {
     const ansToUse = overrideAnswer !== undefined ? overrideAnswer : userAnswer;
-    if (!currentQuestion || !ansToUse.trim()) return;
+    if (!currentQuestion || !ansToUse.trim() || isSubmitting || Boolean(evaluation)) return;
     if (overrideAnswer !== undefined) {
       setUserAnswer(overrideAnswer);
     }
@@ -346,7 +350,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {
           question: currentQuestion,
           evaluation: result,
-          userAnswer
+          userAnswer: ansToUse
         }
       ];
       setLessonAttempts(updatedAttempts);
@@ -369,7 +373,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         questionIndexInSection,
         currentQuestion,
         lastEvaluation: result,
-        lastUserAnswer: userAnswer,
+        lastUserAnswer: ansToUse,
         attempts: updatedAttempts,
         sectionProgress: updatedProgress,
         status: 'in_progress',
@@ -380,7 +384,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       console.error('Failed to evaluate answer:', err);
       setAiError(err);
       // Explicitly preserve userAnswer so learner does not lose writing / progress!
-      setLastFailedAction(() => () => handleSubmitAnswer());
+      setLastFailedAction(() => () => handleSubmitAnswer(ansToUse));
     } finally {
       setIsSubmitting(false);
     }
@@ -574,7 +578,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Top lesson pace & duration banner */}
       <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 shadow-xs space-y-4 text-[#2D312E] dark:text-[#F4F2EC]">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -582,10 +586,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] text-[#1B4332] dark:text-[#84A98C] flex items-center space-x-1.5">
               <span>
                 {paceMode === 'quick_10'
-                  ? '⚡ 10-Min Quick Practice'
+                  ? '10-Min Quick Practice'
                   : paceMode === 'deep_30'
-                  ? '🔬 30-Min Deep Practice'
-                  : '🎯 20-Min Standard Practice'}
+                  ? '30-Min Deep Practice'
+                  : '20-Min Standard Practice'}
               </span>
             </span>
 
@@ -613,10 +617,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
               <button
                 type="button"
                 onClick={onReturnHome}
-                className="flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
                 title="Pause and return to home desk"
               >
-                <span>🐾 Desk</span>
+                <Home className="w-3.5 h-3.5" />
+                <span>Desk</span>
               </button>
             )}
 
@@ -639,7 +644,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               }`}
               title="Toggle shortened 2-part session"
             >
-              {isShortSession ? '⚡ Shortened' : '⚡ Shorten'}
+              {isShortSession ? 'Shortened' : 'Shorten'}
             </button>
 
             <button
@@ -672,48 +677,124 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </div>
 
-        {/* Section Tabs with Questions Completed Badges */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#F4EFEB] dark:border-[#2C332E]">
-          {activeSections.map((sec, idx) => {
-            const isActive = idx === currentSectionIndex;
-            const targetCount = sec.target_questions_count || 1;
-            const doneCount = sectionProgress[idx] || 0;
-            const isSecDone = doneCount >= targetCount;
+        {/* Responsive Activity Stepper Tracker */}
+        <div className="pt-2 border-t border-[#F4EFEB] dark:border-[#2C332E]">
+          {/* Desktop & Tablet Grid Stepper */}
+          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {activeSections.map((sec, idx) => {
+              const isActive = idx === currentSectionIndex;
+              const targetCount = sec.target_questions_count || 1;
+              const doneCount = sectionProgress[idx] || 0;
+              const isSecDone = doneCount >= targetCount;
+              const rawTitle = sec.title.split('—')[1] ? sec.title.split('—')[1].trim() : sec.title;
 
-            return (
-              <button
-                key={idx}
-                onClick={() => handleSelectSection(idx)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-2 transition cursor-pointer ${
-                  isActive
-                    ? 'bg-[#1B4332] dark:bg-[#52B788] text-white dark:text-[#0F291E] shadow-2xs'
-                    : isSecDone
-                    ? 'bg-[#EFF6F1] dark:bg-[#1C2C23] text-[#2D6A4F] dark:text-[#84A98C] border border-[#C2DBC7] dark:border-[#2F4738]'
-                    : 'bg-[#FAF7F2] dark:bg-[#242A25] text-[#5C645E] dark:text-[#8A938C] border border-[#EBE4D7] dark:border-[#313B33] hover:text-[#1B4332] dark:hover:text-[#F4F2EC]'
-                }`}
-              >
-                {isSecDone ? (
-                  <Check className="w-3.5 h-3.5 text-[#52B788]" />
-                ) : (
-                  <span className="w-4 h-4 rounded-full bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC] flex items-center justify-center text-[10px]">
-                    {idx + 1}
-                  </span>
-                )}
-                <span>{sec.title.split('—')[1] ? sec.title.split('—')[1].trim() : sec.title}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectSection(idx)}
+                  className={`p-2.5 rounded-2xl text-xs font-semibold flex items-center justify-between transition cursor-pointer text-left ${
                     isActive
-                      ? 'bg-[#143826] dark:bg-[#40916C] text-white'
+                      ? 'bg-[#1B4332] dark:bg-[#52B788] text-white dark:text-[#0F291E] shadow-2xs'
                       : isSecDone
-                      ? 'bg-[#DCEDE1] dark:bg-[#264232] text-[#2D6A4F] dark:text-[#84A98C]'
-                      : 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#5C645E] dark:text-[#A7ABA4]'
+                      ? 'bg-[#EFF6F1] dark:bg-[#1C2C23] text-[#2D6A4F] dark:text-[#84A98C] border border-[#C2DBC7] dark:border-[#2F4738]'
+                      : 'bg-[#FAF7F2] dark:bg-[#242A25] text-[#5C645E] dark:text-[#8A938C] border border-[#EBE4D7] dark:border-[#313B33] hover:text-[#1B4332] dark:hover:text-[#F4F2EC]'
                   }`}
+                  title={`${sec.title} (${doneCount}/${targetCount} completed)`}
                 >
-                  {doneCount}/{targetCount}
+                  <div className="flex items-center space-x-2 min-w-0 pr-1">
+                    {isSecDone ? (
+                      <Check className="w-3.5 h-3.5 text-[#52B788] dark:text-[#0F291E] shrink-0" />
+                    ) : (
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0 font-bold ${
+                        isActive
+                          ? 'bg-white/20 text-white dark:bg-[#0F291E]/20 dark:text-[#0F291E]'
+                          : 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC]'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                    )}
+                    <span className="truncate font-medium">{rawTitle}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono shrink-0 ${
+                      isActive
+                        ? 'bg-white/20 text-white dark:bg-[#0F291E]/20 dark:text-[#0F291E]'
+                        : isSecDone
+                        ? 'bg-[#DCEDE1] dark:bg-[#264232] text-[#2D6A4F] dark:text-[#84A98C]'
+                        : 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#5C645E] dark:text-[#A7ABA4]'
+                    }`}
+                  >
+                    {doneCount}/{targetCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Mobile: Compact Activity Bar with Expandable Steps */}
+          <div className="sm:hidden space-y-2">
+            <div className="flex items-center justify-between gap-2 bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] p-2.5 rounded-2xl text-xs">
+              <div className="flex items-center space-x-2 min-w-0">
+                <span className="w-5 h-5 rounded-full bg-[#1B4332] dark:bg-[#52B788] text-white dark:text-[#0F291E] flex items-center justify-center text-[11px] font-bold shrink-0">
+                  {currentSectionIndex + 1}
                 </span>
+                <span className="font-bold text-[#1B4332] dark:text-[#F4F2EC] truncate">
+                  {activeSectionPlan.title}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileActivities(!showMobileActivities)}
+                className="px-2.5 py-1 rounded-xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[11px] font-semibold text-[#2D6A4F] dark:text-[#84A98C] flex items-center gap-1 shrink-0"
+              >
+                <span>{showMobileActivities ? 'Hide' : 'All steps'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMobileActivities ? 'rotate-180' : ''}`} />
               </button>
-            );
-          })}
+            </div>
+
+            {showMobileActivities && (
+              <div className="grid grid-cols-1 gap-1.5 pt-1 animate-fade-in">
+                {activeSections.map((sec, idx) => {
+                  const isActive = idx === currentSectionIndex;
+                  const targetCount = sec.target_questions_count || 1;
+                  const doneCount = sectionProgress[idx] || 0;
+                  const isSecDone = doneCount >= targetCount;
+                  const rawTitle = sec.title.split('—')[1] ? sec.title.split('—')[1].trim() : sec.title;
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        handleSelectSection(idx);
+                        setShowMobileActivities(false);
+                      }}
+                      className={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
+                        isActive
+                          ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E]'
+                          : isSecDone
+                          ? 'bg-[#EFF6F1] dark:bg-[#1C2C23] text-[#2D6A4F] dark:text-[#84A98C] border border-[#C2DBC7] dark:border-[#2F4738]'
+                          : 'bg-white dark:bg-[#242A25] text-[#5C645E] dark:text-[#8A938C] border border-[#EBE4D7] dark:border-[#313B33]'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2 min-w-0 pr-2">
+                        {isSecDone ? (
+                          <Check className="w-3.5 h-3.5 text-[#52B788] dark:text-[#0F291E] shrink-0" />
+                        ) : (
+                          <span className="w-4 h-4 rounded-full bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC] flex items-center justify-center text-[10px] shrink-0">
+                            {idx + 1}
+                          </span>
+                        )}
+                        <span className="truncate">{rawTitle}</span>
+                      </div>
+                      <span className="text-[10px] font-mono shrink-0">
+                        {doneCount}/{targetCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -769,17 +850,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
       )}
 
       {isLoadingQuestion ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4">
-          <div className="w-9 h-9 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-xs">
+          <div className="w-8 h-8 border-2 border-[#2D6A4F] dark:border-[#52B788] border-t-transparent rounded-full animate-spin" />
           <div>
-            <h3 className="text-base font-semibold text-white">⚡ Preparing today's cohesive session...</h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <h3 className="text-base font-semibold text-[#1B4332] dark:text-[#F4F2EC]">Preparing today&apos;s session...</h3>
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1">
               Pre-loading all activities for instant, lag-free practice
             </p>
           </div>
         </div>
       ) : !currentQuestion ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center flex flex-col items-center justify-center space-y-4">
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-10 text-center flex flex-col items-center justify-center space-y-4 shadow-xs">
           <AIErrorAlert
             error={aiError || 'Unable to generate question.'}
             onRetry={lastFailedAction || (() => loadQuestionForSection(currentSectionIndex, questionIndexInSection))}
@@ -790,21 +871,21 @@ export const LessonView: React.FC<LessonViewProps> = ({
       ) : (
         <div className="space-y-6">
           {/* Section Heading & Target */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#EBE4D7] dark:border-[#2C332E]">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+              <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C]">
                 {getSectionTitle(currentSection)}
               </span>
-              <h2 className="text-lg font-bold text-white mt-0.5">
+              <h2 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC] mt-0.5">
                 {currentQuestion.skill_name}
               </h2>
             </div>
 
-            <div className="flex items-center space-x-2 text-xs text-slate-400">
-              <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 font-medium">
-                {currentQuestion.context_topic === 'workplace_tech' ? '💼 Workplace / Tech' : '🌱 General'}
+            <div className="flex items-center space-x-2 text-xs text-[#5C645E] dark:text-[#A7ABA4]">
+              <span className="px-2.5 py-1 rounded-lg bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] font-medium">
+                {currentQuestion.context_topic === 'workplace_tech' ? 'Workplace / Tech' : 'General'}
               </span>
-              <span className="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 font-mono text-[11px]">
+              <span className="px-2 py-1 rounded-lg bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] font-mono text-[11px]">
                 {currentQuestion.difficulty}
               </span>
             </div>
@@ -812,30 +893,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Grammar Concept Intro (if present) */}
           {currentQuestion.concept_intro && (
-            <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-2xl p-4 text-xs text-indigo-200 flex items-start space-x-3">
-              <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+            <div className="bg-[#EFF6F1] dark:bg-[#252F28] border border-[#CDE1D4] dark:border-[#334237] rounded-2xl p-4 text-xs text-[#1B4332] dark:text-[#F4F2EC] flex items-start space-x-3">
+              <Sparkles className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788] shrink-0 mt-0.5" />
               <div>
-                <strong className="text-indigo-300 font-semibold block mb-0.5">Key Concept</strong>
-                <p className="leading-relaxed">{currentQuestion.concept_intro}</p>
+                <strong className="text-[#1B4332] dark:text-[#F4F2EC] font-semibold block mb-0.5">Key Concept</strong>
+                <p className="leading-relaxed text-[#5C645E] dark:text-[#A7ABA4]">{currentQuestion.concept_intro}</p>
               </div>
             </div>
           )}
 
-
-
           {/* Reading Passage (if present) */}
           {currentQuestion.reading_passage && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-md">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center space-x-1.5">
+            <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 md:p-8 shadow-xs text-[#2D312E] dark:text-[#F4F2EC]">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
+                <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] flex items-center space-x-1.5">
                   <FileText className="w-3.5 h-3.5" />
                   <span>{currentQuestion.reading_passage.title}</span>
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-[#8A938C]">
                   {currentQuestion.reading_passage.word_count} words
                 </span>
               </div>
-              <div className="text-sm md:text-base leading-relaxed text-slate-200 font-normal">
+              <div className="text-sm md:text-base leading-relaxed text-[#2D312E] dark:text-[#F4F2EC] font-normal max-w-3xl">
                 <ClickableSentenceText
                   text={currentQuestion.reading_passage.text}
                   onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -889,6 +968,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </div>
             )}
 
+            {/* Auto Submit Note for single-action options */}
+            {isAutoAssessQuestion(currentQuestion) && !evaluation && (
+              <div className="text-xs font-medium text-[#2D6A4F] dark:text-[#84A98C] flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38]">
+                <span className="text-sm shrink-0">💡</span>
+                <span>{AUTO_SUBMIT_NOTE}</span>
+              </div>
+            )}
+
             {/* Multiple Choice Options */}
             {currentQuestion.options && currentQuestion.options.length > 0 && (
               <div className="grid grid-cols-1 gap-3">
@@ -934,19 +1021,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       tabIndex={isDisabled ? -1 : 0}
                       aria-disabled={isDisabled}
                       onClick={async () => {
-                        if (evaluation) return;
+                        if (evaluation || isSubmitting) return;
                         setUserAnswer(opt.id);
                         await handleSubmitAnswer(opt.id);
                       }}
                       onKeyDown={async (e) => {
-                        if (evaluation || isDisabled) return;
+                        if (evaluation || isDisabled || isSubmitting) return;
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           setUserAnswer(opt.id);
                           await handleSubmitAnswer(opt.id);
                         }
                       }}
-                      className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
+                      className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled || isSubmitting ? 'cursor-default' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center space-x-4">
                         <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${badgeClass}`}>
@@ -987,7 +1074,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   value={userAnswer}
                   onChange={e => setUserAnswer(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && !evaluation && userAnswer.trim()) {
+                    if (e.key === 'Enter' && !evaluation && !isSubmitting && userAnswer.trim()) {
+                      e.preventDefault();
                       handleSubmitAnswer();
                     }
                   }}
@@ -1034,44 +1122,41 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </div>
             )}
 
-            {/* Answer submission button (if not evaluated yet) */}
-            {!evaluation && (
+            {/* Answer submission button (for manual submission questions like fill-in-blank / free writing) */}
+            {!evaluation && !isAutoAssessQuestion(currentQuestion) && (
               <div className="pt-2 flex justify-end">
-                <button
+                <AppButton
                   disabled={!userAnswer.trim() || isSubmitting}
+                  isLoading={isSubmitting}
                   onClick={() => handleSubmitAnswer()}
-                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] dark:text-[#0F291E] disabled:opacity-50 text-white font-bold text-sm transition shadow-xs flex items-center space-x-2 cursor-pointer"
+                  size="md"
+                  variant="primary"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Checking...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Check Answer</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                  <span>Check Answer</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </AppButton>
               </div>
             )}
           </div>
 
           {/* Tutor Controls: Hint, Simplify, Example, Ambiguous */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <span className="text-slate-400 font-medium">Tutor Assistance:</span>
+          <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[#2D312E] dark:text-[#F4F2EC]">
+            <span className="text-[#5C645E] dark:text-[#A7ABA4] font-medium flex items-center space-x-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
+              <span>AI Tutor Assistance:</span>
+            </span>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
+              <AppButton
+                size="sm"
+                variant="outline"
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('hint')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
                 {isLoadingAssist && activeAssistAction === 'hint' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D48B16] mr-1.5" />
                 ) : (
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                  <Lightbulb className="w-3.5 h-3.5 text-[#D48B16] mr-1.5" />
                 )}
                 <span>
                   {isLoadingAssist && activeAssistAction === 'hint'
@@ -1080,64 +1165,67 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     ? 'Hide Hint'
                     : 'I need a hint'}
                 </span>
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
+                size="sm"
+                variant="outline"
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('simpler_explanation')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
                 {isLoadingAssist && activeAssistAction === 'simpler_explanation' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
                 )}
                 <span>
                   {isLoadingAssist && activeAssistAction === 'simpler_explanation'
                     ? 'Explaining simply...'
                     : 'Explain it more simply'}
                 </span>
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
+                size="sm"
+                variant="outline"
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('another_example')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
               >
                 {isLoadingAssist && activeAssistAction === 'another_example' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
                 ) : (
-                  <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                  <BookOpen className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
                 )}
                 <span>
                   {isLoadingAssist && activeAssistAction === 'another_example'
                     ? 'Generating example...'
                     : 'Give me another example'}
                 </span>
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
+                size="sm"
+                variant="outline"
                 disabled={isLoadingAssist}
                 onClick={() => handleTutorAction('clarify_ambiguity')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5 text-slate-400 hover:text-slate-200"
               >
                 {isLoadingAssist && activeAssistAction === 'clarify_ambiguity' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#52796F] mr-1.5" />
                 ) : (
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                  <HelpCircle className="w-3.5 h-3.5 text-[#52796F] mr-1.5" />
                 )}
                 <span>
                   {isLoadingAssist && activeAssistAction === 'clarify_ambiguity'
                     ? 'Clarifying...'
                     : 'This seems ambiguous'}
                 </span>
-              </button>
+              </AppButton>
             </div>
 
             {/* In-Flight Loading Status Notification Banner */}
             {isLoadingAssist && activeAssistAction && (
-              <div className="w-full bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3 flex items-center space-x-2.5 text-xs text-indigo-200 animate-pulse mt-2">
-                <Loader2 className="w-4 h-4 animate-spin text-indigo-400 shrink-0" />
+              <div className="w-full bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#354037] rounded-xl p-3 flex items-center space-x-2.5 text-xs text-[#2D6A4F] dark:text-[#52B788] animate-pulse mt-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[#2D6A4F] dark:text-[#52B788] shrink-0" />
                 <span className="font-medium">
                   {activeAssistAction === 'simpler_explanation' && 'AI Tutor is crafting a simpler, clearer explanation...'}
                   {activeAssistAction === 'another_example' && 'AI Tutor is generating another realistic contextual example...'}
@@ -1161,30 +1249,30 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
           {/* Hint Dropdown */}
           {showHint && currentQuestion.hint && (
-            <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl p-4 text-xs text-amber-200 flex items-start space-x-3">
-              <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="bg-[#FEF7E6] dark:bg-[#2C2417] border border-[#F5DC9A] dark:border-[#524128] rounded-2xl p-4 text-xs text-[#2D312E] dark:text-[#F4F2EC] flex items-start space-x-3">
+              <Lightbulb className="w-4 h-4 text-[#D48B16] shrink-0 mt-0.5" />
               <div>
-                <strong className="text-amber-300 font-semibold block mb-0.5">Gentle Clue:</strong>
-                <p>{currentQuestion.hint}</p>
+                <strong className="text-[#B25E00] dark:text-[#E9A825] font-semibold block mb-0.5">Gentle Clue:</strong>
+                <p className="text-[#5C645E] dark:text-[#A7ABA4]">{currentQuestion.hint}</p>
               </div>
             </div>
           )}
 
           {/* Tutor Assist Live Response Drawer */}
           {tutorAssistData && (
-            <div className="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 text-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-indigo-300">
+            <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-5 text-[#2D312E] dark:text-[#F4F2EC] space-y-2 shadow-xs">
+              <div className="flex items-center justify-between text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C]">
                 <span>Tutor Note</span>
                 <button
                   onClick={() => setTutorAssistData(null)}
-                  className="text-slate-400 hover:text-white"
+                  className="text-[#8A938C] hover:text-[#1B4332] dark:hover:text-white p-0.5"
                 >
                   ✕
                 </button>
               </div>
-              <p className="text-sm leading-relaxed whitespace-pre-line">{tutorAssistData.content}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-line text-[#2D312E] dark:text-[#F4F2EC]">{tutorAssistData.content}</p>
               {tutorAssistData.example_sentence && (
-                <div className="mt-2 bg-slate-900/80 p-3 rounded-xl border border-slate-700 text-xs text-slate-100 italic">
+                <div className="mt-2 bg-[#FAF7F2] dark:bg-[#252C27] p-3 rounded-xl border border-[#EBE4D7] dark:border-[#354037] text-xs text-[#1B4332] dark:text-[#F4F2EC] italic">
                   "{tutorAssistData.example_sentence}"
                 </div>
               )}
@@ -1395,28 +1483,30 @@ export const LessonView: React.FC<LessonViewProps> = ({
               {/* Action buttons: Next question / Retry */}
               <div className="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#EBE4D7] dark:border-[#2C332E]">
                 {evaluation.verdict !== 'correct' ? (
-                  <button
+                  <AppButton
                     onClick={handleRetryQuestion}
-                    className="px-5 py-2.5 rounded-2xl bg-white dark:bg-[#242A25] hover:bg-[#FAF7F2] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#313B33] text-sm font-semibold transition flex items-center space-x-2 cursor-pointer"
+                    size="md"
+                    variant="outline"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4 mr-2" />
                     <span>Try Again</span>
-                  </button>
+                  </AppButton>
                 ) : <div />}
 
-                <button
+                <AppButton
                   onClick={handleNextQuestionOrSection}
-                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] dark:text-[#0F291E] text-white text-sm font-bold transition shadow-xs flex items-center space-x-2 cursor-pointer"
+                  size="md"
+                  variant="primary"
                 >
                   <span>
                     {questionIndexInSection < targetQuestionsInSection - 1
-                      ? `Next Question in Part ${currentSectionIndex + 1} (${questionIndexInSection + 2}/${targetQuestionsInSection}) →`
+                      ? `Next Question in Part ${currentSectionIndex + 1} (${questionIndexInSection + 2}/${targetQuestionsInSection})`
                       : currentSectionIndex < activeSections.length - 1
-                      ? `Next Activity: ${activeSections[currentSectionIndex + 1]?.title.split('—')[1] ? activeSections[currentSectionIndex + 1]?.title.split('—')[1].trim() : activeSections[currentSectionIndex + 1]?.title} →`
+                      ? `Next Activity: ${activeSections[currentSectionIndex + 1]?.title.split('—')[1] ? activeSections[currentSectionIndex + 1]?.title.split('—')[1].trim() : activeSections[currentSectionIndex + 1]?.title}`
                       : 'Complete Lesson & View Summary 🎉'}
                   </span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </AppButton>
               </div>
             </div>
           )}
@@ -1437,8 +1527,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Time's Up Modal: End with Summary or Continue / Take Break Tomorrow */}
       {showTimeOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/60 rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white dark:bg-[#1E231F] border-2 border-[#2D6A4F] dark:border-[#52B788] rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden text-[#2D312E] dark:text-[#F4F2EC]">
             {/* Decorative top paws & cat avatar */}
             <div className="flex flex-col items-center justify-center space-y-2">
               <div className="relative">
@@ -1450,34 +1540,34 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 />
                 <span className="absolute -top-2 -right-2 text-2xl animate-bounce">⏰</span>
               </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-400/40">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#2D6A4F] dark:text-[#52B788] bg-[#EFF6F1] dark:bg-[#252F28] px-3 py-1 rounded-full border border-[#CDE1D4] dark:border-[#334237]">
                 🐾 Meo Meo Thông Báo 🐾
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
                 Hết Giờ Quy Định Hôm Nay Rồi! ⏰✨
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] max-w-sm mx-auto leading-relaxed">
                 Sen đã hoàn thành xuất sắc mục tiêu <strong>{durationTarget} phút</strong> học hôm nay cùng {catConfig.catName}!
               </p>
             </div>
 
             {/* Mini Session Achievement Pill Box */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3 text-center">
+            <div className="grid grid-cols-3 gap-2 bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-3 text-center">
               <div>
-                <span className="text-[10px] text-slate-400 block">Thời gian</span>
-                <strong className="text-sm font-bold text-amber-300">{durationTarget}m</strong>
+                <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block">Thời gian</span>
+                <strong className="text-sm font-bold text-[#B25E00] dark:text-[#E9A825]">{durationTarget}m</strong>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 block">Câu đã làm</span>
-                <strong className="text-sm font-bold text-sky-300">{lessonAttempts.length} câu</strong>
+                <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block">Câu đã làm</span>
+                <strong className="text-sm font-bold text-[#2D6A4F] dark:text-[#52B788]">{lessonAttempts.length} câu</strong>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 block">Thưởng cá</span>
-                <strong className="text-sm font-bold text-emerald-300">+2 🐟</strong>
+                <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block">Thưởng cá</span>
+                <strong className="text-sm font-bold text-[#52B788]">+2 🐟</strong>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 italic">
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] italic">
               "Giờ sen muốn nghỉ ngơi giữ streak để mèo ru ngủ, hay cộng thêm 5 phút học tiếp nào? Meow~"
             </p>
 
@@ -1485,26 +1575,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <div className="space-y-3 pt-1">
               {/* Choice 1: Take a Break & View Summary */}
               <button
+                type="button"
                 onClick={async () => {
                   setShowTimeOutModal(false);
                   await clearActiveLessonState();
                   const timeSpent = Math.max(1, Math.round(secondsElapsed / 60));
                   onFinishLesson(lessonAttempts, timeSpent);
                 }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-900/40 transition flex items-center justify-between group"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-md transition flex items-center justify-between group cursor-pointer"
               >
                 <div className="flex items-center space-x-2.5">
                   <span className="text-xl">😴</span>
                   <div className="text-left">
                     <span className="block font-bold">Nghỉ Ngơi & Mai Tiếp Tục 🐟</span>
-                    <span className="text-[11px] text-emerald-200 font-normal">Xem tổng kết thành tích & lưu streak hôm nay</span>
+                    <span className="text-[11px] text-[#E0DDD5] font-normal">Xem tổng kết thành tích & lưu streak hôm nay</span>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
               </button>
 
               {/* Choice 2: Continue Studying (+5m) */}
               <button
+                type="button"
                 onClick={() => {
                   setShowTimeOutModal(false);
                   setExtraMinutesAdded(prev => prev + 5);
@@ -1512,16 +1604,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   setHasWarnedNearlyOut(false);
                   setShowNearlyOutOfTimeAlert(false);
                 }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-750 border border-amber-400/50 hover:border-amber-400 text-white font-bold text-sm transition flex items-center justify-between group shadow-md"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] text-[#2D312E] dark:text-[#F4F2EC] font-bold text-sm transition flex items-center justify-between group shadow-sm cursor-pointer"
               >
                 <div className="flex items-center space-x-2.5">
                   <span className="text-xl">⚡</span>
                   <div className="text-left">
-                    <span className="block font-bold text-amber-300">Cộng Thêm 5 Phút & Học Tiếp 🐾</span>
-                    <span className="text-[11px] text-slate-300 font-normal">Đang hăng say, giải nốt các câu hỏi hôm nay!</span>
+                    <span className="block font-bold text-[#B25E00] dark:text-[#E9A825]">Cộng Thêm 5 Phút & Học Tiếp 🐾</span>
+                    <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] font-normal">Đang hăng say, giải nốt các câu hỏi hôm nay!</span>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-[#B25E00] dark:text-[#E9A825] group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>

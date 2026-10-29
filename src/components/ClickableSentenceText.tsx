@@ -1,4 +1,5 @@
 import React from 'react';
+import { InteractiveWord } from './ui/InteractiveWord.tsx';
 
 interface ClickableSentenceTextProps {
   text: string;
@@ -26,20 +27,17 @@ export const ClickableSentenceText: React.FC<ClickableSentenceTextProps> = ({
 
   const isClickableWord = (raw: string): boolean => {
     const cleaned = cleanWord(raw);
-    // Ignore blanks, numbers alone, single characters, or pure symbols
     if (cleaned.length < 2) return false;
     if (/^[0-9]+$/.test(cleaned)) return false;
     if (/^_{2,}$/.test(cleaned)) return false;
     return /^[a-zA-Z]/i.test(cleaned);
   };
 
-  // Split text by whitespace sequences (\s+) to preserve exact spaces, tabs, and newlines
   const tokens = text.split(/(\s+)/);
 
   return (
     <span className={`inline ${className}`}>
       {tokens.map((tok, tIdx) => {
-        // Handle whitespace tokens (preserves exact space and newline layout)
         if (/^\s+$/.test(tok)) {
           if (tok.includes('\n')) {
             const parts = tok.split('\n');
@@ -57,7 +55,6 @@ export const ClickableSentenceText: React.FC<ClickableSentenceTextProps> = ({
           return <React.Fragment key={tIdx}>{tok}</React.Fragment>;
         }
 
-        // Handle answer blanks (e.g., "_____", "________", "[_____]")
         const blankMatch = tok.match(/^([^a-zA-Z0-9_]*)(_{2,})([^a-zA-Z0-9_]*)$/);
         if (blankMatch) {
           const leading = blankMatch[1];
@@ -66,7 +63,7 @@ export const ClickableSentenceText: React.FC<ClickableSentenceTextProps> = ({
           return (
             <React.Fragment key={tIdx}>
               {leading && <span>{leading}</span>}
-              <span className="font-mono text-indigo-400 font-bold px-0.5 underline decoration-indigo-400/60 decoration-2 select-none">
+              <span className="font-mono text-[#2D6A4F] dark:text-[#52B788] font-bold px-0.5 underline decoration-[#2D6A4F]/60 dark:decoration-[#52B788]/60 decoration-2 select-none">
                 {blank}
               </span>
               {trailing && <span>{trailing}</span>}
@@ -74,7 +71,6 @@ export const ClickableSentenceText: React.FC<ClickableSentenceTextProps> = ({
           );
         }
 
-        // Extract leading punctuation, core word, and trailing punctuation
         const wordMatch = tok.match(/^([^a-zA-Z0-9]*)([\w'-]+)([^a-zA-Z0-9]*)$/);
         if (!wordMatch) {
           return <span key={tIdx}>{tok}</span>;
@@ -93,29 +89,12 @@ export const ClickableSentenceText: React.FC<ClickableSentenceTextProps> = ({
           return (
             <React.Fragment key={tIdx}>
               {leading && <span>{leading}</span>}
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onWordClick(cleaned, sentenceCtx);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onWordClick(cleaned, sentenceCtx);
-                  }
-                }}
-                title={`Click to learn & practice "${cleaned}"`}
-                className={`inline p-0 m-0 border-0 bg-transparent font-inherit text-inherit select-text cursor-pointer transition-colors duration-100 ${
-                  isTargetHighlighted
-                    ? 'text-amber-300 font-semibold underline decoration-amber-400 decoration-2 underline-offset-2'
-                    : 'hover:text-sky-300 hover:underline decoration-sky-400/70 underline-offset-2'
-                }`}
-              >
-                {core}
-              </span>
+              <InteractiveWord
+                word={core}
+                contextSentence={sentenceCtx}
+                onWordClick={(w, ctx) => onWordClick(cleanWord(w), ctx || sentenceCtx)}
+                isHighlighted={isTargetHighlighted}
+              />
               {trailing && <span>{trailing}</span>}
             </React.Fragment>
           );

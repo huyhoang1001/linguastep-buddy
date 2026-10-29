@@ -91,6 +91,48 @@ if (res13.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 14: AI Companion Cat Tutoring & Sound Safety Tests...');
+const res14 = spawnSync('npx', ['tsx', 'test/companion_cat_tutoring.test.ts'], { stdio: 'inherit' });
+if (res14.status !== 0) {
+  console.error('AI Companion cat tutoring tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 15: Header Dedicated Second Row Search Layout Tests...');
+const res15 = spawnSync('npx', ['tsx', 'test/header_search_layout.test.ts'], { stdio: 'inherit' });
+if (res15.status !== 0) {
+  console.error('Header search layout tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 16: UI Interaction Primitives & Affordances Tests...');
+const res16 = spawnSync('npx', ['tsx', 'test/interaction_primitives.test.ts'], { stdio: 'inherit' });
+if (res16.status !== 0) {
+  console.error('UI Interaction Primitives tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 17: Full-App Theme Contrast & Accessibility Audit Tests...');
+const res17 = spawnSync('npx', ['tsx', 'test/theme_contrast_audit.test.ts'], { stdio: 'inherit' });
+if (res17.status !== 0) {
+  console.error('Theme contrast audit tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 18: Answer Submission & Assessment Policy Tests...');
+const res18 = spawnSync('npx', ['tsx', 'test/answer_submission_policy.test.ts'], { stdio: 'inherit' });
+if (res18.status !== 0) {
+  console.error('Answer submission & assessment policy tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 19: Learn Page Content Width & Layout Consistency Tests...');
+const res19 = spawnSync('npx', ['tsx', 'test/learn_page_layout_consistency.test.ts'], { stdio: 'inherit' });
+if (res19.status !== 0) {
+  console.error('Learn page content width & layout consistency tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

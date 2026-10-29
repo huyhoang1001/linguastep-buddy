@@ -27,7 +27,7 @@ import { sanitizeAndReconcileQuestion } from './questionUtils.js';
 import { buildDiscoverySystemPrompt } from './prompts/discoveryPrompts.js';
 import { buildLessonPlanSystemPrompt, buildQuestionSystemPrompt } from './prompts/lessonPrompts.js';
 import { buildContrastExplanationPrompt, buildWritingRubricPrompt } from './prompts/evaluationPrompts.js';
-import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt, buildWordPracticeSystemPrompt } from './prompts/tutorPrompts.js';
+import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt, buildWordPracticeSystemPrompt, buildCompanionChatSystemPrompt } from './prompts/tutorPrompts.js';
 import { createFallbackWritingRubric } from './evaluators/diagnosticHelpers.js';
 
 import { fallbackDiscoveryTurn } from './fallbacks/diagnosticFallbacks.js';
@@ -774,6 +774,47 @@ export class GeminiLearningProvider implements LearningModelProvider {
     }
 
     return buildRuleBasedWordFamily(cleaned, contextSentence, profile, majorOrField);
+  }
+
+  // =========================================================================
+  // 5. CHIBI CAT COMPANION CHAT
+  // =========================================================================
+  public async companionChat(
+    messages: Array<{ role: 'user' | 'cat'; content: string }>,
+    profile: UserProfile,
+    lessonContext?: any
+  ): Promise<{ reply: string; suggestedPills?: string[] }> {
+    const systemPrompt = buildCompanionChatSystemPrompt(profile, lessonContext);
+    const lastMessage = messages[messages.length - 1]?.content || 'Hello!';
+    const conversationHistory = messages.slice(-6).map(m => `${m.role === 'user' ? 'Learner' : 'MeoMeo'}: ${m.content}`).join('\n');
+    const prompt = `${conversationHistory}\n\nLearner's current request: "${lastMessage}"`;
+
+    try {
+      const aiResult = await this.callGeminiJson<{ reply: string; suggestedPills?: string[] }>(prompt, systemPrompt, {
+        userId: profile.id,
+        operation: 'companion_chat'
+      });
+      if (aiResult && aiResult.reply) {
+        return {
+          reply: aiResult.reply,
+          suggestedPills: aiResult.suggestedPills && aiResult.suggestedPills.length > 0
+            ? aiResult.suggestedPills
+            : ['Explain this lesson', 'Give me a hint', 'Quiz me', 'Practice English']
+        };
+      }
+    } catch (err: any) {
+      if (err instanceof AIException && (err.code === 'QUOTA_EXHAUSTED' || err.code === 'RATE_LIMITED')) {
+        throw err;
+      }
+      console.warn('[AI] companionChat error, using fallback reply:', err?.message);
+    }
+
+    return {
+      reply: profile.explanation_language === 'vi'
+        ? 'MeoMeo đang nghĩ chút xíu... Bạn có muốn mình giải thích bài học hay gợi ý cho bạn không? 🐾'
+        : 'MeoMeo is pondering... Would you like me to explain the lesson or give you a hint? 🐾',
+      suggestedPills: ['Explain this lesson', 'Give me a hint', 'Quiz me', 'Practice English']
+    };
   }
 }
 

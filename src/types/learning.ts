@@ -685,3 +685,24 @@ export interface DeepDiveInquiryResponse {
   examples?: string[];
   similar_words_comparison?: SimilarWordComparison[];
 }
+
+export interface CompanionChatMessage {
+  id: string;
+  sender: 'user' | 'cat';
+  content: string;
+  timestamp: string;
+  suggestedPills?: string[];
+}
+
+export interface CompanionChatContext {
+  objective?: string;
+  questionPrompt?: string;
+  section?: SectionType | string;
+  skillName?: string;
+  conceptIntro?: string;
+  userAnswer?: string;
+  evaluationVerdict?: string;
+  expectedAnswer?: string;
+  explanationRule?: string;
+}
+

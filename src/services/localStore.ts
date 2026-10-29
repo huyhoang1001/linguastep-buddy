@@ -16,7 +16,8 @@ import {
   WordFormMastery,
   WordFormMasteryStatus,
   WordFamilyData,
-  EnglishLevel
+  EnglishLevel,
+  CompanionChatMessage
 } from '../types/learning.ts';
 import {
   DEFAULT_PROFILE,
@@ -93,6 +94,7 @@ class LocalLearningStore {
           'diagnostic_session',
           'diagnostic_reports',
           'study_plan',
+          'companion_chat',
           'metadata'
         ];
 
@@ -805,6 +807,28 @@ class LocalLearningStore {
   public async saveDiagnosticReport(report: DiagnosticReport): Promise<DiagnosticReport> {
     await this.setStoreData('diagnostic_reports', report.id, report);
     return report;
+  }
+
+  // =========================================================================
+  // 9b. COMPANION CHAT HISTORY
+  // =========================================================================
+
+  public async getCompanionChatHistory(userId?: string): Promise<CompanionChatMessage[]> {
+    const id = userId || this.activeAccountId || 'learner-primary';
+    const messages = await this.getStoreData<CompanionChatMessage[]>('companion_chat', id);
+    return Array.isArray(messages) ? messages : [];
+  }
+
+  public async saveCompanionChatHistory(userId: string | undefined, history: CompanionChatMessage[]): Promise<void> {
+    const id = userId || this.activeAccountId || 'learner-primary';
+    const maxMsgs = 30; // 30-message FIFO cap
+    const trimmed = history.slice(-maxMsgs);
+    await this.setStoreData('companion_chat', id, trimmed);
+  }
+
+  public async clearCompanionChatHistory(userId?: string): Promise<void> {
+    const id = userId || this.activeAccountId || 'learner-primary';
+    await this.deleteStoreData('companion_chat', id);
   }
 
   // =========================================================================

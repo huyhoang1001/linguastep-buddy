@@ -7,11 +7,8 @@ import {
   Compass,
   Trophy,
   Volume2,
-  Clock,
-  Flame,
   CheckCircle2,
   ArrowRight,
-  RotateCcw,
   Sliders,
   Cat
 } from 'lucide-react';
@@ -20,6 +17,7 @@ import { CatCustomizationConfig, CAT_COMPANIONS, CatMood } from '../types/catThe
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
 import { playPurrSound } from '../services/catSoundService.ts';
 import { playEnglishSpeech } from '../services/api.ts';
+import { AppButton, InfoCard, FilterChip, ActionChip, StatusBadge, IconButton } from './ui/index.ts';
 
 interface HomeScreenProps {
   profile: UserProfile;
@@ -64,8 +62,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [catMood, setCatMood] = useState<CatMood>('studying');
   const [catBubble, setCatBubble] = useState<string>('');
   const [isPetting, setIsPetting] = useState<boolean>(false);
-
-  const companion = CAT_COMPANIONS[catConfig.companionId] || CAT_COMPANIONS.mochi;
 
   // Time-based greeting
   const getGreeting = () => {
@@ -119,9 +115,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* 1. Welcoming Hero Banner with Cozy Study Desk & Cat Companion */}
-      <section className="relative overflow-hidden rounded-3xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-6 sm:p-8 shadow-sm">
+      <InfoCard className="relative overflow-hidden p-6 sm:p-8 shadow-sm">
         {/* Subtle decorative background watermarks */}
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 rounded-full bg-[#EAF2ED]/60 dark:bg-[#252F28]/30 blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-10 w-56 h-56 rounded-full bg-[#FDF0ED]/60 dark:bg-[#32231F]/20 blur-2xl pointer-events-none" />
@@ -129,7 +125,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           {/* Left Greeting & Context */}
           <div className="space-y-3 max-w-xl">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C]">
               <span>{getGreeting()}, {profile.name || 'Friend'}</span>
               <span aria-hidden="true">&middot;</span>
               <span>Level {profile.current_level}</span>
@@ -137,7 +133,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <span>Day {dailySummaries.length + 1}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight leading-tight">
               Your Daily Study Sanctuary
             </h1>
 
@@ -220,14 +216,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </InfoCard>
 
       {/* 2. Today's Mission & Primary Action Card */}
-      <section className="rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-6 sm:p-8 shadow-sm space-y-6">
+      <InfoCard className="p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#F4EFEB] dark:border-[#2B332D]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#E07A5F]">
+              <span className="text-xs font-bold text-[#E07A5F]">
                 Today&apos;s Curated Mission
               </span>
               <span aria-hidden="true" className="text-xs text-[#8A938C]">&middot;</span>
@@ -235,7 +231,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {activePlan ? 'In Progress' : 'Ready to Start'}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] mt-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#1B4332] dark:text-[#F4F2EC] mt-1">
               {activePlan?.primary_objective || (
                 overdueSkills.length > 0
                   ? `Spaced Retrieval: ${overdueSkills[0].skill_name} & Core Application`
@@ -247,25 +243,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {/* Session Pace Selector */}
           <div className="flex items-center gap-1 p-1 bg-[#FAF7F2] dark:bg-[#161A17] rounded-xl border border-[#EBE4D7] dark:border-[#2C332E] self-start md:self-center">
             {([10, 20, 30] as const).map(mins => (
-              <button
+              <FilterChip
                 key={mins}
-                type="button"
+                selected={selectedPace === mins}
                 onClick={() => setSelectedPace(mins)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  selectedPace === mins
-                    ? 'bg-[#1B4332] dark:bg-[#52B788] text-white dark:text-[#0F291E] shadow-sm'
-                    : 'text-[#5C645E] dark:text-[#8E978F] hover:text-[#1B4332] dark:hover:text-white'
-                }`}
               >
                 ⏱️ {mins}m
-              </button>
+              </FilterChip>
             ))}
           </div>
         </div>
 
-        {/* Lesson Structure Preview (Airy, clean steps without candy pills) */}
+        {/* Lesson Structure Preview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] space-y-1.5">
+          <InfoCard variant="subtle" className="p-4 rounded-2xl space-y-1.5">
             <div className="flex items-center justify-between text-xs text-[#52796F] dark:text-[#84A98C] font-semibold">
               <span>01. Warm-Up &amp; Review</span>
               <span>~3-4 mins</span>
@@ -276,9 +267,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
               Consolidates past memory traces against the forgetting curve.
             </p>
-          </div>
+          </InfoCard>
 
-          <div className="p-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] space-y-1.5">
+          <InfoCard variant="subtle" className="p-4 rounded-2xl space-y-1.5">
             <div className="flex items-center justify-between text-xs text-[#52796F] dark:text-[#84A98C] font-semibold">
               <span>02. Core Focus</span>
               <span>~8-10 mins</span>
@@ -289,9 +280,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
               Active production, open clozes, and contextual sentence transformations.
             </p>
-          </div>
+          </InfoCard>
 
-          <div className="p-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] space-y-1.5">
+          <InfoCard variant="subtle" className="p-4 rounded-2xl space-y-1.5">
             <div className="flex items-center justify-between text-xs text-[#52796F] dark:text-[#84A98C] font-semibold">
               <span>03. Lexicon &amp; Transfer</span>
               <span>~4-6 mins</span>
@@ -302,58 +293,50 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
               Natural collocations and workplace scenario communication.
             </p>
-          </div>
+          </InfoCard>
         </div>
 
         {/* Action Row */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <button
-            type="button"
+          <ActionChip
+            icon={<Sliders className="w-3.5 h-3.5" />}
+            variant="subtle"
             onClick={onOpenCatalog}
-            className="text-xs font-semibold text-[#52796F] dark:text-[#84A98C] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] flex items-center gap-1.5 cursor-pointer"
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Customize goals, mistakes, or vocabulary for this session</span>
-          </button>
+            Customize goals, mistakes, or vocabulary for this session
+          </ActionChip>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {activePlan ? (
-              <button
-                type="button"
+              <AppButton
+                variant="primary"
+                size="lg"
                 onClick={onResumeLesson}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                leftIcon={<Play className="w-4 h-4 fill-current" />}
+                className="w-full sm:w-auto"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Resume Active Lesson</span>
-              </button>
+                Resume Active Lesson
+              </AppButton>
             ) : (
-              <button
-                type="button"
-                disabled={isBuildingSession}
+              <AppButton
+                variant="primary"
+                size="lg"
+                isLoading={isBuildingSession}
                 onClick={() => onStartLesson(selectedPace)}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                leftIcon={<Play className="w-4 h-4 fill-current" />}
+                className="w-full sm:w-auto"
               >
-                {isBuildingSession ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Preparing Lesson...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Begin Today&apos;s Lesson ({selectedPace}m)</span>
-                  </>
-                )}
-              </button>
+                Begin Today&apos;s Lesson ({selectedPace}m)
+              </AppButton>
             )}
           </div>
         </div>
-      </section>
+      </InfoCard>
 
       {/* 3. Three Focused Study Anchors */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Anchor 1: Spaced Retention Due */}
-        <div className="rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <InfoCard className="p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C]">
@@ -362,7 +345,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <Brain className="w-4 h-4 text-[#74A892]" />
             </div>
 
-            <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+            <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
               {overdueSkills.length > 0 ? `${overdueSkills.length} Skills Due for Review` : 'All Memory Traces Solid'}
             </h3>
 
@@ -373,40 +356,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
+          <AppButton
+            variant="outline"
+            size="sm"
             onClick={onOpenMemory}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#FAF7F2] dark:bg-[#242A25] hover:bg-[#EFF6F1] dark:hover:bg-[#2C342E] border border-[#EBE4D7] dark:border-[#313B33] text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] transition flex items-center justify-center gap-1.5 cursor-pointer"
+            rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+            fullWidth
           >
-            <span>Open Memory Matrix</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            Open Memory Matrix
+          </AppButton>
+        </InfoCard>
 
         {/* Anchor 2: Word Family of the Day */}
-        <div className="rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <InfoCard className="p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#E07A5F]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#B84228] dark:text-[#FF8A65]">
                 Word Family Focus
               </span>
-              <BookOpen className="w-4 h-4 text-[#E07A5F]" />
+              <BookOpen className="w-4 h-4 text-[#B84228] dark:text-[#FF8A65]" />
             </div>
 
             {wordOfTheDay ? (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                  <h3 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">
                     {wordOfTheDay.word}
                   </h3>
-                  <button
-                    type="button"
+                  <IconButton
+                    icon={<Volume2 className="w-3.5 h-3.5" />}
+                    ariaLabel={`Pronounce ${wordOfTheDay.word}`}
+                    size="sm"
+                    variant="ghost"
                     onClick={() => handlePlayWordAudio(wordOfTheDay.word)}
-                    title="Pronounce word"
-                    className="p-1 rounded-full text-[#74A892] hover:bg-[#FAF7F2] dark:hover:bg-[#272E29] transition cursor-pointer"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                  </button>
+                  />
                 </div>
                 <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] line-clamp-2">
                   {wordOfTheDay.meaning}
@@ -417,7 +400,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             ) : (
               <div className="space-y-1.5">
-                <h3 className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                <h3 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">
                   mitigate
                 </h3>
                 <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
@@ -430,8 +413,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             )}
           </div>
 
-          <button
-            type="button"
+          <AppButton
+            variant="outline"
+            size="sm"
             onClick={() => {
               if (wordOfTheDay && onPracticeWord) {
                 onPracticeWord(wordOfTheDay.word);
@@ -439,15 +423,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onOpenMemory();
               }
             }}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#FAF7F2] dark:bg-[#242A25] hover:bg-[#EFF6F1] dark:hover:bg-[#2C342E] border border-[#EBE4D7] dark:border-[#313B33] text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] transition flex items-center justify-center gap-1.5 cursor-pointer"
+            rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+            fullWidth
           >
-            <span>Practice Word Family</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            Practice Word Family
+          </AppButton>
+        </InfoCard>
 
         {/* Anchor 3: Learning Journey Horizon */}
-        <div className="rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <InfoCard className="p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788]">
@@ -456,7 +440,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <Compass className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
             </div>
 
-            <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+            <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
               Target Level: {profile.target_level || 'C1'}
             </h3>
 
@@ -474,62 +458,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
+          <AppButton
+            variant="outline"
+            size="sm"
             onClick={onOpenRoadmap}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#FAF7F2] dark:bg-[#242A25] hover:bg-[#EFF6F1] dark:hover:bg-[#2C342E] border border-[#EBE4D7] dark:border-[#313B33] text-xs font-bold text-[#2D6A4F] dark:text-[#84A98C] transition flex items-center justify-center gap-1.5 cursor-pointer"
+            rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+            fullWidth
           >
-            <span>Explore Curriculum Roadmap</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            Explore Curriculum Roadmap
+          </AppButton>
+        </InfoCard>
       </section>
 
       {/* 4. Quick Companion Navigation Bar */}
-      <section className="p-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] flex flex-wrap items-center justify-between gap-3 text-xs">
+      <InfoCard className="p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-[#5C645E] dark:text-[#A7ABA4]">
           <Cat className="w-4 h-4 text-[#E9A825]" />
           <span>MeoMeo Companion Desk</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
+          <ActionChip
+            icon={<Trophy className="w-3.5 h-3.5" />}
+            variant="subtle"
             onClick={onOpenMilestones}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#52796F] dark:text-[#84A98C] hover:bg-white dark:hover:bg-[#262F28] transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Trophy className="w-3.5 h-3.5" />
-            <span>Milestones &amp; Badges</span>
-          </button>
+            Milestones &amp; Badges
+          </ActionChip>
 
-          <button
-            type="button"
+          <ActionChip
+            icon={<Brain className="w-3.5 h-3.5" />}
+            variant="subtle"
             onClick={onOpenMemory}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#52796F] dark:text-[#84A98C] hover:bg-white dark:hover:bg-[#262F28] transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Memory Matrix</span>
-          </button>
+            Memory Matrix
+          </ActionChip>
 
-          <button
-            type="button"
+          <ActionChip
+            icon={<Compass className="w-3.5 h-3.5" />}
+            variant="subtle"
             onClick={onOpenRoadmap}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#52796F] dark:text-[#84A98C] hover:bg-white dark:hover:bg-[#262F28] transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Roadmap</span>
-          </button>
+            Roadmap
+          </ActionChip>
 
-          <button
-            type="button"
+          <ActionChip
+            icon={<Sliders className="w-3.5 h-3.5" />}
+            variant="subtle"
             onClick={onOpenSettings}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#52796F] dark:text-[#84A98C] hover:bg-white dark:hover:bg-[#262F28] transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Settings</span>
-          </button>
+            Settings
+          </ActionChip>
         </div>
-      </section>
+      </InfoCard>
     </div>
   );
 };

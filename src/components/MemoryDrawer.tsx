@@ -557,16 +557,16 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
 
                       if (s.status === 'regressed') {
                         statusColor = 'text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#342421] border-[#F5D5CC] dark:border-[#4E342D]';
-                        stageLabel = '⚠️ Regressed';
+                        stageLabel = 'Needs review';
                       } else if (stage === 'retained_mastery') {
                         statusColor = 'text-[#2D6A4F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                        stageLabel = 'Retained Mastery 🏆';
+                        stageLabel = 'Retained';
                       } else if (stage === 'application') {
                         statusColor = 'text-[#52796F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                        stageLabel = 'Application ✨';
+                        stageLabel = 'Application';
                       } else if (stage === 'active_recall') {
                         statusColor = 'text-[#2D6A4F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                        stageLabel = 'Active Recall';
+                        stageLabel = 'Active recall';
                       } else if (stage === 'recognition') {
                         statusColor = 'text-[#B25E00] bg-[#FAF7F2] dark:bg-[#242A25] border-[#EBE4D7] dark:border-[#313B33]';
                         stageLabel = 'Recognition';

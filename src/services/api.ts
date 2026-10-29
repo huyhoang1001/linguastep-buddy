@@ -20,7 +20,9 @@ import {
   DeepDiveInquiryResponse,
   DiagnosticAssessmentPlan,
   WordPracticeData,
-  NextSessionCustomContext
+  NextSessionCustomContext,
+  CompanionChatMessage,
+  CompanionChatContext
 } from '../types/learning.ts';
 import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';
 import { localStore } from './localStore.ts';
@@ -584,6 +586,25 @@ export async function tutorDeepDive(
   });
 
   return parseAIResponse<DeepDiveInquiryResponse>(res, 'Failed to process tutor inquiry');
+}
+
+export async function requestCompanionChat(
+  messages: Array<{ role: 'user' | 'cat'; content: string }>,
+  lessonContext?: CompanionChatContext
+): Promise<{ reply: string; suggestedPills?: string[] }> {
+  const profile = await localStore.getProfile();
+
+  const res = await fetch('/api/ai/companion-chat', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      messages,
+      profile,
+      lessonContext
+    })
+  });
+
+  return parseAIResponse<{ reply: string; suggestedPills?: string[] }>(res, 'Failed to connect with MeoMeo');
 }
 
 export async function getWordPractice(

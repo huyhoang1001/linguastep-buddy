@@ -2,15 +2,74 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-/* Global Theme-Aware Text Selection Tokens */
+/* Global Theme Tokens & Contrast Architecture */
 :root {
   --selection-bg: #2D6A4F;
   --selection-text: #ffffff;
+
+  /* Semantic Theme Pairs - Light Mode */
+  --bg-app: #FAF7F2;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subdued: #F4EFEB;
+  --border-app: #EBE4D7;
+  --border-default: #EBE4D7;
+  
+  --text-primary: #1B4332;   /* High contrast primary text (~10.5:1) */
+  --text-secondary: #2D4036; /* Readable secondary body text (~8.5:1) */
+  --text-muted: #3D4E45;     /* Accessible muted text (~6.8:1) */
+  
+  --brand-primary: #2D6A4F;
+  --brand-primary-fg: #FFFFFF;
+  
+  /* Tinted Surfaces */
+  --bg-concept: #EFF6F1;
+  --border-concept: #CDE1D4;
+  --fg-concept-title: #1B4332;
+  --fg-concept-body: #234032;
+
+  --bg-warning: #FEF7E6;
+  --border-warning: #F5DC9A;
+  --fg-warning-title: #7A4B00;
+  --fg-warning-body: #593700;
+
+  --bg-alert: #FDF0ED;
+  --border-alert: #F5D5CC;
+  --fg-alert-title: #9E351B;
+  --fg-alert-body: #7A2814;
 }
 
 .dark {
   --selection-bg: #a7d9bb;
   --selection-text: #14251b;
+
+  /* Semantic Theme Pairs - Dark Mode */
+  --bg-app: #161A17;
+  --bg-surface: #1E231F;
+  --bg-surface-subdued: #252C27;
+  --border-app: #2C332E;
+
+  --text-primary: #F4F2EC;   /* High contrast primary text (~14.5:1) */
+  --text-secondary: #D1DCD5; /* Readable secondary body text (~10.8:1) */
+  --text-muted: #A7B3AB;     /* Accessible muted text (~6.5:1) */
+
+  --brand-primary: #52B788;
+  --brand-primary-fg: #0F291E;
+
+  /* Tinted Surfaces */
+  --bg-concept: #203227;
+  --border-concept: #2F4738;
+  --fg-concept-title: #F4F2EC;
+  --fg-concept-body: #C8D6CE;
+
+  --bg-warning: #2E2519;
+  --border-warning: #4D3B23;
+  --fg-warning-title: #F2C97D;
+  --fg-warning-body: #D1A75B;
+
+  --bg-alert: #33211E;
+  --border-alert: #4E312B;
+  --fg-alert-title: #F3A592;
+  --fg-alert-body: #D98370;
 }
 
 ::selection {
@@ -24,15 +83,17 @@
 }
 
 @theme {
-  --font-serif: "Fraunces", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-heading: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-display: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-serif: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
   /* Cozy Warm Cream Canvas */
   --color-cream-50: #FAF7F2;
   --color-cream-100: #F4EFEB;
   --color-cream-200: #EBE4D7;
-  --color-cream-300: #DECFA;
+  --color-cream-300: #D8CFBF;
 
   /* Forest Green - Grounded Brand & Trust */
   --color-forest-950: #0F291E;
@@ -72,7 +133,15 @@
 @layer base {
   body {
     font-family: var(--font-sans);
+    background-color: var(--bg-app);
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
   }
 }

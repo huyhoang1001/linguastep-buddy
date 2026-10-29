@@ -50,6 +50,7 @@ import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
 import { ClickableSentenceText } from './ClickableSentenceText.tsx';
 import { WordPracticeModal } from './WordPracticeModal.tsx';
+import { isAutoAssessQuestion, AUTO_SUBMIT_NOTE } from '../utils/submissionPolicy.ts';
 
 export interface CuratedMajor {
   id: string;
@@ -373,7 +374,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
   const handleSubmitAnswer = async (overrideAnswer?: string) => {
     const ansToUse = overrideAnswer !== undefined ? overrideAnswer : userAnswer;
-    if (!currentQuestion || !ansToUse.trim() || isEvaluating) return;
+    if (!currentQuestion || !ansToUse.trim() || isEvaluating || Boolean(lastEvaluation)) return;
     if (overrideAnswer !== undefined) {
       setUserAnswer(overrideAnswer);
     }
@@ -399,7 +400,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       console.error('Failed to submit answer:', err);
       setAiError(err);
       // Notice: userAnswer is explicitly NOT cleared, preserving student's work
-      setLastFailedAction(() => () => handleSubmitAnswer());
+      setLastFailedAction(() => () => handleSubmitAnswer(ansToUse));
     } finally {
       setIsEvaluating(false);
     }
@@ -478,22 +479,22 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
     const comprehensivePlan = createDiagnosticAssessmentPlan('comprehensive');
 
     return (
-      <div className="py-6 text-slate-100 space-y-6">
+      <div className="py-6 text-[#2D312E] dark:text-[#F4F2EC] space-y-6">
         <div>
-          <span className="text-xs uppercase font-bold text-indigo-400 tracking-wider">
+          <span className="text-xs uppercase font-bold text-[#2D6A4F] dark:text-[#52B788] tracking-wider">
             Official Placement Diagnostic
           </span>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-1">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#1B4332] dark:text-[#F4F2EC] mt-1">
             Choose Your Diagnostic Assessment Mode
           </h2>
-          <p className="text-xs md:text-sm text-slate-300 mt-1.5 leading-relaxed max-w-3xl">
+          <p className="text-xs md:text-sm text-[#3D4E45] dark:text-[#A7B3AB] mt-1.5 leading-relaxed max-w-3xl">
             Each mode operates as a real sequential English proficiency exam evaluating <strong>Grammar</strong>, <strong>Vocabulary</strong>, <strong>Reading</strong>, and <strong>Writing</strong>.
             Questions adapt dynamically based on your background and answers to estimate your genuine CEFR benchmark.
           </p>
         </div>
 
         {pausedMessage && (
-          <div className="bg-emerald-950/40 border border-emerald-800/40 p-4 rounded-2xl text-xs text-emerald-300">
+          <div className="bg-[#EFF6F1] dark:bg-[#203227] border border-[#CDE1D4] dark:border-[#2F4738] p-4 rounded-2xl text-xs text-[#2D6A4F] dark:text-[#52B788]">
             {pausedMessage}
           </div>
         )}
@@ -507,17 +508,17 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
         )}
 
         {/* Assessment Field & Major Focus Selector Banner */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/40 rounded-3xl p-5 md:p-6 shadow-2xl space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 md:p-6 shadow-xs space-y-4 text-[#2D312E] dark:text-[#F4F2EC]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EBE4D7] dark:border-[#2C332E] pb-3">
             <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <div className="w-8 h-8 rounded-xl bg-[#EFF6F1] dark:bg-[#252F28] border border-[#CDE1D4] dark:border-[#354539] flex items-center justify-center text-[#2D6A4F] dark:text-[#52B788]">
                 <Briefcase className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-300">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B4332] dark:text-[#F4F2EC]">
                   Target Field & Major Focus (Chuyên ngành & Trọng tâm đánh giá)
                 </h3>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB]">
                   AI will calibrate and generate vocabulary, cloze sentences, reading texts, and writing scenarios based on your specific discipline.
                 </p>
               </div>
@@ -525,7 +526,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
             <button
               onClick={() => setIsEditingGoal(!isEditingGoal)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 flex items-center space-x-1.5 transition"
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] text-[#2D6A4F] dark:text-[#52B788] border border-[#EBE4D7] dark:border-[#354037] flex items-center space-x-1.5 transition cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>{isEditingGoal ? 'Close Selector' : 'Change Major / Field'}</span>
@@ -535,7 +536,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           {isEditingGoal ? (
             <div className="space-y-4 pt-1">
               <div>
-                <label className="text-xs font-bold text-slate-200 block mb-2">
+                <label className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] block mb-2">
                   1. Select your main major, discipline, or industry focus:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
@@ -546,28 +547,28 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                         key={major.id}
                         type="button"
                         onClick={() => setSelectedMajorId(major.id)}
-                        className={`text-left p-3 rounded-2xl border transition-all flex flex-col justify-between ${
+                        className={`text-left p-3 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
                           isSelected
-                            ? 'bg-indigo-950 border-indigo-500 ring-2 ring-indigo-500/80 text-white shadow-lg shadow-indigo-950/60'
-                            : 'bg-slate-800/60 hover:bg-slate-800 border-slate-700/70 text-slate-300 hover:text-white'
+                            ? 'bg-[#EFF6F1] dark:bg-[#203227] border-[#2D6A4F] dark:border-[#52B788] ring-2 ring-[#2D6A4F] dark:ring-[#52B788] text-[#1B4332] dark:text-[#F4F2EC] shadow-xs'
+                            : 'bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] dark:hover:bg-[#2C352E] border-[#EBE4D7] dark:border-[#333D35] text-[#2D312E] dark:text-[#F4F2EC]'
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-xl mb-1">{major.icon}</span>
                           {isSelected && (
-                            <span className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-bold">
+                            <span className="w-4 h-4 rounded-full bg-[#2D6A4F] dark:bg-[#52B788] text-white dark:text-[#0F291E] flex items-center justify-center text-[10px] font-bold">
                               ✓
                             </span>
                           )}
                         </div>
                         <div>
-                          <strong className="text-xs font-bold block text-white leading-tight">
+                          <strong className="text-xs font-bold block text-[#1B4332] dark:text-[#F4F2EC] leading-tight">
                             {major.name}
                           </strong>
-                          <span className="text-[10px] text-indigo-300 block font-medium mt-0.5">
+                          <span className="text-[10px] text-[#2D6A4F] dark:text-[#52B788] block font-medium mt-0.5">
                             {major.nameVi}
                           </span>
-                          <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                          <p className="text-[10px] text-[#3D4E45] dark:text-[#A7B3AB] mt-1 line-clamp-2 leading-relaxed">
                             {major.description}
                           </p>
                         </div>
@@ -579,8 +580,8 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
               {/* Custom Major Input if 'other_custom' is chosen */}
               {selectedMajorId === 'other_custom' && (
-                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 space-y-1.5 animate-fadeIn">
-                  <label className="text-xs font-bold text-indigo-300 block">
+                <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-3.5 space-y-1.5 animate-fadeIn">
+                  <label className="text-xs font-bold text-[#2D6A4F] dark:text-[#52B788] block">
                     Type your specific field or major:
                   </label>
                   <input
@@ -588,14 +589,14 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     value={customMajorText}
                     onChange={e => setCustomMajorText(e.target.value)}
                     placeholder="E.g., Biotechnology, Architecture, Logistics & Supply Chain..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl px-3.5 py-2 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
                   />
                 </div>
               )}
 
               {/* Specific specialty or daily scenarios */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-200 block">
+                <label className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] block">
                   2. Your specific role or daily scenarios to emphasize (Optional):
                 </label>
                 <input
@@ -603,13 +604,13 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   value={majorDetailsText}
                   onChange={e => setMajorDetailsText(e.target.value)}
                   placeholder="E.g., Backend engineer collaborating with US architects; or Financial analyst presenting monthly audit reports..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl px-3.5 py-2.5 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
                 />
               </div>
 
               {/* General goal summary */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-200 block">
+                <label className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] block">
                   3. Overall English objective or purpose:
                 </label>
                 <textarea
@@ -617,19 +618,19 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   value={goalSummaryText}
                   onChange={e => setGoalSummaryText(e.target.value)}
                   placeholder="E.g., Prepare for job interviews, communicate fluently with global team, write clear incident reviews..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                  className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl p-3 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] leading-relaxed"
                 />
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-slate-400">
-                  Selected Focus: <strong className="text-indigo-300">{getEffectiveMajorName()}</strong>
+                <span className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB]">
+                  Selected Focus: <strong className="text-[#2D6A4F] dark:text-[#52B788]">{getEffectiveMajorName()}</strong>
                 </span>
                 <div className="flex space-x-2">
                   <button
                     type="button"
                     onClick={() => setIsEditingGoal(false)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                    className="px-3.5 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] text-[#3D4E45] dark:text-[#A7B3AB] text-xs font-semibold transition cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -637,7 +638,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     type="button"
                     onClick={handleSaveGoalContext}
                     disabled={isSavingGoal}
-                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50 flex items-center space-x-1.5"
+                    className="px-5 py-2 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs shadow-xs transition disabled:opacity-50 flex items-center space-x-1.5 cursor-pointer"
                   >
                     {isSavingGoal ? (
                       <span>Saving Focus...</span>
@@ -652,29 +653,29 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-slate-950/80 p-4 md:p-5 rounded-2xl border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-4 md:p-5 rounded-2xl border border-[#EBE4D7] dark:border-[#354037] flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl">{getEffectiveMajorObj().icon}</span>
-                  <strong className="text-sm font-extrabold text-white">
+                  <strong className="text-sm font-extrabold text-[#1B4332] dark:text-[#F4F2EC]">
                     {getEffectiveMajorName()}
                   </strong>
-                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">
+                  <span className="text-[10px] font-bold text-[#2D6A4F] dark:text-[#52B788] bg-[#EFF6F1] dark:bg-[#203227] px-2 py-0.5 rounded-full border border-[#CDE1D4] dark:border-[#2F4738]">
                     Active Focus
                   </span>
                 </div>
                 {majorDetailsText && majorDetailsText.trim().length > 0 && (
-                  <p className="text-xs text-indigo-200/90 font-medium">
-                    <span className="text-slate-400">Specialty / Role:</span> {majorDetailsText}
+                  <p className="text-xs text-[#2D312E] dark:text-[#F4F2EC] font-medium">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB]">Specialty / Role:</span> {majorDetailsText}
                   </p>
                 )}
                 {goalSummaryText && goalSummaryText.trim().length > 0 && (
-                  <p className="text-xs text-slate-300">
-                    <span className="text-slate-400">Target Objective:</span> {goalSummaryText}
+                  <p className="text-xs text-[#3D4E45] dark:text-[#A7B3AB]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB]">Target Objective:</span> {goalSummaryText}
                   </p>
                 )}
                 {!majorDetailsText && !goalSummaryText && (
-                  <p className="text-[11px] text-slate-400 italic">
+                  <p className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] italic">
                     {getEffectiveMajorObj().examples}
                   </p>
                 )}
@@ -683,9 +684,9 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditingGoal(true)}
-                className="self-start md:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 font-semibold transition shrink-0 flex items-center space-x-1.5"
+                className="self-start md:self-auto px-3.5 py-2 rounded-xl bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] border border-[#EBE4D7] dark:border-[#354037] text-xs text-[#2D312E] dark:text-[#F4F2EC] font-semibold transition shrink-0 flex items-center space-x-1.5 cursor-pointer"
               >
-                <Pencil className="w-3 h-3 text-indigo-400" />
+                <Pencil className="w-3 h-3 text-[#2D6A4F] dark:text-[#52B788]" />
                 <span>Customize Field Focus</span>
               </button>
             </div>
@@ -695,47 +696,47 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
         {/* 3 Explicit Diagnostic Modes */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* 1. Quick Mode */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between space-y-5 hover:border-slate-700 transition shadow-lg">
+          <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 flex flex-col justify-between space-y-5 hover:border-[#2D6A4F] dark:hover:border-[#52B788] transition shadow-xs">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase text-sky-400 px-2.5 py-0.5 rounded-full bg-sky-950/60 border border-sky-800/50">
+                <span className="text-xs font-bold uppercase text-[#2D6A4F] dark:text-[#52B788] px-2.5 py-0.5 rounded-full bg-[#EFF6F1] dark:bg-[#203227] border border-[#CDE1D4] dark:border-[#2F4738]">
                   Express Calibration
                 </span>
-                <span className="text-xs font-semibold text-slate-400 flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-sky-400" />
+                <span className="text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                   <span>~10 mins</span>
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white">{quickPlan.title}</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">{quickPlan.title}</h3>
+              <p className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] mt-1 leading-relaxed">
                 {quickPlan.subtitle}
               </p>
 
               {/* Section breakdown */}
-              <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
-                <div className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Exam Structure:</div>
+              <div className="mt-4 pt-4 border-t border-[#EBE4D7] dark:border-[#2C332E] space-y-2">
+                <div className="text-[11px] font-semibold text-[#3D4E45] dark:text-[#A7B3AB] uppercase tracking-wider">Exam Structure:</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">1. Grammar</span>
-                    <strong className="text-slate-200">3 Qs • ~2.5m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~2.5m</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-slate-200">3 Qs • ~2.5m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~2.5m</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">3. Reading</span>
-                    <strong className="text-slate-200">1 Q • ~2m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">1 Q • ~2m</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">4. Writing</span>
-                    <strong className="text-slate-200">1 Q • ~3m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">4. Writing</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">1 Q • ~3m</strong>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-400 pt-1 flex items-center justify-between">
+                <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] pt-1 flex items-center justify-between">
                   <span>Scoring Weights:</span>
-                  <span className="text-sky-300 font-mono font-semibold">25% each (100% total)</span>
+                  <span className="text-[#2D6A4F] dark:text-[#52B788] font-mono font-semibold">25% each (100% total)</span>
                 </div>
               </div>
             </div>
@@ -743,11 +744,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             <button
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('quick')}
-              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center space-x-2"
+              className="w-full py-3 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] dark:hover:bg-[#2E3730] disabled:opacity-50 text-[#1B4332] dark:text-[#F4F2EC] font-bold text-xs border border-[#EBE4D7] dark:border-[#354037] transition flex items-center justify-center space-x-2 cursor-pointer"
             >
               {startingMode === 'quick' ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
                   <span>Starting Express Exam...</span>
                 </>
               ) : (
@@ -757,50 +758,50 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           </div>
 
           {/* 2. Standard Mode (Recommended) */}
-          <div className="bg-gradient-to-b from-indigo-950/70 via-slate-900 to-slate-900 border-2 border-indigo-500 rounded-3xl p-6 flex flex-col justify-between space-y-5 shadow-2xl shadow-indigo-950/60 relative">
-            <span className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-indigo-500 text-white tracking-widest shadow-md">
+          <div className="bg-[#EFF6F1] dark:bg-[#203227] border-2 border-[#2D6A4F] dark:border-[#52B788] rounded-3xl p-6 flex flex-col justify-between space-y-5 shadow-sm relative">
+            <span className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-[#2D6A4F] dark:bg-[#52B788] text-white dark:text-[#0F291E] tracking-widest shadow-xs">
               Recommended
             </span>
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase text-indigo-300 px-2.5 py-0.5 rounded-full bg-indigo-950 border border-indigo-700">
+                <span className="text-xs font-bold uppercase text-[#2D6A4F] dark:text-[#52B788] px-2.5 py-0.5 rounded-full bg-white dark:bg-[#19211C] border border-[#CDE1D4] dark:border-[#2F4738]">
                   Standard Placement
                 </span>
-                <span className="text-xs font-semibold text-slate-300 flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                   <span>~20 mins</span>
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white">{standardPlan.title}</h3>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">{standardPlan.title}</h3>
+              <p className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] mt-1 leading-relaxed">
                 {standardPlan.subtitle}
               </p>
 
               {/* Section breakdown */}
-              <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
-                <div className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">Exam Structure:</div>
+              <div className="mt-4 pt-4 border-t border-[#CDE1D4] dark:border-[#2F4738] space-y-2">
+                <div className="text-[11px] font-semibold text-[#2D6A4F] dark:text-[#52B788] uppercase tracking-wider">Exam Structure:</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-slate-400 block text-[10px]">1. Grammar</span>
-                    <strong className="text-white">5 Qs • ~4m</strong>
+                  <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 Qs • ~4m</strong>
                   </div>
-                  <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-slate-400 block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-white">4 Qs • ~3.5m</strong>
+                  <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">4 Qs • ~3.5m</strong>
                   </div>
-                  <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-slate-400 block text-[10px]">3. Reading</span>
-                    <strong className="text-white">3 Qs • ~5.5m</strong>
+                  <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~5.5m</strong>
                   </div>
-                  <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-slate-400 block text-[10px]">4. Writing</span>
-                    <strong className="text-white">1 Task • ~7m</strong>
+                  <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">4. Writing</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">1 Task • ~7m</strong>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-300 pt-1 flex items-center justify-between">
-                  <span>Confidence: <strong className="text-emerald-400">High</strong></span>
-                  <span className="text-indigo-300 font-mono font-semibold">25% each (100% total)</span>
+                <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] pt-1 flex items-center justify-between">
+                  <span>Confidence: <strong className="text-[#2D6A4F] dark:text-[#52B788]">High</strong></span>
+                  <span className="text-[#2D6A4F] dark:text-[#52B788] font-mono font-semibold">25% each (100% total)</span>
                 </div>
               </div>
             </div>
@@ -808,7 +809,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             <button
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('standard')}
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2"
+              className="w-full py-3.5 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] disabled:opacity-50 text-white dark:text-[#0F291E] font-extrabold text-xs shadow-xs transition flex items-center justify-center space-x-2 cursor-pointer"
             >
               {startingMode === 'standard' ? (
                 <>
@@ -825,47 +826,47 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           </div>
 
           {/* 3. Comprehensive Mode */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between space-y-5 hover:border-slate-700 transition shadow-lg">
+          <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 flex flex-col justify-between space-y-5 hover:border-[#2D6A4F] dark:hover:border-[#52B788] transition shadow-xs">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-950/60 border border-amber-800/50">
+                <span className="text-xs font-bold uppercase text-[#B87A24] dark:text-[#E6A23C] px-2.5 py-0.5 rounded-full bg-[#FEF7E6] dark:bg-[#2E2519] border border-[#F2E3C6] dark:border-[#4B3E2C]">
                   Comprehensive Exam
                 </span>
-                <span className="text-xs font-semibold text-slate-400 flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-[#B87A24] dark:text-[#E6A23C]" />
                   <span>~36 mins</span>
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white">{comprehensivePlan.title}</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">{comprehensivePlan.title}</h3>
+              <p className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] mt-1 leading-relaxed">
                 {comprehensivePlan.subtitle}
               </p>
 
               {/* Section breakdown */}
-              <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
-                <div className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Exam Structure:</div>
+              <div className="mt-4 pt-4 border-t border-[#EBE4D7] dark:border-[#2C332E] space-y-2">
+                <div className="text-[11px] font-semibold text-[#3D4E45] dark:text-[#A7B3AB] uppercase tracking-wider">Exam Structure:</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">1. Grammar</span>
-                    <strong className="text-slate-200">8 Qs • ~6.5m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">8 Qs • ~6.5m</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-slate-200">7 Qs • ~6m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">7 Qs • ~6m</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">3. Reading</span>
-                    <strong className="text-slate-200">5 Qs (2 Passages)</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 Qs (2 Passages)</strong>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">4. Writing</span>
-                    <strong className="text-slate-200">2 Tasks • ~13m</strong>
+                  <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
+                    <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">4. Writing</span>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">2 Tasks • ~13m</strong>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-400 pt-1 flex items-center justify-between">
-                  <span>Confidence: <strong className="text-amber-400">Very High</strong></span>
-                  <span className="text-amber-300 font-mono font-semibold">25% each (100% total)</span>
+                <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] pt-1 flex items-center justify-between">
+                  <span>Confidence: <strong className="text-[#B87A24] dark:text-[#E6A23C]">Very High</strong></span>
+                  <span className="text-[#B87A24] dark:text-[#E6A23C] font-mono font-semibold">25% each (100% total)</span>
                 </div>
               </div>
             </div>
@@ -873,11 +874,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             <button
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('comprehensive')}
-              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center space-x-2"
+              className="w-full py-3 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] dark:hover:bg-[#2E3730] disabled:opacity-50 text-[#1B4332] dark:text-[#F4F2EC] font-bold text-xs border border-[#EBE4D7] dark:border-[#354037] transition flex items-center justify-center space-x-2 cursor-pointer"
             >
               {startingMode === 'comprehensive' ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
                   <span>Starting Comprehensive Exam...</span>
                 </>
               ) : (
@@ -888,10 +889,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
         </div>
 
         {/* Capability disclosure */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400 leading-relaxed flex items-start space-x-3">
-          <Sparkles className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+        <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 text-xs text-[#3D4E45] dark:text-[#A7B3AB] leading-relaxed flex items-start space-x-3">
+          <Sparkles className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788] shrink-0 mt-0.5" />
           <div>
-            <strong className="text-slate-300 font-semibold block mb-0.5">Honest Proficiency Estimation:</strong>
+            <strong className="text-[#1B4332] dark:text-[#F4F2EC] font-semibold block mb-0.5">Honest Proficiency Estimation:</strong>
             All four core literacy skills are evaluated with explicit 25% scoring weights. Speaking and listening will be transparently labeled as <em>Not Assessed</em> until dedicated audio sessions are conducted.
           </div>
         </div>
@@ -913,23 +914,23 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   const currentSectionIndex = plan.sections.findIndex(s => s.section === currentSection);
 
   return (
-    <div className="py-4 text-slate-100 space-y-6">
+    <div className="py-4 text-[#2D312E] dark:text-[#F4F2EC] space-y-6">
       {/* 1. Header with Mode info & Stepper */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
+      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
         {/* Top header row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#EBE4D7] dark:border-[#2C332E]">
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#EFF6F1] dark:bg-[#203227] text-[#2D6A4F] dark:text-[#52B788] border border-[#CDE1D4] dark:border-[#2F4738]">
               {plan.title}
             </span>
             {session.major_or_subject && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-700/50 flex items-center space-x-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EFF6F1] dark:bg-[#203227] text-[#2D6A4F] dark:text-[#52B788] border border-[#CDE1D4] dark:border-[#2F4738] flex items-center space-x-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                 <span>Field: {session.major_or_subject}</span>
               </span>
             )}
-            <span className="text-xs text-slate-400 flex items-center space-x-1">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] flex items-center space-x-1">
+              <Clock className="w-3.5 h-3.5 text-[#3D4E45] dark:text-[#A7B3AB]" />
               <span>Target: ~{plan.targetDurationMinutes} mins</span>
             </span>
           </div>
@@ -938,7 +939,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             {(canStop || mustStop || historyCount >= totalPlannedQuestions) && (
               <button
                 onClick={handleFinishAssessment}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/30 flex items-center space-x-1.5"
+                className="px-4 py-2 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
               >
                 <Award className="w-4 h-4" />
                 <span>Complete & View Report 🎉</span>
@@ -947,7 +948,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
             <button
               onClick={handlePause}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
               title="Pause and resume later"
             >
               <PauseCircle className="w-3.5 h-3.5" />
@@ -969,28 +970,28 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 key={sec.section}
                 className={`p-3 rounded-2xl border transition-all ${
                   isActive
-                    ? 'bg-indigo-950/60 border-indigo-500 ring-1 ring-indigo-500'
+                    ? 'bg-[#EFF6F1] dark:bg-[#203227] border-[#2D6A4F] dark:border-[#52B788] ring-1 ring-[#2D6A4F] dark:ring-[#52B788]'
                     : isCompleted
-                    ? 'bg-slate-800/40 border-emerald-500/30 text-slate-300'
-                    : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                    ? 'bg-[#F7FAF8] dark:bg-[#1C2620] border-[#CDE1D4] dark:border-[#2C3B31] text-[#2D6A4F] dark:text-[#84A98C]'
+                    : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#313B33] text-[#5C645E] dark:text-[#8A938C]'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                    isActive ? 'text-indigo-400' : isCompleted ? 'text-emerald-400' : 'text-slate-500'
+                    isActive ? 'text-[#2D6A4F] dark:text-[#52B788]' : isCompleted ? 'text-[#2D6A4F] dark:text-[#84A98C]' : 'text-[#8A938C]'
                   }`}>
                     Section {idx + 1}
                   </span>
                   {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                   ) : isActive ? (
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-[#2D6A4F] dark:bg-[#52B788] animate-ping" />
                   ) : null}
                 </div>
-                <div className="text-xs font-bold text-white mt-0.5 truncate capitalize">
+                <div className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] mt-0.5 truncate capitalize">
                   {sec.section}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] mt-1 flex items-center justify-between">
                   <span>{isCompleted ? `${sec.targetQuestionsCount}/${sec.targetQuestionsCount} done` : isActive ? `${sectionAttemptsCount + 1}/${sec.targetQuestionsCount}` : `${sec.targetQuestionsCount} Qs`}</span>
                   <span className="font-mono text-[10px]">25% wt</span>
                 </div>
@@ -1001,13 +1002,13 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
         {/* Overall progress indicator bar */}
         <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+          <div className="flex items-center justify-between text-xs text-[#3D4E45] dark:text-[#A7B3AB] font-medium">
             <span>Overall Progress: Question {Math.min(totalPlannedQuestions, historyCount + 1)} of {totalPlannedQuestions}</span>
             <span className="font-mono">{overallProgressPct}%</span>
           </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2C332E] h-2 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-300"
+              className="bg-[#2D6A4F] dark:bg-[#52B788] h-full rounded-full transition-all duration-300"
               style={{ width: `${overallProgressPct}%` }}
             />
           </div>
@@ -1055,34 +1056,34 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
       {/* Active Question Content */}
       {isLoading ? (
-        <div className="py-24 text-center flex flex-col items-center justify-center space-y-3 bg-slate-900 border border-slate-800 rounded-3xl">
-          <div className="w-9 h-9 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-300 font-medium">Preparing calibrated question for {activeSectionPlan.title}...</p>
+        <div className="py-24 text-center flex flex-col items-center justify-center space-y-3 bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl shadow-xs">
+          <div className="w-9 h-9 border-2 border-[#2D6A4F] dark:border-[#52B788] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#3D4E45] dark:text-[#A7B3AB] font-medium">Preparing calibrated question for {activeSectionPlan.title}...</p>
         </div>
       ) : currentQuestion ? (
         <div className="space-y-5">
           {/* Question Metadata Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-2 border-b border-[#EBE4D7] dark:border-[#2C332E]">
             <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-400 flex items-center space-x-2">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-2">
                 <span>{activeSectionPlan.title}</span>
                 <span>•</span>
-                <span className="text-slate-300 font-medium">{currentQuestion.skill_name}</span>
+                <span className="text-[#1B4332] dark:text-[#F4F2EC] font-medium">{currentQuestion.skill_name}</span>
               </span>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Target Level: <strong className="text-slate-200">{currentQuestion.difficulty}</strong> • Item {sectionAttemptsCount + 1} of {activeSectionPlan.targetQuestionsCount}
+              <p className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] mt-0.5">
+                Target Level: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{currentQuestion.difficulty}</strong> • Item {sectionAttemptsCount + 1} of {activeSectionPlan.targetQuestionsCount}
               </p>
             </div>
 
             <div className="flex items-center space-x-2">
-              <span className="text-[11px] text-slate-400 hidden sm:flex items-center space-x-1.5 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700/60">
-                <Sparkles className="w-3 h-3 text-sky-400" />
+              <span className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] hidden sm:flex items-center space-x-1.5 bg-[#FAF7F2] dark:bg-[#252C27] px-2.5 py-1 rounded-full border border-[#EBE4D7] dark:border-[#354037]">
+                <Sparkles className="w-3 h-3 text-[#2D6A4F] dark:text-[#52B788]" />
                 <span>Click any word to learn & practice</span>
               </span>
               <button
                 onClick={() => setFlagged(!flagged)}
-                className={`p-1.5 rounded-lg text-xs transition flex items-center space-x-1 ${
-                  flagged ? 'text-amber-400 bg-amber-950/40' : 'text-slate-500 hover:text-slate-300'
+                className={`p-1.5 rounded-lg text-xs transition flex items-center space-x-1 cursor-pointer ${
+                  flagged ? 'text-[#B87A24] bg-[#FEF7E6] dark:bg-[#2E2519]' : 'text-[#8A938C] hover:text-[#1B4332] dark:hover:text-white'
                 }`}
                 title="Flag this question as ambiguous or unclear"
               >
@@ -1094,18 +1095,18 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
           {/* Reading Passage View (Prominent, High-Readability Passage Box) */}
           {currentQuestion.reading_passage && (
-            <div className="bg-slate-900/95 border-2 border-sky-500/30 rounded-3xl p-6 md:p-8 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between text-xs text-sky-400 font-bold border-b border-slate-800 pb-3">
-                <span className="flex items-center space-x-2 text-sm text-white font-bold">
-                  <BookOpen className="w-4 h-4 text-sky-400" />
+            <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 md:p-8 space-y-4 shadow-xs text-[#2D312E] dark:text-[#F4F2EC]">
+              <div className="flex items-center justify-between text-xs font-bold border-b border-[#EBE4D7] dark:border-[#2C332E] pb-3">
+                <span className="flex items-center space-x-2 text-sm text-[#1B4332] dark:text-[#F4F2EC] font-bold">
+                  <BookOpen className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
                   <span>{currentQuestion.reading_passage.title}</span>
                 </span>
-                <div className="flex items-center space-x-2 text-slate-400 text-xs">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-medium">{currentQuestion.reading_passage.topic}</span>
+                <div className="flex items-center space-x-2 text-[#3D4E45] dark:text-[#A7B3AB] text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-[#FAF7F2] dark:bg-[#252C27] font-medium">{currentQuestion.reading_passage.topic}</span>
                   <span>{currentQuestion.reading_passage.word_count} words</span>
                 </div>
               </div>
-              <div className="text-sm md:text-base text-slate-200 leading-relaxed font-normal tracking-wide whitespace-pre-line">
+              <div className="text-sm md:text-base text-[#2D312E] dark:text-[#F4F2EC] leading-relaxed font-normal tracking-wide whitespace-pre-line">
                 <ClickableSentenceText
                   text={currentQuestion.reading_passage.text}
                   onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -1115,17 +1116,17 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           )}
 
           {/* Question Prompt Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+          <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-6 md:p-8 shadow-xs text-[#2D312E] dark:text-[#F4F2EC] space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] uppercase tracking-wider block">
                   {currentQuestion.question_type === 'reading_comprehension' ? 'Comprehension Question' : currentQuestion.question_type === 'free_writing' ? 'Writing Task' : 'Question Prompt'}
                 </span>
-                <span className="text-[10px] text-sky-400/80 font-medium flex items-center space-x-1">
+                <span className="text-[10px] text-[#2D6A4F] dark:text-[#52B788] font-medium flex items-center space-x-1">
                   <span>💡 Click any unfamiliar word to learn & practice</span>
                 </span>
               </div>
-              <div className="text-base md:text-lg font-medium text-white whitespace-pre-line leading-relaxed">
+              <div className="text-base md:text-lg font-medium text-[#1B4332] dark:text-[#F4F2EC] whitespace-pre-line leading-relaxed">
                 <ClickableSentenceText
                   text={currentQuestion.prompt}
                   onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -1136,16 +1137,24 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             {/* Context sentence callout if available and distinct from prompt */}
             {currentQuestion.context_sentence &&
               !currentQuestion.prompt.toLowerCase().includes(currentQuestion.context_sentence.toLowerCase().trim()) && (
-              <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-2xl p-4 md:p-5 shadow-inner">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">
+              <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 md:p-5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] block mb-1">
                   Sentence to Complete
                 </span>
-                <div className="text-base md:text-lg font-medium text-white italic">
+                <div className="text-base md:text-lg font-medium text-[#1B4332] dark:text-[#F4F2EC] italic">
                   "<ClickableSentenceText
                     text={currentQuestion.context_sentence}
                     onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
                   />"
                 </div>
+              </div>
+            )}
+
+            {/* Auto Submit Note for single-action options */}
+            {isAutoAssessQuestion(currentQuestion) && !lastEvaluation && (
+              <div className="text-xs font-medium text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6F1] dark:bg-[#203227] border border-[#CDE1D4] dark:border-[#2F4738]">
+                <span className="text-sm shrink-0">💡</span>
+                <span>{AUTO_SUBMIT_NOTE}</span>
               </div>
             )}
 
@@ -1168,23 +1177,23 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   );
                   const isWrongSelected = Boolean(lastEvaluation && isSelected && lastEvaluation.verdict !== 'correct');
 
-                  let buttonClass = 'bg-slate-800/50 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white';
-                  let badgeClass = 'bg-slate-700 text-slate-300';
+                  let buttonClass = 'bg-[#FAF7F2] dark:bg-[#242A25] border-[#EBE4D7] dark:border-[#313B33] text-[#2D312E] dark:text-[#E8ECE9] hover:border-[#2D6A4F] dark:hover:border-[#52B788]';
+                  let badgeClass = 'bg-[#EBE4D7] dark:bg-[#313B33] text-[#2D312E] dark:text-[#F4F2EC]';
 
                   if (lastEvaluation) {
                     if (isExpectedOpt) {
-                      buttonClass = 'bg-emerald-950/50 border-emerald-500 ring-1 ring-emerald-500 text-white';
-                      badgeClass = 'bg-emerald-500 text-white font-bold';
+                      buttonClass = 'bg-[#EFF6F1] dark:bg-[#182F22] border-[#2D6A4F] dark:border-[#40916C] ring-1 ring-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC]';
+                      badgeClass = 'bg-[#2D6A4F] text-white font-bold';
                     } else if (isWrongSelected) {
-                      buttonClass = 'bg-rose-950/50 border-rose-500 ring-1 ring-rose-500 text-white';
-                      badgeClass = 'bg-rose-500 text-white font-bold';
+                      buttonClass = 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] ring-1 ring-[#E07A5F] text-[#B84728] dark:text-[#F28482]';
+                      badgeClass = 'bg-[#E07A5F] text-white font-bold';
                     } else {
-                      buttonClass = 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-60';
-                      badgeClass = 'bg-slate-800 text-slate-500';
+                      buttonClass = 'bg-[#FAF7F2] dark:bg-[#202522] border-[#EBE4D7] dark:border-[#2E3730] text-[#8A938C] opacity-60';
+                      badgeClass = 'bg-[#EBE4D7] dark:bg-[#2C332E] text-[#8A938C]';
                     }
                   } else if (isSelected) {
-                    buttonClass = 'bg-indigo-950/70 border-indigo-500 ring-1 ring-indigo-500 text-white';
-                    badgeClass = 'bg-indigo-500 text-white font-bold';
+                    buttonClass = 'bg-[#EFF6F1] dark:bg-[#1C2C23] border-[#2D6A4F] dark:border-[#52B788] ring-1 ring-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC]';
+                    badgeClass = 'bg-[#2D6A4F] dark:bg-[#52B788] text-white dark:text-[#0F291E] font-bold';
                   }
 
                   return (
@@ -1194,19 +1203,19 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                       tabIndex={isDisabled ? -1 : 0}
                       aria-disabled={isDisabled}
                       onClick={async () => {
-                        if (lastEvaluation) return;
+                        if (lastEvaluation || isEvaluating) return;
                         setUserAnswer(opt.id);
                         await handleSubmitAnswer(opt.id);
                       }}
                       onKeyDown={async (e) => {
-                        if (lastEvaluation || isDisabled) return;
+                        if (lastEvaluation || isDisabled || isEvaluating) return;
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           setUserAnswer(opt.id);
                           await handleSubmitAnswer(opt.id);
                         }
                       }}
-                      className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
+                      className={`w-full text-left p-4 rounded-2xl border transition flex items-center justify-between space-x-4 ${buttonClass} ${isDisabled || isEvaluating ? 'cursor-default' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center space-x-4">
                         <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${badgeClass}`}>
@@ -1222,12 +1231,12 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                       </div>
 
                       {lastEvaluation && isExpectedOpt && (
-                        <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30 shrink-0">
+                        <span className="text-xs font-bold text-[#2D6A4F] dark:text-[#52B788] bg-[#EFF6F1] dark:bg-[#203227] px-2.5 py-1 rounded-lg border border-[#CDE1D4] dark:border-[#2F4738] shrink-0">
                           ✓ Correct Answer
                         </span>
                       )}
                       {lastEvaluation && isWrongSelected && (
-                        <span className="text-xs font-bold text-rose-400 bg-rose-950/80 px-2.5 py-1 rounded-lg border border-rose-500/30 shrink-0">
+                        <span className="text-xs font-bold text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#33211E] px-2.5 py-1 rounded-lg border border-[#F5D5CC] dark:border-[#4E312B] shrink-0">
                           ✗ Your Choice
                         </span>
                       )}
@@ -1247,11 +1256,12 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   value={userAnswer}
                   onChange={e => setUserAnswer(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && !lastEvaluation && userAnswer.trim()) {
+                    if (e.key === 'Enter' && !lastEvaluation && !isEvaluating && userAnswer.trim()) {
+                      e.preventDefault();
                       handleSubmitAnswer();
                     }
                   }}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
+                  className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl px-4 py-3.5 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base"
                 />
               </div>
             )}
@@ -1266,15 +1276,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     placeholder="Write your response in English (e.g. 3 to 5 sentences)..."
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base leading-relaxed"
+                    className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed"
                   />
                   {speechSupported && !lastEvaluation && (
                     <button
                       onClick={handleToggleVoiceInput}
-                      className={`absolute right-3 bottom-3 p-2.5 rounded-xl transition ${
+                      className={`absolute right-3 bottom-3 p-2.5 rounded-xl transition cursor-pointer ${
                         isRecording
-                          ? 'bg-rose-600 text-white animate-pulse'
-                          : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                          ? 'bg-[#E07A5F] text-white animate-pulse'
+                          : 'bg-[#FAF7F2] dark:bg-[#2C352E] hover:bg-[#EBE4D7] text-[#3D4E45] dark:text-[#A7B3AB]'
                       }`}
                       title={isRecording ? 'Listening (click to stop)' : 'Voice input (Speech-to-Text)'}
                     >
@@ -1283,24 +1293,24 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between text-xs text-[#3D4E45] dark:text-[#A7B3AB]">
                   <span>
-                    Sentences: <strong className="text-slate-200">{countSentences(userAnswer)}</strong> (target: 3-4)
+                    Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: 3-4)
                   </span>
                   <span>
-                    Word count: <strong className="text-slate-200">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong>
+                    Word count: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong>
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Submit button (if not evaluated yet) */}
-            {!lastEvaluation && (
+            {/* Submit button (if not evaluated yet and manual submission) */}
+            {!lastEvaluation && !isAutoAssessQuestion(currentQuestion) && (
               <div className="pt-2 flex justify-end">
                 <button
                   disabled={!userAnswer.trim() || isEvaluating}
                   onClick={() => handleSubmitAnswer()}
-                  className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2"
+                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] disabled:opacity-50 text-white dark:text-[#0F291E] font-bold text-sm transition shadow-xs flex items-center space-x-2 cursor-pointer"
                 >
                   {isEvaluating ? (
                     <>
@@ -1320,33 +1330,33 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
           {/* ITEM FEEDBACK STATE (AFTER SUBMISSION) */}
           {lastEvaluation && (
-            <div className={`rounded-3xl p-6 md:p-8 border shadow-2xl space-y-5 transition-all ${
+            <div className={`rounded-3xl p-6 md:p-8 border shadow-xs space-y-5 transition-all ${
               lastEvaluation.verdict === 'correct'
-                ? 'bg-emerald-950/20 border-emerald-500/40 text-slate-100'
+                ? 'bg-[#EFF6F1] dark:bg-[#182C20] border-[#C2DBC7] dark:border-[#2C4A38] text-[#1B4332] dark:text-[#F4F2EC]'
                 : lastEvaluation.verdict === 'partially_correct'
-                ? 'bg-amber-950/20 border-amber-500/40 text-slate-100'
-                : 'bg-rose-950/20 border-rose-500/40 text-slate-100'
+                ? 'bg-[#FEF7E6] dark:bg-[#2C2417] border-[#F5DC9A] dark:border-[#524128] text-[#2D312E] dark:text-[#F4F2EC]'
+                : 'bg-[#FFF8F6] dark:bg-[#2A1D1A] border-[#F3B3A2] dark:border-[#4E2B24] text-[#2D312E] dark:text-[#F4F2EC]'
             }`}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
                   {lastEvaluation.verdict === 'correct' ? (
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#DCEDE1] dark:bg-[#203D2D] border border-[#C2DBC7] dark:border-[#2F4738] flex items-center justify-center text-[#2D6A4F] dark:text-[#52B788]">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                   ) : lastEvaluation.verdict === 'partially_correct' ? (
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FEF7E6] dark:bg-[#342A1D] border border-[#F5DC9A] flex items-center justify-center text-[#D48B16]">
                       <AlertTriangle className="w-5 h-5" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FDF0ED] dark:bg-[#3B2521] border border-[#F3B3A2] dark:border-[#5C342C] flex items-center justify-center text-[#E07A5F]">
                       <XCircle className="w-5 h-5" />
                     </div>
                   )}
                   <div>
-                    <h4 className="text-base font-bold text-white capitalize">
+                    <h4 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC] capitalize">
                       {lastEvaluation.verdict.replace('_', ' ')}
                     </h4>
-                    <span className="text-xs text-slate-400">Answer recorded into diagnostic profile</span>
+                    <span className="text-xs text-[#3D4E45] dark:text-[#A7B3AB]">Answer recorded into diagnostic profile</span>
                   </div>
                 </div>
 
@@ -1354,7 +1364,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 {historyCount >= totalPlannedQuestions || mustStop ? (
                   <button
                     onClick={handleFinishAssessment}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/30 flex items-center space-x-2"
+                    className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-2 cursor-pointer"
                   >
                     <span>View Assessment Results 🎉</span>
                     <ArrowRight className="w-4 h-4" />
@@ -1362,7 +1372,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 ) : (
                   <button
                     onClick={loadNextQuestion}
-                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-md shadow-indigo-600/30 flex items-center space-x-2"
+                    className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-2 cursor-pointer"
                   >
                     <span>
                       {sectionCompletedNotice?.nextSection
@@ -1375,22 +1385,22 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
               {/* Complete Correct Sentence & Meaning Translation */}
               {lastEvaluation.full_correct_sentence && (
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-xs space-y-2.5">
+                <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 text-xs space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788]">
                       Complete Sentence
                     </span>
                     <button
                       onClick={() => playEnglishSpeech(lastEvaluation.full_correct_sentence.replace(/\*/g, ''))}
-                      className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition"
+                      className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#FAF7F2] dark:bg-[#27302A] hover:bg-[#EBE4D7] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#354037] text-xs transition cursor-pointer"
                       title="Listen to full correct sentence"
                     >
-                      <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <Volume2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                       <span>Listen</span>
                     </button>
                   </div>
 
-                  <div className="text-sm font-semibold text-white leading-relaxed">
+                  <div className="text-sm font-semibold text-[#1B4332] dark:text-[#F4F2EC] leading-relaxed">
                     <ClickableSentenceText
                       text={lastEvaluation.full_correct_sentence}
                       onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
@@ -1399,13 +1409,13 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
                   {/* Sentence Meaning / Translation */}
                   {(lastEvaluation.sentence_translation || currentQuestion.sentence_translation || currentQuestion.vocab_card?.meaning) && (
-                    <div className="pt-2 border-t border-slate-800/80 flex items-start space-x-2 text-xs text-slate-300">
-                      <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="pt-2 border-t border-[#F4EFEB] dark:border-[#2C332E] flex items-start space-x-2 text-xs text-[#3D4E45] dark:text-[#A7B3AB]">
+                      <Globe className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
+                        <span className="text-[#3D4E45] dark:text-[#A7B3AB] font-semibold block text-[10px] uppercase tracking-wider mb-0.5">
                           Ý nghĩa câu / Sentence Meaning:
                         </span>
-                        <div className="text-slate-200 italic font-medium leading-relaxed">
+                        <div className="text-[#2D312E] dark:text-[#F4F2EC] italic font-medium leading-relaxed">
                           <ClickableSentenceText
                             text={lastEvaluation.sentence_translation || currentQuestion.sentence_translation || currentQuestion.vocab_card?.meaning || ''}
                             contextSentence={lastEvaluation.full_correct_sentence || currentQuestion.context_sentence || currentQuestion.prompt}
@@ -1420,8 +1430,8 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
               {/* Contrast explanation for distractors */}
               {lastEvaluation.contrast_explanation && (
-                <div className="bg-rose-950/30 border border-rose-500/30 rounded-2xl p-4 text-xs text-rose-200 leading-relaxed">
-                  <span className="text-rose-400 font-bold uppercase tracking-wider block mb-1">
+                <div className="bg-[#FFF8F6] dark:bg-[#271E1C] border border-[#F3B3A2] dark:border-[#4A2D27] rounded-2xl p-4 text-xs text-[#B84728] dark:text-[#F28482] leading-relaxed">
+                  <span className="font-bold uppercase tracking-wider block mb-1">
                     Why your choice was not suitable
                   </span>
                   <div>
@@ -1434,13 +1444,13 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </div>
               )}
 
-              {/* Single Clear Explanation (No Duplicate Decisive Clue) */}
+              {/* Single Clear Explanation */}
               {lastEvaluation.explanation && (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs space-y-1.5">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block mb-1">
+                <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 text-xs space-y-1.5">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] block mb-1">
                     Explanation
                   </span>
-                  <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-medium">
+                  <div className="text-sm text-[#2D312E] dark:text-[#F4F2EC] leading-relaxed whitespace-pre-line font-medium">
                     <ClickableSentenceText
                       text={lastEvaluation.explanation}
                       contextSentence={lastEvaluation.full_correct_sentence || currentQuestion.context_sentence || currentQuestion.prompt}
@@ -1450,58 +1460,58 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </div>
               )}
 
-              {/* Writing Rubric Breakdown (Scale 1 to 5 across 6 dimensions) */}
+              {/* Writing Rubric Breakdown */}
               {lastRubric && (
-                <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-2xl p-4 md:p-5 space-y-3">
-                  <span className="text-xs uppercase font-bold tracking-wider text-indigo-300 block">
+                <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 md:p-5 space-y-3">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] block">
                     Writing Rubric Breakdown (Scale 1 to 5)
                   </span>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Grammar Accuracy</span>
-                      <strong className="text-emerald-400">{lastRubric.accuracy}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Grammar Accuracy</span>
+                      <strong className="text-[#2D6A4F] dark:text-[#52B788]">{lastRubric.accuracy}/5</strong>
                     </div>
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Vocabulary Range</span>
-                      <strong className="text-sky-400">{lastRubric.vocabularyRange}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Vocabulary Range</span>
+                      <strong className="text-[#2D6A4F] dark:text-[#52B788]">{lastRubric.vocabularyRange}/5</strong>
                     </div>
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Complexity</span>
-                      <strong className="text-indigo-300">{lastRubric.sentenceComplexity}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Complexity</span>
+                      <strong className="text-[#2D6A4F] dark:text-[#52B788]">{lastRubric.sentenceComplexity}/5</strong>
                     </div>
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Coherence</span>
-                      <strong className="text-amber-300">{lastRubric.coherence}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Coherence</span>
+                      <strong className="text-[#B87A24] dark:text-[#E6A23C]">{lastRubric.coherence}/5</strong>
                     </div>
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Naturalness</span>
-                      <strong className="text-purple-300">{lastRubric.naturalness}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Naturalness</span>
+                      <strong className="text-[#2D6A4F] dark:text-[#52B788]">{lastRubric.naturalness}/5</strong>
                     </div>
-                    <div className="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Task Completion</span>
-                      <strong className="text-teal-300">{lastRubric.taskCompletion}/5</strong>
+                    <div className="bg-white dark:bg-[#242E27] p-2.5 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
+                      <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">Task Completion</span>
+                      <strong className="text-[#2D6A4F] dark:text-[#52B788]">{lastRubric.taskCompletion}/5</strong>
                     </div>
                   </div>
 
                   {lastRubric.correctedVersion && (
                     <div className="pt-2">
-                      <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">Natural Native Phrasing:</span>
-                      <p className="text-xs text-indigo-100 italic bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                      <span className="text-[11px] font-semibold text-[#3D4E45] dark:text-[#A7B3AB] block mb-0.5">Natural Native Phrasing:</span>
+                      <p className="text-xs text-[#1B4332] dark:text-[#F4F2EC] italic bg-white dark:bg-[#242E27] p-3 rounded-xl border border-[#EBE4D7] dark:border-[#313E34]">
                         "{lastRubric.correctedVersion}"
                       </p>
                     </div>
                   )}
 
                   {lastRubric.keyCorrections && lastRubric.keyCorrections.length > 0 && (
-                    <div className="space-y-1.5 pt-2 border-t border-indigo-900/50">
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase">Key Adjustments:</span>
+                    <div className="space-y-1.5 pt-2 border-t border-[#C2DBC7]/50 dark:border-[#2C4A38]">
+                      <span className="text-[11px] font-semibold text-[#3D4E45] dark:text-[#A7B3AB] uppercase">Key Adjustments:</span>
                       {lastRubric.keyCorrections.map((kc, i) => (
-                        <div key={i} className="text-xs text-slate-300 flex items-start space-x-2">
-                          <span className="text-rose-400 line-through">{kc.original}</span>
+                        <div key={i} className="text-xs text-[#2D312E] dark:text-[#F4F2EC] flex items-start space-x-2">
+                          <span className="text-[#E07A5F] line-through">{kc.original}</span>
                           <span>→</span>
-                          <span className="text-emerald-300 font-semibold">{kc.corrected}</span>
-                          <span className="text-slate-400">({kc.reason})</span>
+                          <span className="text-[#2D6A4F] dark:text-[#52B788] font-semibold">{kc.corrected}</span>
+                          <span className="text-[#8A938C]">({kc.reason})</span>
                         </div>
                       ))}
                     </div>
@@ -1511,24 +1521,24 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
               {/* Useful Phrases for Writing or Exercise */}
               {lastEvaluation.useful_phrases && lastEvaluation.useful_phrases.length > 0 && (
-                <div className="bg-emerald-950/20 border border-emerald-800/40 rounded-2xl p-4 space-y-2">
-                  <span className="text-xs uppercase font-bold tracking-wider text-emerald-300 flex items-center space-x-1.5">
+                <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 space-y-2">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Useful Collocations & Phrases for this Context</span>
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                     {lastEvaluation.useful_phrases.map((up, i) => (
-                      <div key={i} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-0.5">
-                        <strong className="text-xs text-emerald-300 font-mono block">
+                      <div key={i} className="p-2.5 rounded-xl bg-white dark:bg-[#242E27] border border-[#EBE4D7] dark:border-[#313E34] space-y-0.5">
+                        <strong className="text-xs text-[#2D6A4F] dark:text-[#52B788] font-mono block">
                           {typeof up === 'string' ? up : up.phrase}
                         </strong>
                         {typeof up !== 'string' && up.meaning && (
-                          <p className="text-[11px] text-slate-300">
-                            <span className="text-slate-400">Meaning: </span>{up.meaning}
+                          <p className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB]">
+                            <span className="text-[#8A938C]">Meaning: </span>{up.meaning}
                           </p>
                         )}
                         {typeof up !== 'string' && up.how_to_use && (
-                          <p className="text-[10px] text-slate-400 italic">
+                          <p className="text-[10px] text-[#8A938C] italic">
                             Tip: {up.how_to_use}
                           </p>
                         )}
@@ -1538,7 +1548,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </div>
               )}
 
-              {/* Interactive Tutor Deep-Dive Chat (allows asking follow-ups on vocabulary/grammar/writing before moving on) */}
+              {/* Interactive Tutor Deep-Dive Chat */}
               <TutorDeepDiveChat
                 question={currentQuestion}
                 userAnswer={userAnswer}

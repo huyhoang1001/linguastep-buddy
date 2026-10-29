@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/learning.ts';
 import { UserAccount, BudgetLimits } from '../types/auth.ts';
+import { StatusBadge } from './ui/StatusBadge.tsx';
 
 export type NavigationDestination = 'home' | 'learn' | 'words' | 'progress';
 
@@ -110,9 +111,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Subtle CEFR Level Badge */}
-            <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-[#EFF6F1] dark:bg-[#252F28] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#334237]">
+            <StatusBadge variant="success">
               Level {profile.current_level}
-            </span>
+            </StatusBadge>
           </div>
 
           {/* Center: Four Primary Destinations (Desktop) */}
@@ -200,20 +201,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </button>
             )}
-
-            {/* Compact Search Trigger (Cmd + K) */}
-            <button
-              type="button"
-              onClick={onOpenSearchPalette}
-              title="Search dictionary & quick commands (⌘K)"
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#202722] hover:bg-[#FAF7F2] dark:hover:bg-[#27302A] border border-[#EBE4D7] dark:border-[#2E3730] text-xs text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white transition cursor-pointer shadow-2xs"
-            >
-              <Search className="w-3.5 h-3.5 text-[#74A892]" />
-              <span className="hidden sm:inline">Search words...</span>
-              <kbd className="hidden sm:inline-block font-mono text-[10px] bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2E3730] px-1.5 py-0.5 rounded text-[#8A938C]">
-                ⌘K
-              </kbd>
-            </button>
 
             {/* Quota Warning Badge Indicator (When >= 80% daily quota used) */}
             {isQuotaWarning && (
@@ -354,6 +341,30 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Row 2: Dedicated Global Search Row */}
+        <div className="border-t border-[#EBE4D7]/80 dark:border-[#262E28] bg-[#F7F3EC]/80 dark:bg-[#181E19]/80 py-2.5 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto flex justify-center">
+            <button
+              type="button"
+              onClick={onOpenSearchPalette}
+              title="Search dictionary, grammar rules & quick commands (⌘K)"
+              className="w-full max-w-3xl flex items-center justify-between px-3.5 py-2 rounded-2xl bg-white dark:bg-[#202722] hover:bg-[#FAF7F2] dark:hover:bg-[#27302A] border border-[#EBE4D7] dark:border-[#2C332E] text-xs text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] transition cursor-pointer shadow-2xs group"
+            >
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <Search className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788] group-hover:scale-110 transition-transform shrink-0" />
+                <span className="truncate text-xs font-normal text-[#5C645E] dark:text-[#A7ABA4] group-hover:text-[#1B4332] dark:hover:text-[#F4F2EC]">
+                  Search Cambridge dictionary, grammar rules &amp; quick commands...
+                </span>
+              </div>
+              <div className="flex items-center space-x-1.5 shrink-0 ml-2">
+                <kbd className="font-mono text-[10px] font-semibold bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2E3730] px-2 py-0.5 rounded-lg text-[#5C645E] dark:text-[#8A938C] shadow-2xs">
+                  ⌘K
+                </kbd>
+              </div>
+            </button>
           </div>
         </div>
       </header>

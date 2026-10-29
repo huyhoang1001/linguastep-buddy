@@ -170,8 +170,8 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Search Input Box (Cambridge Inspired) */}
       <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-        <div className="absolute left-3.5 pointer-events-none text-slate-400 flex items-center">
-          <Search className="w-4 h-4 text-amber-400/90" />
+        <div className="absolute left-3.5 pointer-events-none text-[#8A938C] flex items-center">
+          <Search className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
         </div>
 
         <input
@@ -183,7 +183,7 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
           aria-label="Search English vocabulary in Cambridge dictionary"
-          className={`w-full bg-slate-800/95 hover:bg-slate-800 focus:bg-slate-800/90 border border-slate-700/80 focus:border-amber-400/70 rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/25 shadow-inner transition-all ${
+          className={`w-full bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] dark:hover:bg-[#222924] focus:bg-white dark:focus:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] focus:border-[#2D6A4F] dark:focus:border-[#52B788] rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 shadow-inner transition-all ${
             compact ? 'text-xs py-1.5 pl-9 pr-14 rounded-xl' : ''
           }`}
         />
@@ -197,13 +197,13 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
                 setSearchTerm('');
                 inputRef.current?.focus();
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/70 transition"
+              className="p-1.5 rounded-lg text-[#8A938C] hover:text-[#2D312E] dark:hover:text-[#F4F2EC] hover:bg-[#FAF7F2] dark:hover:bg-[#2C332E] transition cursor-pointer"
               title="Clear input"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-400 bg-slate-900/90 border border-slate-700/80">
+            <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono text-[#8A938C] bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2C332E]">
               Ctrl+K or /
             </kbd>
           )}
@@ -211,7 +211,7 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           {searchTerm.trim().length > 0 && (
             <button
               type="submit"
-              className="flex items-center space-x-1 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold shadow-md shadow-amber-500/25 transition"
+              className="flex items-center space-x-1 px-3 py-1 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold shadow-md transition cursor-pointer"
               title="Search and learn word"
             >
               <span>Tra từ</span>
@@ -223,14 +223,14 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
 
       {/* Suggestion Dropdown on Focus */}
       {isFocused && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl overflow-hidden z-50 text-slate-100 max-h-80 overflow-y-auto animate-fadeIn">
+        <div className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl shadow-2xl overflow-hidden z-50 text-[#2D312E] dark:text-[#F4F2EC] max-h-80 overflow-y-auto animate-fadeIn">
           {/* Header Banner */}
-          <div className="px-3.5 py-2 bg-slate-800/80 border-b border-slate-800 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-300 flex items-center space-x-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="px-3.5 py-2 bg-[#FAF7F2] dark:bg-[#161A17] border-b border-[#EBE4D7] dark:border-[#2C332E] flex items-center justify-between text-[11px]">
+            <span className="font-semibold text-[#1B4332] dark:text-[#F4F2EC] flex items-center space-x-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
               <span>{searchTerm.trim() ? `Search for "${searchTerm.trim()}"` : 'Dictionary Suggestions & Memory'}</span>
             </span>
-            <span className="text-[10px] text-slate-400">Press Enter ↵ to learn</span>
+            <span className="text-[10px] text-[#8A938C]">Press Enter ↵ to learn</span>
           </div>
 
           {/* Direct "Search <term>" button if user typed something custom */}
@@ -238,22 +238,22 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="w-full text-left px-3.5 py-2.5 hover:bg-indigo-950/50 border-b border-slate-800/80 flex items-center justify-between transition group"
+              className="w-full text-left px-3.5 py-2.5 hover:bg-[#EFF6F1] dark:hover:bg-[#252C26] border-b border-[#EBE4D7] dark:border-[#2C332E] flex items-center justify-between transition group cursor-pointer"
             >
               <div className="flex items-center space-x-2">
-                <span className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0">
+                <span className="w-6 h-6 rounded-lg bg-[#2D6A4F]/10 dark:bg-[#52B788]/20 text-[#2D6A4F] dark:text-[#52B788] flex items-center justify-center shrink-0">
                   <Search className="w-3.5 h-3.5" />
                 </span>
                 <div>
-                  <span className="text-xs font-bold text-white group-hover:text-indigo-200">
+                  <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] group-hover:text-[#2D6A4F] dark:group-hover:text-[#52B788]">
                     Look up & practice "{searchTerm.trim()}"
                   </span>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4]">
                     Get pronunciation, Vietnamese meaning, workplace context & micro-exam
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] group-hover:translate-x-0.5 transition-transform" />
             </button>
           )}
 
@@ -264,24 +264,24 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
                 key={`${item.word}-${idx}`}
                 type="button"
                 onClick={() => handleSelectSuggestion(item.word)}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800/70 transition flex items-center justify-between gap-2 group"
+                className="w-full text-left px-3.5 py-2 hover:bg-[#FAF7F2] dark:hover:bg-[#252C26] transition flex items-center justify-between gap-2 group cursor-pointer"
               >
                 <div className="flex items-center space-x-2 min-w-0">
                   {item.isSaved ? (
-                    <Bookmark className="w-3.5 h-3.5 text-sky-400 shrink-0 fill-sky-400/20" />
+                    <Bookmark className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] shrink-0 fill-[#2D6A4F]/20" />
                   ) : (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-indigo-400 shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8A938C] group-hover:bg-[#2D6A4F] shrink-0" />
                   )}
-                  <span className="text-xs font-bold text-white group-hover:text-indigo-300 truncate">
+                  <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] group-hover:text-[#2D6A4F] dark:group-hover:text-[#52B788] truncate">
                     {item.word}
                   </span>
                   {item.pos && (
-                    <span className="text-[10px] text-slate-400 italic">
+                    <span className="text-[10px] text-[#8A938C] italic">
                       ({item.pos})
                     </span>
                   )}
                   {item.meaning && (
-                    <span className="text-[11px] text-slate-400 truncate max-w-[180px] hidden sm:inline">
+                    <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] truncate max-w-[180px] hidden sm:inline">
                       — {item.meaning}
                     </span>
                   )}
@@ -289,12 +289,12 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
 
                 <div className="flex items-center space-x-1.5 shrink-0">
                   {item.level && (
-                    <span className="text-[10px] font-mono font-medium text-slate-400 bg-slate-800 px-1.5 py-0.2 rounded border border-slate-700/60">
+                    <span className="text-[10px] font-mono font-medium text-[#5C645E] dark:text-[#A7ABA4] bg-[#FAF7F2] dark:bg-[#161A17] px-1.5 py-0.2 rounded border border-[#EBE4D7] dark:border-[#2C332E]">
                       {item.level}
                     </span>
                   )}
                   {item.isSaved && (
-                    <span className="text-[10px] text-sky-400 font-semibold">
+                    <span className="text-[10px] text-[#2D6A4F] dark:text-[#52B788] font-semibold">
                       In Memory
                     </span>
                   )}
@@ -304,7 +304,7 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           </div>
 
           {/* Cambridge Dictionary Info Footer */}
-          <div className="px-3.5 py-1.5 bg-slate-950/60 border-t border-slate-800/80 text-[10px] text-slate-400 flex items-center justify-between">
+          <div className="px-3.5 py-1.5 bg-[#FAF7F2] dark:bg-[#161A17] border-t border-[#EBE4D7] dark:border-[#2C332E] text-[10px] text-[#8A938C] flex items-center justify-between">
             <span>Powered by Cambridge-style Lexicographer AI</span>
             <span>Audio · IPA · Collocations · Spaced Repetition</span>
           </div>

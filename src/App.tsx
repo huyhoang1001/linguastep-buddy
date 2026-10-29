@@ -678,6 +678,11 @@ export default function App() {
       <CatCompanionWidget
         config={catConfig}
         onOpenCustomizer={() => setShowCatCustomizer(true)}
+        lessonContext={activePlan ? {
+          objective: activePlan.primary_objective,
+          section: activePlan.sections?.find(s => !s.completed)?.section || 'grammar',
+          skillName: activePlan.sections?.find(s => !s.completed)?.skill_target || ''
+        } : undefined}
       />
 
       {/* MeoMeo Cat Studio Customizer Modal */}

@@ -61,7 +61,7 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
 
         {/* Debrief Header */}
         <div className="space-y-3 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C]">
             <span>Session #{summary.lesson_number} Debrief</span>
             <span aria-hidden="true">&middot;</span>
             <span>{new Date(summary.completed_at).toLocaleDateString()}</span>
@@ -71,7 +71,7 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
 
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
                 Today&apos;s Field Notes
               </h2>
               <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
@@ -94,11 +94,11 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         </div>
 
-        {/* Real Performance Metrics (No fabricated level jumps or fake scores) */}
+        {/* Real Performance Metrics */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
             <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">Time Logged</span>
-            <strong className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+            <strong className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">
               {summary.time_spent_minutes || summary.target_duration_minutes || 20}m
             </strong>
             <span className="text-[10px] text-[#8A938C] block">of {summary.target_duration_minutes || 20}m plan</span>
@@ -106,7 +106,7 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
 
           <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
             <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">Exercises</span>
-            <strong className="text-lg font-serif font-bold text-[#2D6A4F] dark:text-[#52B788]">
+            <strong className="text-lg font-bold text-[#2D6A4F] dark:text-[#52B788]">
               {summary.questions_answered}
             </strong>
             <span className="text-[10px] text-[#8A938C] block">
@@ -116,7 +116,7 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
 
           <div className="bg-white/80 dark:bg-[#252C26] border border-[#EBE4D7] dark:border-[#333D35] rounded-2xl p-3.5 text-center">
             <span className="text-[11px] font-medium text-[#8A938C] dark:text-[#8E978F] block mb-0.5">First-Try Accuracy</span>
-            <strong className="text-lg font-serif font-bold text-[#E07A5F]">
+            <strong className="text-lg font-bold text-[#E07A5F]">
               {accuracyPercent}%
             </strong>
             <span className="text-[10px] text-[#8A938C] block">verified attempts</span>

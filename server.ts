@@ -419,6 +419,21 @@ app.post('/api/ai/deep-dive', checkAIBudget, async (req: Request, res: Response)
   }
 });
 
+// 4d. MeoMeo Chibi Cat AI Companion Chat
+app.post('/api/ai/companion-chat', checkAIBudget, async (req: Request, res: Response) => {
+  try {
+    const { messages = [], profile, lessonContext } = req.body;
+    if (!profile) {
+      return res.status(400).json({ error: 'Learner profile context is required.' });
+    }
+
+    const response = await aiService.companionChat(messages, profile, lessonContext);
+    res.json(response);
+  } catch (err: any) {
+    handleAiRouteError(res, err);
+  }
+});
+
 // 4c. Word Deep-Dive & Micro-Practice (Clickable words in exam/lesson)
 app.post('/api/ai/word-practice', checkAIBudget, async (req: Request, res: Response) => {
   try {

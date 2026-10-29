@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import {
-  BookMarked,
   Volume2,
   Search,
   Sparkles,
-  ArrowRight,
   Download,
   Upload,
-  BookOpen,
-  Filter,
-  CheckCircle2,
-  Clock,
-  RotateCcw
+  ArrowRight
 } from 'lucide-react';
 import { VocabularyItem } from '../types/learning.ts';
 import { playEnglishSpeech, exportMemory, importMemory, validateImportData } from '../services/api.ts';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
+import { AppButton, InfoCard, FilterChip, StatusBadge, IconButton, ActionChip, InteractiveCard } from './ui/index.ts';
 
 interface WordsViewProps {
   vocabulary: VocabularyItem[];
@@ -111,14 +106,14 @@ export const WordsView: React.FC<WordsViewProps> = ({
       {/* 1. Header & Context */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C]">
             <span>Vocabulary Deck</span>
             <span aria-hidden="true">&middot;</span>
-            <span>Spaced Review Ledger</span>
+            <span>Spaced review</span>
             <span aria-hidden="true">&middot;</span>
-            <span>Word Families</span>
+            <span>Word families</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight mt-1">
             Word Stash
           </h1>
           <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
@@ -128,16 +123,16 @@ export const WordsView: React.FC<WordsViewProps> = ({
 
         {/* Quick Ledger Actions */}
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          <button
-            type="button"
+          <AppButton
+            variant="outline"
+            size="sm"
             onClick={handleExport}
-            className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#252C26] hover:bg-[#FAF7F2] border border-[#EBE4D7] dark:border-[#333D35] text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            leftIcon={<Download className="w-3.5 h-3.5" />}
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export</span>
-          </button>
+            Export
+          </AppButton>
 
-          <label className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#252C26] hover:bg-[#FAF7F2] border border-[#EBE4D7] dark:border-[#333D35] text-xs font-semibold text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+          <label className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2D6A4F] text-xs px-3 py-1.5 min-h-[36px] gap-1.5 bg-transparent text-[#2D312E] dark:text-[#F4F2EC] border border-[#D8CFBF] dark:border-[#3C443E] hover:bg-[#FAF7F2] dark:hover:bg-[#262F28]">
             <Upload className="w-3.5 h-3.5" />
             <span>Restore</span>
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />
@@ -152,7 +147,7 @@ export const WordsView: React.FC<WordsViewProps> = ({
       )}
 
       {/* 2. Look Up & Add New Word Box */}
-      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 shadow-sm space-y-3">
+      <InfoCard className="p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
@@ -167,7 +162,7 @@ export const WordsView: React.FC<WordsViewProps> = ({
           onSelectWord={(w) => onPracticeWord(w)}
           placeholder="Look up a word to explore its word family forms and add to your stash..."
         />
-      </div>
+      </InfoCard>
 
       {/* 3. Filter Bar & Search */}
       <div className="space-y-3">
@@ -195,64 +190,43 @@ export const WordsView: React.FC<WordsViewProps> = ({
 
           {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <button
-              type="button"
+            <FilterChip
+              selected={vocabFilter === 'all'}
               onClick={() => setVocabFilter('all')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer ${
-                vocabFilter === 'all'
-                  ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-                  : 'bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-              }`}
+              count={vocabulary.length}
             >
-              All ({vocabulary.length})
-            </button>
+              All
+            </FilterChip>
 
-            <button
-              type="button"
+            <FilterChip
+              selected={vocabFilter === 'due'}
               onClick={() => setVocabFilter('due')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                vocabFilter === 'due'
-                  ? 'bg-[#E07A5F] text-white font-bold shadow-xs'
-                  : 'bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-              }`}
+              count={overdueCount}
             >
-              <span>Due for Recall</span>
-              {overdueCount > 0 && (
-                <span className="px-1.5 py-0.2 bg-white/30 text-white rounded text-[10px] font-bold">
-                  {overdueCount}
-                </span>
-              )}
-            </button>
+              Due for Recall
+            </FilterChip>
 
-            <button
-              type="button"
+            <FilterChip
+              selected={vocabFilter === 'solid'}
               onClick={() => setVocabFilter('solid')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer ${
-                vocabFilter === 'solid'
-                  ? 'bg-[#2D6A4F] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-                  : 'bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-              }`}
+              count={solidCount}
             >
-              Solidified ({solidCount})
-            </button>
+              Solidified
+            </FilterChip>
 
-            <button
-              type="button"
+            <FilterChip
+              selected={vocabFilter === 'families'}
               onClick={() => setVocabFilter('families')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer ${
-                vocabFilter === 'families'
-                  ? 'bg-[#52796F] text-white dark:bg-[#84A98C] dark:text-[#0F291E] font-bold shadow-xs'
-                  : 'bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-              }`}
+              count={familiesCount}
             >
-              Word Families ({familiesCount})
-            </button>
+              Word Families
+            </FilterChip>
           </div>
         </div>
 
         {/* 4. Word Cards Grid */}
         {vocabulary.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl space-y-3">
+          <InfoCard className="text-center py-16 px-4 space-y-3">
             <div className="w-14 h-14 rounded-2xl bg-[#EFF6F1] dark:bg-[#28352C] flex items-center justify-center text-3xl mx-auto">
               🧺
             </div>
@@ -262,56 +236,53 @@ export const WordsView: React.FC<WordsViewProps> = ({
             <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] max-w-md mx-auto leading-relaxed">
               Words you explore in the search box above or encounter during your daily lessons will automatically gather here with spaced-retention schedules.
             </p>
-          </div>
+          </InfoCard>
         ) : filteredVocab.length === 0 ? (
-          <div className="text-center py-12 px-4 bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl space-y-2">
+          <InfoCard className="text-center py-12 px-4 space-y-2">
             <p className="text-sm font-semibold text-[#1B4332] dark:text-[#F4F2EC]">
               No words match that filter
             </p>
             <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
               You&apos;re either all caught up on scheduled reviews or no saved words match your search.
             </p>
-          </div>
+          </InfoCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredVocab.map(v => {
               const overdue = isOverdue(v);
-              const nextDate = v.next_review_at ? new Date(v.next_review_at).toLocaleDateString() : 'Tomorrow';
 
               return (
-                <div
+                <InteractiveCard
                   key={v.id}
-                  className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 shadow-xs hover:border-[#74A892] dark:hover:border-[#52B788] transition duration-150 flex flex-col justify-between space-y-3"
+                  onClick={() => onPracticeWord(v.word)}
+                  className="p-5 shadow-xs flex flex-col justify-between space-y-3"
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onPracticeWord(v.word)}
-                            className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] hover:text-[#2D6A4F] dark:hover:text-[#52B788] transition text-left cursor-pointer underline decoration-dotted decoration-[#C5BFB3] hover:decoration-[#2D6A4F]"
-                            title="Open Cambridge dictionary details & micro-exam"
-                          >
+                          <span className="text-lg font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
                             {v.word}
-                          </button>
-
-                          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-[#EFF6F1] dark:bg-[#28352C] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#344439]">
-                            {v.part_of_speech}
                           </span>
+
+                          <StatusBadge variant="neutral">
+                            {v.part_of_speech}
+                          </StatusBadge>
 
                           <span className="text-xs font-mono text-[#5C645E] dark:text-[#A7ABA4]">
                             {v.ipa}
                           </span>
 
-                          <button
-                            type="button"
-                            onClick={() => playEnglishSpeech(v.word)}
-                            className="p-1 rounded-md text-[#74A892] hover:text-[#1B4332] dark:hover:text-white transition cursor-pointer"
-                            title="Listen to pronunciation"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </button>
+                          <IconButton
+                            icon={<Volume2 className="w-3.5 h-3.5" />}
+                            ariaLabel={`Pronounce ${v.word}`}
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playEnglishSpeech(v.word);
+                            }}
+                          />
                         </div>
 
                         <p className="text-xs font-medium text-[#2D6A4F] dark:text-[#95D5B2] mt-0.5">
@@ -320,13 +291,9 @@ export const WordsView: React.FC<WordsViewProps> = ({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border inline-block ${
-                          overdue
-                            ? 'bg-[#FDF0ED] dark:bg-[#342421] text-[#E07A5F] border-[#F5D5CC] dark:border-[#4E342D]'
-                            : 'bg-[#EFF6F1] dark:bg-[#242E27] text-[#2D6A4F] dark:text-[#84A98C] border-[#CDE1D4] dark:border-[#334237]'
-                        }`}>
+                        <StatusBadge variant={overdue ? 'accent' : 'success'}>
                           {overdue ? '⚠️ Due for recall' : `Stage ${v.review_stage}d`}
-                        </span>
+                        </StatusBadge>
                         <span className="block text-[10px] text-[#8A938C] mt-1 font-mono">
                           ✓ {v.times_correct} / ✗ {v.times_incorrect}
                         </span>
@@ -352,52 +319,29 @@ export const WordsView: React.FC<WordsViewProps> = ({
                           Word Family Forms:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
-                          {v.word_family.members.map((m, idx) => {
-                            const formKey = m.form.toLowerCase().trim();
-                            const mastery = v.word_form_mastery?.[formKey];
-                            const status = mastery?.status || 'untested';
-
-                            let badgeColor = 'bg-[#FAF7F2] text-[#5C645E] border-[#EBE4D7] dark:bg-[#161A17] dark:text-[#8A938C] dark:border-[#2C332E]';
-                            if (status === 'mastered') {
-                              badgeColor = 'bg-[#EFF6F1] text-[#2D6A4F] border-[#CDE1D4] dark:bg-[#252F28] dark:text-[#84A98C] dark:border-[#334237]';
-                            } else if (status === 'understood') {
-                              badgeColor = 'bg-[#EFF6F1] text-[#52796F] border-[#CDE1D4] dark:bg-[#252F28] dark:text-[#84A98C] dark:border-[#334237]';
-                            } else if (status === 'needs_practice') {
-                              badgeColor = 'bg-[#FDF0ED] text-[#E07A5F] border-[#F5D5CC] dark:bg-[#2E2421] dark:text-[#D1ABA2] dark:border-[#4B342E]';
-                            }
-
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => onPracticeWord(m.form)}
-                                className={`text-[11px] px-2 py-0.5 rounded-md border flex items-center gap-1 cursor-pointer hover:border-[#74A892] transition ${badgeColor}`}
-                                title={`Practice ${m.form} (${m.part_of_speech})`}
-                              >
-                                <span className="font-semibold">{m.form}</span>
-                                <span className="text-[9px] opacity-75">({m.part_of_speech.slice(0, 4)})</span>
-                              </button>
-                            );
-                          })}
+                          {v.word_family.members.map((m, idx) => (
+                            <ActionChip
+                              key={idx}
+                              variant="subtle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPracticeWord(m.form);
+                              }}
+                            >
+                              <span className="font-semibold">{m.form}</span>
+                              <span className="text-[9px] opacity-75">({m.part_of_speech.slice(0, 4)})</span>
+                            </ActionChip>
+                          ))}
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-[#F4EFEB] dark:border-[#2B332D] flex items-center justify-between">
-                    <span className="text-[11px] text-[#8A938C]">
-                      Next review: {nextDate}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onPracticeWord(v.word)}
-                      className="text-xs font-semibold text-[#2D6A4F] dark:text-[#52B788] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Practice forms</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                  <div className="pt-2 border-t border-[#F4EFEB] dark:border-[#2B332D] flex items-center justify-between text-xs text-[#52796F] dark:text-[#84A98C]">
+                    <span className="font-medium">Practice Micro-Exam</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </div>
-                </div>
+                </InteractiveCard>
               );
             })}
           </div>

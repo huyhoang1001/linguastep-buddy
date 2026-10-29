@@ -29,6 +29,7 @@ import { getWordPractice, localStore } from '../services/api.ts';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 import { playCorrectMeowChime, playMeowSound } from '../services/catSoundService.ts';
 import { catCustomizationStore } from '../services/catCustomizationStore.ts';
+import { AUTO_SUBMIT_NOTE } from '../utils/submissionPolicy.ts';
 
 interface WordPracticeModalProps {
   word: string;
@@ -194,28 +195,22 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
     isCorrect: false
   };
 
-  const handleSelectOption = (optId: string) => {
+  const handleSelectOption = async (optId: string) => {
     if (currentSubmission.isSubmitted) return;
-    setExerciseStates(prev => ({
-      ...prev,
-      [activeExerciseIndex]: {
-        selectedOptionId: optId,
-        isSubmitted: false,
-        isCorrect: false
-      }
-    }));
+    await handleSubmitExercise(optId);
   };
 
-  const handleSubmitExercise = async () => {
-    if (!currentSubmission.selectedOptionId || !currentExercise || !data || currentSubmission.isSubmitted) return;
+  const handleSubmitExercise = async (overrideOptionId?: string) => {
+    const selectedOptId = overrideOptionId || currentSubmission.selectedOptionId;
+    if (!selectedOptId || !currentExercise || !data || currentSubmission.isSubmitted) return;
 
-    const isCorrect = currentSubmission.selectedOptionId.toUpperCase() === currentExercise.expected_answer_id.toUpperCase();
+    const isCorrect = selectedOptId.toUpperCase() === currentExercise.expected_answer_id.toUpperCase();
 
     // Mark current exercise as submitted
     setExerciseStates(prev => ({
       ...prev,
       [activeExerciseIndex]: {
-        selectedOptionId: currentSubmission.selectedOptionId,
+        selectedOptionId: selectedOptId,
         isSubmitted: true,
         isCorrect
       }
@@ -275,7 +270,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
     const mastery = formMasteries[key];
     if (!mastery) {
       return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FAF7F2] dark:bg-[#1E231F] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#2C332E]">
           Not Tested
         </span>
       );
@@ -514,35 +509,35 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                           return (
                             <tr
                               key={idx}
-                              className={`group hover:bg-slate-800/40 transition ${
-                                isHead ? 'bg-indigo-950/20' : ''
+                              className={`group hover:bg-[#FAF7F2] dark:hover:bg-[#252C26] transition ${
+                                isHead ? 'bg-[#EFF6F1] dark:bg-[#28352C]' : ''
                               }`}
                             >
                               <td className="py-3 pr-3">
                                 <div className="flex items-center space-x-1.5">
                                   <button
                                     onClick={() => playSpeech(member.form)}
-                                    className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                                    className="p-1 rounded-md text-[#8A938C] hover:text-[#1B4332] dark:hover:text-white transition"
                                     title={`Listen to ${member.form}`}
                                   >
-                                    <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                                    <Volume2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setActiveWord(member.form)}
-                                    className="font-bold text-white hover:text-indigo-300 transition text-left cursor-pointer underline decoration-dotted decoration-slate-600 hover:decoration-indigo-400"
+                                    className="font-bold text-[#1B4332] dark:text-[#F4F2EC] hover:text-[#2D6A4F] dark:hover:text-[#52B788] transition text-left cursor-pointer underline decoration-dotted decoration-[#C5BFB3] hover:decoration-[#2D6A4F]"
                                     title="Look up this specific form in Cambridge dictionary"
                                   >
                                     {member.form}
                                   </button>
                                   {isHead && (
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#2D6A4F]/10 dark:bg-[#52B788]/20 text-[#2D6A4F] dark:text-[#52B788] border border-[#2D6A4F]/20 font-semibold">
                                       Searched
                                     </span>
                                   )}
                                 </div>
                                 {member.ipa && (
-                                  <span className="text-[10px] font-mono text-slate-400 block pl-6">
+                                  <span className="text-[10px] font-mono text-[#5C645E] dark:text-[#A7ABA4] block pl-6">
                                     {member.ipa}
                                   </span>
                                 )}
@@ -551,25 +546,25 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                               <td className="py-3 pr-3">
                                 <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
                                   member.part_of_speech.includes('verb')
-                                    ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                                    ? 'bg-[#FDF0ED] dark:bg-[#2E2421] text-[#E07A5F] border border-[#F5D5CC] dark:border-[#4B342E]'
                                     : member.part_of_speech.includes('noun')
-                                    ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                                    ? 'bg-[#EFF6F1] dark:bg-[#252F28] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#334237]'
                                     : member.part_of_speech.includes('adj')
-                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                                    : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                    ? 'bg-[#EFF6F1] dark:bg-[#252F28] text-[#2D6A4F] dark:text-[#84A98C] border border-[#CDE1D4] dark:border-[#334237]'
+                                    : 'bg-[#FAF7F2] dark:bg-[#242A25] text-[#B25E00] dark:text-[#E9A825] border border-[#EBE4D7] dark:border-[#313B33]'
                                 }`}>
                                   {member.part_of_speech.replace('_', ' ')}
                                 </span>
                               </td>
 
-                              <td className="py-3 pr-3 hidden md:table-cell text-slate-400 font-mono text-[11px]">
+                              <td className="py-3 pr-3 hidden md:table-cell text-[#5C645E] dark:text-[#A7ABA4] font-mono text-[11px]">
                                 {member.suffix_or_pattern || '—'}
                               </td>
 
                               <td className="py-3 pr-3">
-                                <p className="text-slate-200 font-medium">{member.meaning_vi}</p>
+                                <p className="text-[#2D312E] dark:text-[#F4F2EC] font-medium">{member.meaning_vi}</p>
                                 {member.example_sentence && (
-                                  <p className="text-[11px] text-slate-400 italic mt-0.5 line-clamp-1 group-hover:line-clamp-none transition-all">
+                                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] italic mt-0.5 line-clamp-1 group-hover:line-clamp-none transition-all">
                                     "{member.example_sentence}"
                                   </p>
                                 )}
@@ -587,10 +582,10 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                   {/* Missing forms note */}
                   {data.word_family.missing_forms_note && (
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-3 text-xs text-slate-400 flex items-start space-x-2">
-                      <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                    <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-3 text-xs text-[#5C645E] dark:text-[#A7ABA4] flex items-start space-x-2">
+                      <Info className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788] shrink-0 mt-0.5" />
                       <p className="leading-relaxed">
-                        <strong className="text-slate-300">Morphology Note: </strong>
+                        <strong className="text-[#1B4332] dark:text-[#F4F2EC]">Morphology Note: </strong>
                         {data.word_family.missing_forms_note}
                       </p>
                     </div>
@@ -665,15 +660,15 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                   {/* Transformation source / Error sentence if applicable */}
                   {currentExercise.transformation_source_sentence && (
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-300 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block">
+                    <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-3.5 text-xs text-[#5C645E] dark:text-[#A7ABA4] space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#B25E00] dark:text-[#E9A825] block">
                         Original Sentence to Transform:
                       </span>
-                      <p className="italic font-medium text-slate-200">
+                      <p className="italic font-medium text-[#2D312E] dark:text-[#F4F2EC]">
                         "{currentExercise.transformation_source_sentence}"
                       </p>
                       {currentExercise.transformation_prompt && (
-                        <span className="text-[11px] text-indigo-300 font-semibold block pt-1">
+                        <span className="text-[11px] text-[#2D6A4F] dark:text-[#52B788] font-semibold block pt-1">
                           → {currentExercise.transformation_prompt}
                         </span>
                       )}
@@ -681,11 +676,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   )}
 
                   {currentExercise.error_sentence && (
-                    <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-3.5 text-xs text-rose-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 block">
+                    <div className="bg-[#FDF0ED] dark:bg-[#2D2320] border border-[#F5D5CC] dark:border-[#4B342E] rounded-2xl p-3.5 text-xs text-[#E07A5F] space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#E07A5F] block">
                         Sentence with Grammatical Error:
                       </span>
-                      <p className="font-mono text-slate-200">
+                      <p className="font-mono text-[#2D312E] dark:text-[#F4F2EC]">
                         "{currentExercise.error_sentence}"
                       </p>
                     </div>
@@ -695,6 +690,14 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   <p className="text-sm md:text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] leading-relaxed whitespace-pre-line">
                     {currentExercise.prompt}
                   </p>
+
+                  {/* Auto Submit Note */}
+                  {!currentSubmission.isSubmitted && (
+                    <div className="text-xs font-medium text-[#2D6A4F] dark:text-[#52B788] flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#EFF6F1] dark:bg-[#252F28] border border-[#CDE1D4] dark:border-[#334237]">
+                      <span className="text-sm shrink-0">💡</span>
+                      <span>{AUTO_SUBMIT_NOTE}</span>
+                    </div>
+                  )}
 
                   {/* Options with Part of Speech labels */}
                   <div className="grid grid-cols-1 gap-2.5">
@@ -759,40 +762,27 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                     })}
                   </div>
 
-                  {/* Submission Button */}
-                  {!currentSubmission.isSubmitted ? (
-                    <div className="flex justify-end pt-1">
-                      <button
-                        type="button"
-                        disabled={!currentSubmission.selectedOptionId}
-                        onClick={handleSubmitExercise}
-                        className="px-5 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] disabled:opacity-40 text-white text-xs font-bold transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
-                      >
-                        <span>Check Word Form</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
+                  {currentSubmission.isSubmitted && (
                     /* Detailed Post-Submission Feedback */
                     <div className={`p-4 md:p-5 rounded-2xl border space-y-3 animate-fadeIn ${
                       currentSubmission.isCorrect
-                        ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-100'
-                        : 'bg-rose-950/30 border-rose-500/40 text-rose-100'
+                        ? 'bg-[#EFF6F1] dark:bg-[#202B24] border-[#CDE1D4] dark:border-[#334237] text-[#1B4332] dark:text-[#F4F2EC]'
+                        : 'bg-[#FDF0ED] dark:bg-[#2D2320] border-[#F5D5CC] dark:border-[#4B342E] text-[#2D312E] dark:text-[#F4F2EC]'
                     }`}>
                       {/* Verdict Header */}
                       <div className="flex items-center justify-between text-xs font-bold">
                         <div className="flex items-center space-x-2">
                           {currentSubmission.isCorrect ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                              <span className="text-emerald-300">
+                              <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
+                              <span className="text-[#2D6A4F] dark:text-[#52B788]">
                                 Excellent! Correct form: <strong>{currentExercise.expected_answer_text}</strong> ({currentExercise.target_part_of_speech})
                               </span>
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-4 h-4 text-rose-400" />
-                              <span className="text-rose-300">
+                              <XCircle className="w-4 h-4 text-[#E07A5F]" />
+                              <span className="text-[#E07A5F]">
                                 Incorrect form. Expected: <strong>{currentExercise.expected_answer_text}</strong> ({currentExercise.target_part_of_speech})
                               </span>
                             </>
@@ -801,18 +791,18 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                         {/* Individual Word Form Mastery Status Callout */}
                         <div className="flex items-center space-x-1.5">
-                          <span className="text-[10px] text-slate-400">Tested form status:</span>
+                          <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4]">Tested form status:</span>
                           {getFormMasteryBadge(currentExercise.target_form)}
                         </div>
                       </div>
 
                       {/* Decisive Grammatical Clue Box */}
                       {currentExercise.grammatical_clue && (
-                        <div className="bg-slate-900/90 border border-indigo-500/30 p-3 rounded-xl text-xs space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block">
+                        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-3 rounded-xl text-xs space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] block">
                             💡 Decisive Grammatical Clue:
                           </span>
-                          <p className="text-slate-200 leading-relaxed font-medium">
+                          <p className="text-[#2D312E] dark:text-[#F4F2EC] leading-relaxed font-medium">
                             {currentExercise.grammatical_clue}
                           </p>
                         </div>
@@ -820,11 +810,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                       {/* Full Completed Natural Sentence */}
                       {currentExercise.full_correct_sentence && (
-                        <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl text-xs space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] p-3 rounded-xl text-xs space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                             Natural Completed Sentence:
                           </span>
-                          <p className="italic text-white font-medium">
+                          <p className="italic text-[#1B4332] dark:text-[#F4F2EC] font-medium">
                             "{currentExercise.full_correct_sentence}"
                           </p>
                         </div>
@@ -832,20 +822,20 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                       {/* Vietnamese Explanation */}
                       {currentExercise.vietnamese_explanation && (
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                        <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
                           {currentExercise.vietnamese_explanation}
                         </p>
                       )}
 
                       {/* Option-by-Option Distractor Breakdown */}
                       {currentExercise.distractor_explanations && Object.keys(currentExercise.distractor_explanations).length > 0 && (
-                        <div className="pt-2 border-t border-slate-800 space-y-1.5 text-xs">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        <div className="pt-2 border-t border-[#EBE4D7] dark:border-[#2C332E] space-y-1.5 text-xs">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                             Form-by-Form Syntactic Analysis:
                           </span>
                           {Object.entries(currentExercise.distractor_explanations).map(([optKey, explanationText]) => (
-                            <div key={optKey} className="text-[11px] text-slate-300 flex items-start space-x-2">
-                              <span className="font-bold text-indigo-400 shrink-0">Option {optKey}:</span>
+                            <div key={optKey} className="text-[11px] text-[#2D312E] dark:text-[#F4F2EC] flex items-start space-x-2">
+                              <span className="font-bold text-[#2D6A4F] dark:text-[#52B788] shrink-0">Option {optKey}:</span>
                               <span>{explanationText}</span>
                             </div>
                           ))}
@@ -853,7 +843,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                       )}
 
                       {/* Learning Progress Notice */}
-                      <div className="pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 border-t border-slate-800">
+                      <div className="pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#5C645E] dark:text-[#A7ABA4] border-t border-[#EBE4D7] dark:border-[#2C332E]">
                         <span>
                           Word forms are tracked independently. A single correct answer does not mark the entire family as mastered.
                         </span>
@@ -863,7 +853,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                               setActiveExerciseIndex(prev => prev + 1);
                               setShowHint(false);
                             }}
-                            className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center space-x-1"
+                            className="px-3 py-1 rounded-lg bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition flex items-center space-x-1 cursor-pointer"
                           >
                             <span>Next Exercise ({activeExerciseIndex + 2}/{currentExercises.length})</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -878,51 +868,51 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
               {/* 4. Collocations & Nuances */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {data.collocation_pattern && (
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
+                  <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-2xl p-4 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] block">
                       Natural Collocation:
                     </span>
-                    <strong className="text-white block font-mono text-xs">
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC] block font-mono text-xs">
                       {data.collocation_pattern}
                     </strong>
                   </div>
                 )}
 
                 {data.pronunciation_tip && (
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 block">
+                  <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-2xl p-4 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] block">
                       Pronunciation Tip:
                     </span>
-                    <p className="text-slate-300 text-xs">{data.pronunciation_tip}</p>
+                    <p className="text-[#5C645E] dark:text-[#A7ABA4] text-xs">{data.pronunciation_tip}</p>
                   </div>
                 )}
               </div>
 
               {/* 5. Workplace & Real-world Usage Examples */}
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-3xl p-5 space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4] block">
                   Practical Application Examples
                 </span>
 
                 {data.example_workplace && (
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2 text-xs">
-                      <span className="text-[10px] uppercase font-bold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
+                      <span className="text-[10px] uppercase font-bold text-[#2D6A4F] dark:text-[#84A98C] bg-[#EFF6F1] dark:bg-[#28352C] px-2 py-0.5 rounded border border-[#CDE1D4] dark:border-[#344439]">
                         {examMajor || 'Professional'}
                       </span>
                     </div>
-                    <p className="text-xs md:text-sm text-slate-200 italic font-medium leading-relaxed pl-1">
+                    <p className="text-xs md:text-sm text-[#2D312E] dark:text-[#F4F2EC] italic font-medium leading-relaxed pl-1">
                       "{data.example_workplace}"
                     </p>
                   </div>
                 )}
 
                 {data.example_general && (
-                  <div className="space-y-1 pt-1 border-t border-slate-800">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                  <div className="space-y-1 pt-1 border-t border-[#F4EFEB] dark:border-[#2B332D]">
+                    <span className="text-[10px] uppercase font-bold text-[#5C645E] dark:text-[#A7ABA4] block">
                       Everyday Context:
                     </span>
-                    <p className="text-xs text-slate-300 italic pl-1 leading-relaxed">
+                    <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] italic pl-1 leading-relaxed">
                       "{data.example_general}"
                     </p>
                   </div>
@@ -930,20 +920,20 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
                 {/* Similar Word Contrast */}
                 {data.similar_word_comparison && (
-                  <div className="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-3.5 text-xs text-amber-200 space-y-1.5 mt-2">
+                  <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-3.5 text-xs text-[#2D312E] dark:text-[#F4F2EC] space-y-1.5 mt-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-amber-400 font-bold uppercase tracking-wider text-[10px] block">
+                      <span className="text-[#B25E00] dark:text-[#E9A825] font-bold uppercase tracking-wider text-[10px] block">
                         Nuance Contrast: {data.word} vs. {data.similar_word_comparison.word}
                       </span>
                       <button
                         type="button"
                         onClick={() => setActiveWord(data.similar_word_comparison!.word)}
-                        className="text-[10px] font-semibold text-amber-300 hover:text-white underline decoration-amber-400/60 transition"
+                        className="text-[10px] font-semibold text-[#2D6A4F] dark:text-[#52B788] hover:underline transition cursor-pointer"
                       >
                         Look up "{data.similar_word_comparison.word}" →
                       </button>
                     </div>
-                    <p className="text-slate-300">{data.similar_word_comparison.difference}</p>
+                    <p className="text-[#5C645E] dark:text-[#A7ABA4]">{data.similar_word_comparison.difference}</p>
                   </div>
                 )}
               </div>
@@ -952,10 +942,10 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         </div>
 
         {/* Bottom Persistent Action Bar */}
-        <div className="sticky bottom-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-400">
+        <div className="sticky bottom-0 bg-[#FAF7F2]/95 dark:bg-[#1A1F1B]/95 backdrop-blur border-t border-[#EBE4D7] dark:border-[#2C332E] p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
             {isSavedToMemory ? (
-              <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+              <span className="text-[#2D6A4F] dark:text-[#52B788] font-semibold flex items-center space-x-1">
                 <BookmarkCheck className="w-3.5 h-3.5" />
                 <span>Word family saved in your spaced repetition deck</span>
               </span>
@@ -966,30 +956,32 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
           <div className="flex items-center space-x-2">
             <button
+              type="button"
               onClick={handleToggleSaveMemory}
               disabled={!data || isLoading}
-              className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1.5 ${
+              className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
                 isSavedToMemory
-                  ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                  ? 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237] text-[#2D6A4F] dark:text-[#52B788]'
+                  : 'bg-white dark:bg-[#272E29] hover:bg-[#FAF7F2] dark:hover:bg-[#323D34] border-[#EBE4D7] dark:border-[#38423A] text-[#2D312E] dark:text-[#F4F2EC]'
               }`}
             >
               {isSavedToMemory ? (
                 <>
-                  <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <BookmarkCheck className="w-3.5 h-3.5 text-[#52B788]" />
                   <span>Saved</span>
                 </>
               ) : (
                 <>
-                  <Bookmark className="w-3.5 h-3.5 text-slate-400" />
+                  <Bookmark className="w-3.5 h-3.5 text-[#8A938C]" />
                   <span>Save to Memory</span>
                 </>
               )}
             </button>
 
             <button
+              type="button"
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5"
+              className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition shadow-md flex items-center space-x-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Current Exam</span>

@@ -5,17 +5,13 @@ import {
   Layers,
   Sparkles,
   Trophy,
-  AlertCircle,
-  Calendar,
-  ArrowRight,
   TrendingUp,
-  Award,
-  BookOpen,
-  RotateCcw
+  Award
 } from 'lucide-react';
 import { UserProfile, LearnerSkillState, DailySummary, Attempt } from '../types/learning.ts';
 import { MilestoneBadge } from '../types/milestone.ts';
 import { WeeklyProgressChart } from './WeeklyProgressChart.tsx';
+import { AppButton, InfoCard, FilterChip, StatusBadge, InteractiveCard } from './ui/index.ts';
 
 interface ProgressViewProps {
   profile: UserProfile;
@@ -119,352 +115,281 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
       {/* 1. Header with Verified CEFR Progress */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C] uppercase tracking-wider">
-            <span>Learning Horizon</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#52796F] dark:text-[#84A98C]">
+            <span>Your learning path</span>
             <span aria-hidden="true">&middot;</span>
-            <span>CEFR Evidence Ledger</span>
+            <span>Skill breakdown</span>
             <span aria-hidden="true">&middot;</span>
             <span>Milestones</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight mt-1">
-            Progress &amp; Mastery
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight mt-1">
+            Your progress
           </h1>
           <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
-            Objective progress tracking grounded in spaced retrieval trials, difficulty calibration, and error retention.
+            Track your skill retention, active learning path, and milestone badges over time.
           </p>
         </div>
 
-        <button
-          type="button"
+        <AppButton
+          variant="primary"
           onClick={onStartNewLesson}
-          className="px-5 py-2.5 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-sm hover:shadow-md"
+          leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+          className="self-start sm:self-auto"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Launch Today&apos;s Session</span>
-        </button>
+          Launch Today&apos;s Session
+        </AppButton>
       </div>
 
-      {/* 2. Top Metric Cards (Truthful, non-gamified statistics) */}
+      {/* 2. Top Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-4 text-center space-y-0.5 shadow-xs">
-          <span className="text-[11px] font-bold text-[#8A938C] uppercase tracking-wider block">Level Target</span>
-          <div className="text-xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+        <InfoCard className="p-4 text-center space-y-0.5 shadow-xs">
+          <span className="text-xs font-semibold text-[#8A938C] block">Target level</span>
+          <div className="text-xl font-bold text-[#1B4332] dark:text-[#F4F2EC]">
             {profile.current_level} &rarr; {profile.target_level || 'C1'}
           </div>
-          <span className="text-[10px] text-[#52796F] dark:text-[#84A98C]">Evidence calibrated</span>
-        </div>
+          <span className="text-[10px] text-[#52796F] dark:text-[#84A98C]">CEFR progression</span>
+        </InfoCard>
 
-        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-4 text-center space-y-0.5 shadow-xs">
-          <span className="text-[11px] font-bold text-[#8A938C] uppercase tracking-wider block">Retained Mastery</span>
-          <div className="text-xl font-serif font-bold text-[#2D6A4F] dark:text-[#52B788]">
+        <InfoCard className="p-4 text-center space-y-0.5 shadow-xs">
+          <span className="text-xs font-semibold text-[#8A938C] block">Skills retained</span>
+          <div className="text-xl font-bold text-[#2D6A4F] dark:text-[#52B788]">
             {masteredSkills.length}
           </div>
-          <span className="text-[10px] text-[#8A938C]">Delayed recall verified</span>
-        </div>
+          <span className="text-[10px] text-[#8A938C]">Verified in practice</span>
+        </InfoCard>
 
-        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-4 text-center space-y-0.5 shadow-xs">
-          <span className="text-[11px] font-bold text-[#8A938C] uppercase tracking-wider block">Overdue Reviews</span>
-          <div className="text-xl font-serif font-bold text-[#E07A5F]">
+        <InfoCard className="p-4 text-center space-y-0.5 shadow-xs">
+          <span className="text-xs font-semibold text-[#8A938C] block">Reviews due</span>
+          <div className="text-xl font-bold text-[#E07A5F]">
             {overdueSkills.length}
           </div>
-          <span className="text-[10px] text-[#8A938C]">Ready for reinforcement</span>
-        </div>
+          <span className="text-[10px] text-[#8A938C]">Ready for review</span>
+        </InfoCard>
 
-        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-4 text-center space-y-0.5 shadow-xs">
-          <span className="text-[11px] font-bold text-[#8A938C] uppercase tracking-wider block">Badges Unlocked</span>
-          <div className="text-xl font-serif font-bold text-[#B25E00] dark:text-[#E9A825]">
+        <InfoCard className="p-4 text-center space-y-0.5 shadow-xs">
+          <span className="text-xs font-semibold text-[#8A938C] block">Milestone badges</span>
+          <div className="text-xl font-bold text-[#B25E00] dark:text-[#E9A825]">
             {unlockedBadges.length} / {allBadges.length || 10}
           </div>
-          <span className="text-[10px] text-[#8A938C]">Milestone achievements</span>
-        </div>
+          <span className="text-[10px] text-[#8A938C]">Achievements</span>
+        </InfoCard>
       </div>
 
       {/* 3. Section Navigation Tabs */}
       <div className="flex items-center gap-1.5 p-1 bg-white/70 dark:bg-[#1A1F1B] rounded-2xl border border-[#EBE4D7] dark:border-[#2C332E] self-start overflow-x-auto text-xs">
-        <button
-          type="button"
+        <FilterChip
+          selected={activeTab === 'roadmap'}
           onClick={() => setActiveTab('roadmap')}
-          className={`px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'roadmap'
-              ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-              : 'text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332]'
-          }`}
         >
-          <Compass className="w-3.5 h-3.5" />
-          <span>Curriculum Roadmap</span>
-        </button>
+          <Compass className="w-3.5 h-3.5 inline mr-1" />
+          Curriculum Roadmap
+        </FilterChip>
 
-        <button
-          type="button"
+        <FilterChip
+          selected={activeTab === 'skills'}
           onClick={() => setActiveTab('skills')}
-          className={`px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'skills'
-              ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-              : 'text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332]'
-          }`}
+          count={skills.length}
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Skills Matrix ({skills.length})</span>
-        </button>
+          <Layers className="w-3.5 h-3.5 inline mr-1" />
+          Skills Matrix
+        </FilterChip>
 
-        <button
-          type="button"
+        <FilterChip
+          selected={activeTab === 'charts'}
           onClick={() => setActiveTab('charts')}
-          className={`px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'charts'
-              ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-              : 'text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332]'
-          }`}
         >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Weekly Trends</span>
-        </button>
+          <TrendingUp className="w-3.5 h-3.5 inline mr-1" />
+          Weekly Trends
+        </FilterChip>
 
-        <button
-          type="button"
+        <FilterChip
+          selected={activeTab === 'badges'}
           onClick={() => setActiveTab('badges')}
-          className={`px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'badges'
-              ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-              : 'text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332]'
-          }`}
+          count={unlockedBadges.length}
         >
-          <Trophy className="w-3.5 h-3.5" />
-          <span>Badges ({unlockedBadges.length})</span>
-        </button>
+          <Trophy className="w-3.5 h-3.5 inline mr-1" />
+          Badges
+        </FilterChip>
       </div>
 
       {/* 4. Tab 1: Curriculum Roadmap */}
       {activeTab === 'roadmap' && (
         <div className="space-y-4">
-          <div className="p-5 rounded-3xl bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] shadow-sm space-y-4">
+          <InfoCard className="p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-[#F4EFEB] dark:border-[#2B332D] pb-3">
               <div>
-                <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                  5-Day Adaptive Progression Timeline
+                <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                  Your learning path
                 </h3>
                 <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
-                  Objectives are deterministically prioritized: prerequisite weaknesses first, then overdue reviews, then fresh concepts.
+                  Prioritized step-by-step to address missing prerequisites, overdue reviews, and new topics.
                 </p>
               </div>
-              <span className="text-xs font-mono text-[#2D6A4F] dark:text-[#84A98C] font-semibold">
-                Level {profile.current_level}
-              </span>
+              <StatusBadge variant="info">
+                Level {profile.current_level} Sequence
+              </StatusBadge>
             </div>
 
             <div className="space-y-3">
-              {roadmapDays.map(item => (
+              {roadmapDays.map(rd => (
                 <div
-                  key={item.day}
+                  key={rd.day}
                   className={`p-4 rounded-2xl border transition ${
-                    item.status === 'completed'
-                      ? 'bg-[#EFF6F1]/50 dark:bg-[#252C26] border-[#CDE1D4] dark:border-[#323D34]'
-                      : item.status === 'current'
-                      ? 'bg-[#EFF6F1] dark:bg-[#27352B] border-[#74A892] dark:border-[#52B788] ring-1 ring-[#52B788]/30 shadow-xs'
-                      : 'bg-white/40 dark:bg-[#1C211D] border-[#EBE4D7] dark:border-[#2C332E] text-[#8A938C]'
+                    rd.status === 'completed'
+                      ? 'bg-[#EFF6F1] dark:bg-[#202B24] border-[#CDE1D4] dark:border-[#334237]'
+                      : rd.status === 'current'
+                      ? 'bg-white dark:bg-[#242C26] border-2 border-[#2D6A4F] dark:border-[#52B788] shadow-xs'
+                      : 'bg-[#FAF7F2] dark:bg-[#1A1F1B] border-[#EBE4D7] dark:border-[#2C332E] opacity-80'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2.5">
-                      {item.status === 'completed' ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#52B788] shrink-0" />
-                      ) : item.status === 'current' ? (
-                        <div className="w-5 h-5 rounded-full bg-[#2D6A4F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                          {item.day}
-                        </div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border border-[#C5BFB3] dark:border-[#4B554D] flex items-center justify-center text-[10px] text-[#8A938C] shrink-0">
-                          {item.day}
-                        </div>
-                      )}
-                      <span className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                        Day {item.day}: {item.title}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
+                        rd.status === 'completed'
+                          ? 'bg-[#2D6A4F] text-white'
+                          : rd.status === 'current'
+                          ? 'bg-[#52B788] text-[#0F291E]'
+                          : 'bg-[#EAE4D7] dark:bg-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
+                      }`}>
+                        {rd.day}
                       </span>
+                      <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                        {rd.title}
+                      </h4>
                     </div>
 
-                    {item.status === 'current' && (
-                      <span className="text-[10px] font-bold bg-[#2D6A4F] text-white px-2.5 py-0.5 rounded-full uppercase">
-                        Current Session
-                      </span>
-                    )}
+                    <StatusBadge variant={rd.status === 'completed' ? 'success' : rd.status === 'current' ? 'info' : 'neutral'}>
+                      {rd.status === 'completed' ? '✓ Completed' : rd.status === 'current' ? 'Active Focus' : 'Upcoming'}
+                    </StatusBadge>
                   </div>
 
-                  <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1.5 pl-7 leading-relaxed">
-                    {item.focus}
+                  <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-2 font-medium">
+                    {rd.focus}
                   </p>
 
-                  <div className="mt-2.5 pl-7 flex flex-wrap gap-1.5">
-                    {item.skills.map((sk, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[11px] px-2.5 py-1 rounded-lg bg-white/70 dark:bg-[#181D19] border border-[#EBE4D7] dark:border-[#303B33] text-[#2D312E] dark:text-[#D1D7CE]"
-                      >
-                        {sk}
+                  <div className="mt-2 pt-2 border-t border-[#EBE4D7]/60 dark:border-[#2C332E] flex flex-wrap gap-2 text-[11px] text-[#2D6A4F] dark:text-[#84A98C]">
+                    {rd.skills.map((s, idx) => (
+                      <span key={idx} className="bg-white/60 dark:bg-[#161A17] px-2 py-0.5 rounded-md border border-[#EBE4D7] dark:border-[#2C332E]">
+                        &bull; {s}
                       </span>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </InfoCard>
         </div>
       )}
 
       {/* 5. Tab 2: Skills Matrix */}
       {activeTab === 'skills' && (
         <div className="space-y-4">
+          {/* Category Filter Chips */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {categories.map(cat => (
-              <button
+              <FilterChip
                 key={cat}
-                type="button"
+                selected={categoryFilter === cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={`px-3 py-1.5 rounded-xl font-medium capitalize transition cursor-pointer ${
-                  categoryFilter === cat
-                    ? 'bg-[#1B4332] text-white dark:bg-[#52B788] dark:text-[#0F291E] font-bold shadow-xs'
-                    : 'bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-                }`}
               >
-                {cat}
-              </button>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </FilterChip>
             ))}
           </div>
 
-          <div className="space-y-3">
-            {filteredSkills.length === 0 ? (
-              <div className="text-center py-12 px-4 bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl text-xs text-[#8A938C]">
-                No skills tracked under this category yet.
-              </div>
-            ) : (
-              filteredSkills.map(s => {
-                const stage = s.mastery_stage || 'recognition';
-                const isRegressed = s.status === 'regressed';
-                let statusColor = 'text-[#5C645E] bg-white dark:bg-[#222924] border-[#EBE4D7] dark:border-[#303B33]';
-                let stageLabel = 'Recognition';
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredSkills.map(s => {
+              const isOverdue = s.next_review_at && new Date(s.next_review_at).getTime() <= now;
+              const stage = s.mastery_stage || 'exposure';
 
-                if (isRegressed) {
-                  statusColor = 'text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#342421] border-[#F5D5CC] dark:border-[#4E342D]';
-                  stageLabel = '⚠️ Regressed';
-                } else if (stage === 'retained_mastery') {
-                  statusColor = 'text-[#2D6A4F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                  stageLabel = 'Retained Mastery 🏆';
-                } else if (stage === 'application') {
-                  statusColor = 'text-[#52796F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                  stageLabel = 'Application ✨';
-                } else if (stage === 'active_recall') {
-                  statusColor = 'text-[#2D6A4F] bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237]';
-                  stageLabel = 'Active Recall';
-                }
-
-                const nextDate = s.next_review_at ? new Date(s.next_review_at).toLocaleDateString() : 'Tomorrow';
-                const isSkillOverdue = s.next_review_at && new Date(s.next_review_at).getTime() <= now;
-
-                return (
-                  <div
-                    key={s.skill_id}
-                    className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="text-sm font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                          {s.skill_name}
-                        </h4>
-                        <span className="text-[10px] uppercase font-bold text-[#5C645E] dark:text-[#A7ABA4] bg-[#F4EFEB] dark:bg-[#181D19] px-2 py-0.5 rounded-md">
-                          {s.category}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-[#5C645E] dark:text-[#A7ABA4]">
-                        <span>Accuracy: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{Math.round(s.accuracy_rate * 100)}%</strong> ({s.total_attempts} trials)</span>
-                        {s.mastery_score !== undefined && (
-                          <span>&bull; Score: <strong className="text-[#2D6A4F] dark:text-[#84A98C]">{s.mastery_score}/100</strong></span>
-                        )}
-                        <span className={isSkillOverdue ? 'text-[#E07A5F] font-bold' : ''}>
-                          &bull; Review: {isSkillOverdue ? 'Overdue' : nextDate}
-                        </span>
-                      </div>
-
-                      {s.recurring_errors && s.recurring_errors.length > 0 && (
-                        <div className="text-[11px] text-[#E07A5F] pt-0.5">
-                          <span>Clinic note: {s.recurring_errors[s.recurring_errors.length - 1]}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="self-start sm:self-center shrink-0">
-                      <span className={`text-[11px] font-bold px-3 py-1 rounded-full border capitalize ${statusColor}`}>
-                        {stageLabel}
+              return (
+                <InfoCard key={s.skill_id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                        {s.skill_name}
+                      </h4>
+                      <span className="text-[10px] font-mono text-[#52796F] dark:text-[#84A98C] uppercase">
+                        {s.category}
                       </span>
                     </div>
+
+                    <StatusBadge variant={isOverdue ? 'accent' : stage === 'retained_mastery' ? 'success' : 'neutral'}>
+                      {isOverdue ? 'Review Due' : stage}
+                    </StatusBadge>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* 6. Tab 3: Weekly Progress Visualization */}
-      {activeTab === 'charts' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 shadow-sm space-y-4">
-            <div>
-              <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                7-Day Rolling Performance &amp; Consistency
-              </h3>
-              <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
-                Plots daily lesson accuracy against learning volume and retention checks.
-              </p>
-            </div>
-
-            <WeeklyProgressChart
-              summaries={summaries}
-              attempts={attempts}
-              targetAccuracy={80}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* 7. Tab 4: Milestones & Badges */}
-      {activeTab === 'badges' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {allBadges.map(badge => {
-              const isUnlocked = unlockedBadges.some(b => b.id === badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  className={`p-4 rounded-3xl border transition flex items-start space-x-3 ${
-                    isUnlocked
-                      ? 'bg-white dark:bg-[#1E231F] border-[#EBE4D7] dark:border-[#2C332E] shadow-xs'
-                      : 'bg-white/40 dark:bg-[#181D19] border-[#EBE4D7]/60 dark:border-[#262E28] opacity-60'
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                    isUnlocked
-                      ? 'bg-[#EFF6F1] dark:bg-[#252F28] text-[#2D6A4F] dark:text-[#52B788]'
-                      : 'bg-[#F4EFEB] dark:bg-[#222924] text-[#8A938C]'
-                  }`}>
-                    <Trophy className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                        {badge.title}
-                      </h4>
-                      {isUnlocked && (
-                        <CheckCircle2 className="w-3 h-3 text-[#52B788]" />
-                      )}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-[#5C645E] dark:text-[#A7ABA4]">
+                      <span>Mastery Score</span>
+                      <span className="font-bold">{s.mastery_score || 0}%</span>
                     </div>
-                    <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
-                      {badge.description}
-                    </p>
+                    <div className="w-full h-1.5 bg-[#EAE4D7] dark:bg-[#2C332E] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#2D6A4F] dark:bg-[#52B788] transition-all duration-300"
+                        style={{ width: `${s.mastery_score || 0}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
+
+                  {s.recurring_errors && s.recurring_errors.length > 0 && (
+                    <div className="text-[11px] text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#2E2421] p-2 rounded-xl border border-[#F5D5CC] dark:border-[#4B342E]">
+                      ⚠️ Note: {s.recurring_errors[0]}
+                    </div>
+                  )}
+                </InfoCard>
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* 6. Tab 3: Weekly Trends Chart */}
+      {activeTab === 'charts' && (
+        <InfoCard className="p-6 shadow-sm space-y-4">
+          <div className="border-b border-[#F4EFEB] dark:border-[#2B332D] pb-3">
+            <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+              7-Day Performance Window
+            </h3>
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
+              Daily study duration, accuracy trends, and exercise completion metrics.
+            </p>
+          </div>
+
+          <WeeklyProgressChart summaries={summaries} attempts={attempts} />
+        </InfoCard>
+      )}
+
+      {/* 7. Tab 4: Milestone Badges */}
+      {activeTab === 'badges' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {allBadges.map(badge => {
+            const isUnlocked = unlockedBadges.some(b => b.id === badge.id);
+
+            return (
+              <InteractiveCard
+                key={badge.id}
+                className={`p-4 space-y-2 ${!isUnlocked ? 'opacity-60 grayscale' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#EFF6F1] dark:bg-[#252F28] border border-[#CDE1D4] dark:border-[#354539] flex items-center justify-center text-xl shrink-0">
+                    {badge.icon || '🏅'}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                      {badge.title}
+                    </h4>
+                    <StatusBadge variant={isUnlocked ? 'success' : 'neutral'}>
+                      {isUnlocked ? 'Unlocked' : 'Locked'}
+                    </StatusBadge>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
+                  {badge.description}
+                </p>
+              </InteractiveCard>
+            );
+          })}
         </div>
       )}
     </div>

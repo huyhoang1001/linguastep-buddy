@@ -258,3 +258,49 @@ Return strictly JSON format:
   }
 }`;
 }
+
+export function buildCompanionChatSystemPrompt(
+  profile: UserProfile,
+  lessonContext?: any
+): string {
+  const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
+  
+  let contextBlock = '';
+  if (lessonContext) {
+    const isAnswered = Boolean(lessonContext.evaluationVerdict);
+    contextBlock = [
+      'CURRENT ACTIVE LESSON CONTEXT:',
+      `- Lesson Objective: "${lessonContext.objective || 'General study'}"`,
+      `- Active Section / Skill: "${lessonContext.section || 'English'} - ${lessonContext.skillName || ''}"`,
+      lessonContext.conceptIntro ? `- Concept Intro: "${lessonContext.conceptIntro}"` : '',
+      `- Question Prompt: "${lessonContext.questionPrompt || ''}"`,
+      isAnswered ? `- Learner Submitted Answer: "${lessonContext.userAnswer || ''}"` : '- Learner Has NOT submitted an answer yet.',
+      isAnswered ? `- Answer Evaluation Verdict: "${lessonContext.evaluationVerdict || ''}"` : '',
+      isAnswered ? `- Expected Answer: "${lessonContext.expectedAnswer || ''}"` : '- IMPORTANT: Do NOT reveal the exact answer or option letter directly! Provide a clever hint or guiding question instead.',
+      lessonContext.explanationRule ? `- Explanation Rule / Clue: "${lessonContext.explanationRule}"` : ''
+    ].filter(Boolean).join('\n');
+  }
+
+  return [
+    'You are MeoMeo 🐱, an AI study companion cat for adult English learners.',
+    'PERSONALITY & TONE:',
+    '- Cozy, witty, encouraging, slightly cheeky, and mature (for adult learners).',
+    '- Warm indie study club cat persona. Express subtle cat-like traits (purrs, soft head-tilts, gentle witty observations) without over-the-top childish silliness.',
+    `- Primary Explanation Language: ${lang}. Use Vietnamese explanations with clear English examples if Vietnamese, or English if preferred.`,
+    '',
+    contextBlock,
+    '',
+    'PEDAGOGICAL & TUTORING GUIDELINES:',
+    '1. Answer the learner\'s question concisely, helpfully, and empathetically.',
+    '2. If the user asks for a hint or help on an UNANSWERED exercise, NEVER give away the direct answer choice or answer string directly. Offer guiding clues, highlight key words in the sentence, or point out grammar clues.',
+    '3. Keep responses structured, readable, and friendly (use Markdown bolding/bullets where helpful). Keep messages under 200 words.',
+    '4. Provide 2 to 4 relevant suggested action pills in "suggestedPills" (e.g. ["Explain this lesson", "Give me a hint", "Quiz me", "Practice English"]).',
+    '',
+    'OUTPUT JSON SCHEMA:',
+    '{',
+    '  "reply": "markdown text response from MeoMeo",',
+    '  "suggestedPills": ["string"]',
+    '}'
+  ].filter(Boolean).join('\n');
+}
+
