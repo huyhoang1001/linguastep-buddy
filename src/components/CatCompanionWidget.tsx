@@ -297,14 +297,16 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isChatOpen]);
 
-  // Pointer drag-and-drop handler for the chatbox header
-  const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  // Pointer drag-and-drop handler for the chatbox header OR the floating cat button
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, isCatButton = false) => {
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('[role="button"]') || target.closest('input')) {
       return;
     }
-    if (!chatPanelRef.current) return;
-    const rect = chatPanelRef.current.getBoundingClientRect();
+    const container = isCatButton ? catButtonRef.current : chatPanelRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
     dragStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -318,12 +320,15 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       if (!dragStartRef.current) return;
       const dx = ev.clientX - dragStartRef.current.startX;
       const dy = ev.clientY - dragStartRef.current.startY;
-      const panelWidth = chatPanelRef.current?.offsetWidth || 360;
-      const panelHeight = chatPanelRef.current?.offsetHeight || 500;
+      
+      const panelWidth = container.offsetWidth;
+      const panelHeight = container.offsetHeight;
       const maxX = Math.max(8, window.innerWidth - panelWidth - 8);
       const maxY = Math.max(8, window.innerHeight - panelHeight - 8);
+      
       const nextX = Math.max(8, Math.min(maxX, dragStartRef.current.initialX + dx));
       const nextY = Math.max(8, Math.min(maxY, dragStartRef.current.initialY + dy));
+      
       setChatPosition({ x: nextX, y: nextY });
     };
 
@@ -346,7 +351,15 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
   if (!config.showCompanionWidget) return null;
 
   return (
-    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 select-none animate-fadeIn flex flex-col items-end">
+    <div 
+      className={`fixed z-50 select-none animate-fadeIn flex flex-col items-end ${!chatPosition ? 'bottom-20 right-4 md:bottom-6 md:right-6' : ''}`}
+      style={chatPosition ? {
+        left: `${chatPosition.x}px`,
+        top: `${chatPosition.y}px`,
+        bottom: 'auto',
+        right: 'auto'
+      } : undefined}
+    >
       {/* Speech Bubble */}
       {speechBubble && !isMinimized && !isChatOpen && (
         <div className="relative mb-2 max-w-[260px] bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#3C443E] text-[#2D312E] dark:text-[#F4F2EC] text-xs p-3 rounded-2xl shadow-xl animate-bounce-short">
@@ -382,22 +395,13 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       {isChatOpen && (
         <div
           ref={chatPanelRef}
-          style={chatPosition ? {
-            position: 'fixed',
-            left: `${chatPosition.x}px`,
-            top: `${chatPosition.y}px`,
-            bottom: 'auto',
-            right: 'auto',
-            margin: 0,
-            zIndex: 60
-          } : undefined}
           className={`mb-3 w-[340px] sm:w-[380px] h-[480px] sm:h-[520px] max-h-[82vh] bg-[#FAF7F2] dark:bg-[#1C211E] border border-[#EBE4D7] dark:border-[#333B35] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp transition-shadow ${
             isDragging ? 'shadow-amber-500/20 ring-2 ring-[#2D6A4F]/40 cursor-grabbing' : ''
           }`}
         >
           {/* Draggable Drawer Header */}
           <div
-            onPointerDown={handleHeaderPointerDown}
+            onPointerDown={(e) => handlePointerDown(e, false)}
             onDoubleClick={() => setChatPosition(null)}
             className={`p-3.5 border-b flex items-center justify-between bg-gradient-to-r ${activeTheme.bannerGradient} ${activeTheme.borderColor} cursor-grab active:cursor-grabbing select-none`}
             title="Kéo thả để di chuyển hộp chat (Click đúp để đưa về vị trí mặc định)"
@@ -577,11 +581,14 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       {/* Main Floating Cat Widget Control Box */}
       <div
         ref={catButtonRef}
-        className={`bg-[#161A17]/90 dark:bg-[#161A17]/95 border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition group`}
+        onPointerDown={(e) => handlePointerDown(e, true)}
+        onDoubleClick={() => setChatPosition(null)}
+        className={`bg-[#161A17]/90 dark:bg-[#161A17]/95 border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition group cursor-grab active:cursor-grabbing`}
       >
         {/* Cat Avatar Button - Click opens chat or pets */}
         <div
           onClick={() => {
+            if (isDraggingRef.current) return;
             if (!isChatOpen) {
               handlePetCat();
               setIsChatOpen(true);
@@ -590,7 +597,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
             }
           }}
           className="cursor-pointer relative transform group-hover:scale-105 active:scale-95 transition"
-          title={`Xoa đầu ${config.catName} hoặc trò chuyện cùng AI Companion!`}
+          title={`Xoa đầu ${config.catName} hoặc trò chuyện cùng AI Companion! (Kéo để di chuyển)`}
         >
           <CatChibiAvatar
             companionId={config.companionId}

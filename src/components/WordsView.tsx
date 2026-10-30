@@ -135,14 +135,20 @@ export const WordsView: React.FC<WordsViewProps> = ({
             variant="outline"
             size="sm"
             onClick={handleExport}
-            leftIcon={<Download className="w-3.5 h-3.5" />}
+            leftIcon={<Download />}
           >
             Export
           </AppButton>
 
-          <label className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2D6A4F] text-xs px-3 py-1.5 min-h-[36px] gap-1.5 bg-transparent text-[#2D312E] dark:text-[#F4F2EC] border border-[#D8CFBF] dark:border-[#3C443E] hover:bg-[#FAF7F2] dark:hover:bg-[#262F28]">
-            <Upload className="w-3.5 h-3.5" />
-            <span>Restore</span>
+          <label className="cursor-pointer">
+            <AppButton
+              variant="outline"
+              size="sm"
+              leftIcon={<Upload />}
+              className="pointer-events-none"
+            >
+              Restore
+            </AppButton>
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />
           </label>
         </div>

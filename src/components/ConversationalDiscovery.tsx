@@ -17,6 +17,7 @@ import {
   confirmDiscovery
 } from '../services/api.ts';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface ConversationalDiscoveryProps {
   currentProfile: UserProfile;
@@ -131,12 +132,14 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
         </div>
 
         {onSkipToDiagnostic && (
-          <button
+          <AppButton
             onClick={onSkipToDiagnostic}
-            className="text-xs text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white px-3 py-1.5 rounded-xl bg-[#FAF7F2] dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] transition cursor-pointer"
+            size="sm"
+            variant="ghost"
+            rightIcon={<ArrowRight />}
           >
-            Skip to Assessment →
-          </button>
+            Skip to Assessment
+          </AppButton>
         )}
       </div>
 
@@ -253,20 +256,22 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
             )}
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <button
+              <AppButton
                 onClick={() => handleSendMessage('Tôi muốn điều chỉnh lại một số điểm')}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-medium text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] hover:bg-white dark:hover:bg-[#262F28] transition cursor-pointer"
+                size="sm"
+                variant="secondary"
               >
                 Adjust via Tutor Chat
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
                 onClick={handleConfirmPlan}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
+                size="md"
+                variant="primary"
+                rightIcon={<ArrowRight />}
               >
-                <span>Confirm & Proceed to Adaptive Diagnostic</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                Confirm & Proceed to Adaptive Diagnostic
+              </AppButton>
             </div>
           </div>
         )}
@@ -319,22 +324,25 @@ export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = (
             className="flex-1 bg-white dark:bg-[#262F28] border border-[#D8CFBF] dark:border-[#3C443E] rounded-xl px-4 py-2.5 text-sm text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8C938D] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
           />
 
-          <button
+          <AppButton
+            variant="icon"
             onClick={handleSkipQuestion}
             title="Skip this question"
             disabled={isSending}
-            className="p-2.5 rounded-xl bg-[#FAF7F2] dark:bg-[#262F28] hover:bg-white dark:hover:bg-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#3C443E] transition cursor-pointer"
+            size="md"
           >
             <SkipForward className="w-4 h-4" />
-          </button>
+          </AppButton>
 
-          <button
+          <AppButton
             disabled={!inputText.trim() || isSending}
             onClick={() => handleSendMessage()}
-            className="p-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] disabled:opacity-50 text-white font-medium transition shadow-sm cursor-pointer"
+            variant="primary"
+            size="md"
+            className="!p-2.5 aspect-square min-w-0"
           >
             <Send className="w-4 h-4" />
-          </button>
+          </AppButton>
         </div>
       )}
     </div>

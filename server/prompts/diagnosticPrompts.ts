@@ -55,7 +55,7 @@ SECTION SPECIFIC RULES:
   ${existingPassage && currentQuestionIndexInSection < 3
     ? `Reuse the existing reading passage "${existingPassage.title}" and generate a brand-new follow-up comprehension, inference, or vocabulary-in-context question at level ${targetLevel}.`
     : `Generate an accessible reading passage (80-120 words for A1/A2, 140-180 words for B1/B2/C1) and 1 reading comprehension question with 4 options. Topic MUST be about ${topic === 'general' ? 'travel, daily culture, personal growth, or general interest' : 'software engineering, team collaboration, or workplace management'}.`}
-- If section is "writing": Provide a level-appropriate scenario prompt: for A1/A2 ask for 2-3 simple sentences; for B1/B2/C1 ask for a structured 3-4 sentence workplace or general update. Set question_type to "free_writing".
+- If section is "writing": Provide a level-appropriate scenario prompt: for A1/A2 ask for 2-3 simple sentences; for B1/B2/C1 ask for a structured 3-4 sentence workplace or general update. Set question_type to "free_writing". Do NOT provide a "context_sentence" with blanks for writing; focus strictly on the scenario.
 - NEVER duplicate any prompt or skill from previously answered questions: ${JSON.stringify(answered.map(a => a.question.prompt.slice(0, 40)))}.
 - Keep hints and explanations in ${lang}.
 
@@ -211,7 +211,7 @@ Quality & Formatting Rules:
    - All questions in the reading section must reference this passage for reading comprehension, factual detail, or author's intent.
 5. Writing Section:
    - The final section items (${plan.sections.find(s => s.section === 'writing')?.targetQuestionsCount || 1} items) MUST have question_type "free_writing".
-   - Prompt the learner for an authentic 3-4 sentence workplace or daily scenario response aligned with "${userGoal}".
+   - Prompt the learner for an authentic 3-4 sentence workplace or daily scenario response aligned with "${userGoal}". Do NOT provide a "context_sentence" with blanks for writing.
    - "expected_answer_text" can be "Original coherent written response".
 6. Output JSON: Return strictly a valid JSON object matching this schema:
 {

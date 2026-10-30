@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, BookOpen, Bookmark, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { localStore } from '../services/api.ts';
 import { VocabularyItem } from '../types/learning.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 // High-yield Cambridge academic and professional vocabulary suggestions
 const CAMBRIDGE_RECOMMENDED_WORDS = [
@@ -200,17 +201,17 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
         {/* Clear or Action button inside input */}
         <div className="absolute right-2.5 flex items-center space-x-1.5">
           {searchTerm ? (
-            <button
-              type="button"
+            <AppButton
+              variant="icon"
               onClick={() => {
                 setSearchTerm('');
                 inputRef.current?.focus();
               }}
-              className="p-1.5 rounded-lg text-[#8A938C] hover:text-[#2D312E] dark:hover:text-[#F4F2EC] hover:bg-[#FAF7F2] dark:hover:bg-[#2C332E] transition cursor-pointer"
               title="Clear input"
+              size="sm"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </AppButton>
           ) : (
             <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono text-[#8A938C] bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2C332E]">
               Ctrl+K or /
@@ -218,14 +219,15 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           )}
 
           {searchTerm.trim().length > 0 && (
-            <button
+            <AppButton
               type="submit"
-              className="flex items-center space-x-1 px-3 py-1 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold shadow-md transition cursor-pointer"
-              title="Search and learn word"
+              size="sm"
+              variant="primary"
+              rightIcon={<CornerDownLeft />}
+              className="font-bold shadow-md"
             >
-              <span>Tra từ</span>
-              <CornerDownLeft className="w-3 h-3" />
-            </button>
+              Tra từ
+            </AppButton>
           )}
         </div>
       </form>

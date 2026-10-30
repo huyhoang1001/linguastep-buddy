@@ -50,6 +50,7 @@ import { AIErrorAlert } from './AIErrorAlert.tsx';
 import { ClickableSentenceText } from './ClickableSentenceText.tsx';
 import { WordPracticeModal } from './WordPracticeModal.tsx';
 import { isAutoAssessQuestion, AUTO_SUBMIT_NOTE } from '../utils/submissionPolicy.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 export interface CuratedMajor {
   id: string;
@@ -339,7 +340,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       } catch (e) {}
     }
 
-    // 2. Time expired: Trigger modal when target seconds reached
+    // 2. Time expired: Trigger modal & auto-finalize
     if (remainingSeconds === 0 && !isTimeExpired && secondsElapsed >= targetSeconds && secondsElapsed >= 5) {
       setIsTimeExpired(true);
       setShowTimeOutModal(true);
@@ -348,6 +349,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       try {
         if (catConfig.soundEnabled) playTimesUpChime();
       } catch (e) {}
+
+      // Auto-finish assessment after a short delay to let the chime play
+      setTimeout(() => {
+        handleFinishAssessment();
+      }, 1500);
     }
   }, [secondsElapsed, remainingSeconds, hasWarnedNearlyOut, isTimeExpired, targetSeconds, session?.status, catConfig.soundEnabled]);
 
@@ -653,6 +659,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     type="text"
                     value={customMajorText}
                     onChange={e => setCustomMajorText(e.target.value)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="E.g., Biotechnology, Architecture, Logistics & Supply Chain..."
                     className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl px-3.5 py-2 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
                   />
@@ -668,6 +678,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   type="text"
                   value={majorDetailsText}
                   onChange={e => setMajorDetailsText(e.target.value)}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                   placeholder="E.g., Backend engineer collaborating with US architects; or Financial analyst presenting monthly audit reports..."
                   className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl px-3.5 py-2.5 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
                 />
@@ -682,6 +696,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   rows={2}
                   value={goalSummaryText}
                   onChange={e => setGoalSummaryText(e.target.value)}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                   placeholder="E.g., Prepare for job interviews, communicate fluently with global team, write clear incident reviews..."
                   className="w-full bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#313B33] rounded-xl p-3 text-xs text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] leading-relaxed"
                 />
@@ -817,7 +835,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Express Exam...</span>
                 </>
               ) : (
-                <span className="truncate">Start Express (8 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
+                <span className="truncate">Start Express Exam</span>
               )}
             </button>
           </div>
@@ -883,7 +901,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </>
               ) : (
                 <>
-                  <span className="truncate">Start Standard Exam (13 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
+                  <span className="truncate">Start Standard Exam</span>
                   <ArrowRight className="w-4 h-4 shrink-0" />
                 </>
               )}
@@ -947,7 +965,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Comprehensive Exam...</span>
                 </>
               ) : (
-                <span className="truncate">Start Comprehensive (22 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
+                <span className="truncate">Start Comprehensive Exam</span>
               )}
             </button>
           </div>
@@ -1157,7 +1175,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               onClick={() => setShowNearlyOutOfTimeAlert(false)}
               className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer"
             >
-              <span>Cố lên MeoMeo! 💨</span>
+              <span>Keep Going</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -1256,6 +1274,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
             {/* Context sentence callout if available and distinct from prompt */}
             {currentQuestion.context_sentence &&
+              currentQuestion.question_type !== 'free_writing' &&
               !currentQuestion.prompt.toLowerCase().includes(currentQuestion.context_sentence.toLowerCase().trim()) && (
               <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 md:p-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788] block mb-1">
@@ -1372,6 +1391,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 <input
                   type="text"
                   disabled={Boolean(lastEvaluation)}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                   placeholder="Type your answer here..."
                   value={userAnswer}
                   onChange={e => setUserAnswer(e.target.value)}
@@ -1393,6 +1416,10 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <textarea
                     rows={5}
                     disabled={Boolean(lastEvaluation)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Write your response in English (e.g. 3 to 5 sentences)..."
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
@@ -1427,23 +1454,16 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             {/* Submit button (if not evaluated yet and manual submission) */}
             {!lastEvaluation && !isAutoAssessQuestion(currentQuestion) && (
               <div className="pt-2 flex justify-end">
-                <button
+                <AppButton
                   disabled={!userAnswer.trim() || isEvaluating}
+                  isLoading={isEvaluating}
                   onClick={() => handleSubmitAnswer()}
-                  className="px-6 py-3 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] disabled:opacity-50 text-white dark:text-[#0F291E] font-bold text-sm transition shadow-xs flex items-center space-x-2 cursor-pointer"
+                  size="md"
+                  variant="primary"
+                  rightIcon={<ArrowRight />}
                 >
-                  {isEvaluating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Evaluating Answer...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Submit & Evaluate</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                  Submit
+                </AppButton>
               </div>
             )}
           </div>
@@ -1482,24 +1502,25 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
                 {/* Next button */}
                 {historyCount >= totalPlannedQuestions || mustStop ? (
-                  <button
+                  <AppButton
                     onClick={handleFinishAssessment}
-                    className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-2 cursor-pointer"
+                    size="md"
+                    variant="primary"
+                    rightIcon={<ArrowRight />}
                   >
-                    <span>View Assessment Results 🎉</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                    Finish Exam
+                  </AppButton>
                 ) : (
-                  <button
+                  <AppButton
                     onClick={loadNextQuestion}
-                    className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-2 cursor-pointer"
+                    size="md"
+                    variant="primary"
+                    rightIcon={<ArrowRight />}
                   >
-                    <span>
-                      {sectionCompletedNotice?.nextSection
-                        ? `Continue to ${sectionCompletedNotice.nextSection} →`
-                        : `Next Question (${Math.min(totalPlannedQuestions, historyCount + 1)}/${totalPlannedQuestions}) →`}
-                    </span>
-                  </button>
+                    {sectionCompletedNotice?.nextSection
+                      ? 'Next Section'
+                      : 'Next Question'}
+                  </AppButton>
                 )}
               </div>
 
@@ -1732,23 +1753,24 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               "Dù chưa xong hết nhưng MeoMeo đã có đủ dữ liệu để đánh giá trình độ của sen rồi. Xem kết quả thôi nào! Meow~"
             </p>
 
-            <button
-              type="button"
+            <AppButton
               onClick={() => {
                 setShowTimeOutModal(false);
                 handleFinishAssessment();
               }}
-              className="w-full py-4 px-6 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-md transition flex items-center justify-between group cursor-pointer"
+              size="lg"
+              variant="primary"
+              fullWidth
+              rightIcon={<ArrowRight />}
             >
-              <div className="flex items-center space-x-2.5">
+              <div className="flex items-center space-x-2.5 text-left">
                 <span className="text-xl">🏆</span>
-                <div className="text-left">
+                <div>
                   <span className="block font-bold">Xem Kết Quả Đánh Giá 🐟</span>
-                  <span className="text-[11px] text-[#E0DDD5] font-normal">Tổng kết năng lực & nhận lộ trình học tập</span>
+                  <span className="text-[11px] opacity-80 font-normal">Tổng kết năng lực & nhận lộ trình học tập</span>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
-            </button>
+            </AppButton>
           </div>
         </div>
       )}

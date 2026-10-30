@@ -25,6 +25,7 @@ import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 import { playCorrectMeowChime, playMeowSound } from '../services/catSoundService.ts';
 import { catCustomizationStore } from '../services/catCustomizationStore.ts';
 import { AUTO_SUBMIT_NOTE } from '../utils/submissionPolicy.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface WordPracticeModalProps {
   word: string;
@@ -344,15 +345,15 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         <div className="sticky top-0 z-10 bg-[#FAF7F2]/95 dark:bg-[#1A1F1B]/95 backdrop-blur border-b border-[#EBE4D7] dark:border-[#2C332E] p-3.5 md:p-4 space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center space-x-2.5">
-              <button
-                type="button"
+              <AppButton
                 onClick={onClose}
-                className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#272E29] hover:bg-[#EFF6F1] dark:hover:bg-[#323D34] text-[#2D312E] dark:text-[#F4F2EC] border border-[#EBE4D7] dark:border-[#38423A] text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
-                title="Return to your previous screen"
+                size="sm"
+                variant="secondary"
+                leftIcon={<ArrowLeft />}
+                className="font-bold shadow-sm"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
-                <span>Return</span>
-              </button>
+                Return
+              </AppButton>
 
               {currentQuestionIndex && totalQuestions ? (
                 <span className="text-xs text-[#5C645E] dark:text-[#A7ABA4] hidden sm:inline">
@@ -399,13 +400,13 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
               <AlertTriangle className="w-8 h-8 text-[#E07A5F] mx-auto" />
               <h3 className="text-base font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">Could Not Load Practice</h3>
               <p className="text-xs text-[#E07A5F]">{error || 'Unable to connect to dictionary service.'}</p>
-              <button
-                type="button"
+              <AppButton
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#38423A] text-[#2D312E] dark:text-[#F4F2EC] text-xs font-semibold cursor-pointer"
+                size="sm"
+                variant="secondary"
               >
                 Return to Exam
-              </button>
+              </AppButton>
             </div>
           ) : (
             <>
@@ -435,27 +436,15 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                   </div>
 
                   {/* Bookmark / Save to Stash Button */}
-                  <button
-                    type="button"
+                  <AppButton
                     onClick={handleToggleSaveMemory}
-                    className={`px-3.5 py-2 rounded-2xl border text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer ${
-                      isSavedToMemory
-                        ? 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237] text-[#2D6A4F] dark:text-[#52B788]'
-                        : 'bg-white dark:bg-[#272E29] hover:bg-[#FAF7F2] border-[#EBE4D7] dark:border-[#38423A] text-[#5C645E] dark:text-[#A7ABA4]'
-                    }`}
+                    size="sm"
+                    variant={isSavedToMemory ? 'secondary' : 'outline'}
+                    leftIcon={isSavedToMemory ? <BookmarkCheck className="text-[#52B788]" /> : <Bookmark className="text-[#8A938C]" />}
+                    className="font-bold"
                   >
-                    {isSavedToMemory ? (
-                      <>
-                        <BookmarkCheck className="w-4 h-4 text-[#52B788]" />
-                        <span>Saved to Word Stash</span>
-                      </>
-                    ) : (
-                      <>
-                        <Bookmark className="w-4 h-4 text-[#8A938C]" />
-                        <span>Save to Word Stash</span>
-                      </>
-                    )}
-                  </button>
+                    {isSavedToMemory ? 'Saved to Word Stash' : 'Save to Word Stash'}
+                  </AppButton>
                 </div>
 
                 {/* Meanings */}
@@ -1128,16 +1117,17 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                           Word forms are tracked independently. A single correct answer does not mark the entire family as mastered.
                         </span>
                         {activeExerciseIndex < currentExercises.length - 1 && (
-                          <button
+                          <AppButton
                             onClick={() => {
                               setActiveExerciseIndex(prev => prev + 1);
                               setShowHint(false);
                             }}
-                            className="px-3 py-1 rounded-lg bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition flex items-center space-x-1 cursor-pointer"
+                            size="sm"
+                            variant="primary"
+                            rightIcon={<ArrowRight />}
                           >
-                            <span>Next Exercise ({activeExerciseIndex + 2}/{currentExercises.length})</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
+                            Next
+                          </AppButton>
                         )}
                       </div>
                     </div>
@@ -1235,37 +1225,26 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <button
-              type="button"
+            <AppButton
               onClick={handleToggleSaveMemory}
               disabled={!data || isLoading}
-              className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
-                isSavedToMemory
-                  ? 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#CDE1D4] dark:border-[#334237] text-[#2D6A4F] dark:text-[#52B788]'
-                  : 'bg-white dark:bg-[#272E29] hover:bg-[#FAF7F2] dark:hover:bg-[#323D34] border-[#EBE4D7] dark:border-[#38423A] text-[#2D312E] dark:text-[#F4F2EC]'
-              }`}
+              size="md"
+              variant={isSavedToMemory ? 'secondary' : 'outline'}
+              leftIcon={isSavedToMemory ? <BookmarkCheck className="text-[#52B788]" /> : <Bookmark className="text-[#8A938C]" />}
+              className="font-bold"
             >
-              {isSavedToMemory ? (
-                <>
-                  <BookmarkCheck className="w-3.5 h-3.5 text-[#52B788]" />
-                  <span>Saved</span>
-                </>
-              ) : (
-                <>
-                  <Bookmark className="w-3.5 h-3.5 text-[#8A938C]" />
-                  <span>Save to Memory</span>
-                </>
-              )}
-            </button>
+              {isSavedToMemory ? 'Saved' : 'Save to Memory'}
+            </AppButton>
 
-            <button
-              type="button"
+            <AppButton
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition shadow-md flex items-center space-x-1.5 cursor-pointer"
+              size="md"
+              variant="primary"
+              leftIcon={<ArrowLeft />}
+              className="shadow-md"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Current Exam</span>
-            </button>
+              Back to Current Exam
+            </AppButton>
           </div>
         </div>
       </div>

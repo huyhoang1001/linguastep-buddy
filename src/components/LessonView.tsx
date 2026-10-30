@@ -562,6 +562,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
           detail: { quote: '⏰ Hết giờ học rồi meow! Hoàn thành xuất sắc hôm nay, nghỉ ngơi xíu nào sen ơi 🐾💤' }
         }));
       }
+
+      // Auto-finish lesson after a short delay to let the chime play
+      setTimeout(() => {
+        handleFinishEarly();
+      }, 1500);
     }
   }, [secondsElapsed, remainingSeconds, hasWarnedNearlyOut, isTimeExpired, targetSeconds]);
 
@@ -822,11 +827,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
             <button
               onClick={() => setShowNearlyOutOfTimeAlert(false)}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0"
-              title="Tăng tốc làm bài"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-bold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0"
             >
-              <span>Cố lên MeoMeo! 💨</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Keep Going</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -946,6 +950,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
             {/* Context sentence callout if available and distinct from prompt */}
             {currentQuestion.context_sentence &&
+              currentQuestion.question_type !== 'free_writing' &&
               !currentQuestion.prompt.toLowerCase().includes(currentQuestion.context_sentence.toLowerCase().trim()) && (
               <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 md:p-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] block mb-1">
@@ -1088,13 +1093,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   <textarea
                     rows={4}
                     disabled={Boolean(evaluation)}
-                    placeholder="Write 2 to 3 sentences in English..."
-                    value={userAnswer}
-                    onChange={e => setUserAnswer(e.target.value)}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
+                    placeholder="Write 2 to 3 sentences in English..."
+                    value={userAnswer}
+                    onChange={e => setUserAnswer(e.target.value)}
                     data-enable-grammarly="false"
                     className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed"
                   />
@@ -1133,9 +1138,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   onClick={() => handleSubmitAnswer()}
                   size="md"
                   variant="primary"
+                  rightIcon={<ArrowRight />}
                 >
-                  <span>Check Answer</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  Check Answer
                 </AppButton>
               </div>
             )}
@@ -1488,26 +1493,25 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   <AppButton
                     onClick={handleRetryQuestion}
                     size="md"
-                    variant="outline"
+                    variant="secondary"
+                    leftIcon={<RotateCcw />}
                   >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    <span>Try Again</span>
+                    Try Again
                   </AppButton>
                 ) : <div />}
 
                 <AppButton
                   onClick={handleNextQuestionOrSection}
-                  size="md"
+                  size="lg"
                   variant="primary"
+                  className="min-w-[160px]"
+                  rightIcon={<ArrowRight />}
                 >
-                  <span>
-                    {questionIndexInSection < targetQuestionsInSection - 1
-                      ? `Next Question in Part ${currentSectionIndex + 1} (${questionIndexInSection + 2}/${targetQuestionsInSection})`
-                      : currentSectionIndex < activeSections.length - 1
-                      ? `Next Activity: ${activeSections[currentSectionIndex + 1]?.title.split('—')[1] ? activeSections[currentSectionIndex + 1]?.title.split('—')[1].trim() : activeSections[currentSectionIndex + 1]?.title}`
-                      : 'Complete Lesson & View Summary 🎉'}
-                  </span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  {questionIndexInSection < targetQuestionsInSection - 1
+                    ? 'Next Question'
+                    : currentSectionIndex < activeSections.length - 1
+                    ? 'Next Activity'
+                    : 'Finish Lesson'}
                 </AppButton>
               </div>
             </div>

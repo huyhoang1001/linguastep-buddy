@@ -17,6 +17,7 @@ import {
 } from '../types/learning.ts';
 import { tutorDeepDive } from '../services/api.ts';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface TutorDeepDiveChatProps {
   question: Question;
@@ -167,15 +168,17 @@ export const TutorDeepDiveChat: React.FC<TutorDeepDiveChatProps> = ({
               </span>
               <div className="flex flex-wrap gap-2">
                 {getQuickPrompts().map((prompt, idx) => (
-                  <button
+                  <AppButton
                     key={idx}
                     disabled={isLoading}
                     onClick={() => handleSend(prompt)}
-                    className="text-xs text-left px-3.5 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#1E231F] hover:bg-white dark:hover:bg-[#2C332E] border border-[#EBE4D7] dark:border-[#2C332E] hover:border-[#2D6A4F] text-[#2D312E] dark:text-[#F4F2EC] transition flex items-center space-x-1.5 shadow-2xs group cursor-pointer"
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<Lightbulb className="text-[#D4A373]" />}
+                    className="text-left font-normal"
                   >
-                    <Lightbulb className="w-3.5 h-3.5 text-[#D4A373] group-hover:scale-110 transition shrink-0" />
-                    <span>{prompt}</span>
-                  </button>
+                    {prompt}
+                  </AppButton>
                 ))}
               </div>
             </div>
@@ -323,15 +326,15 @@ export const TutorDeepDiveChat: React.FC<TutorDeepDiveChatProps> = ({
               }}
               className="flex-1 bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] rounded-xl px-4 py-2.5 text-xs md:text-sm text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8C938D] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] transition"
             />
-            <button
+            <AppButton
               disabled={!inputMessage.trim() || isLoading}
               onClick={() => handleSend()}
-              className="px-4 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] disabled:opacity-40 text-white font-semibold text-xs md:text-sm transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
-              title="Send question to tutor"
+              size="md"
+              variant="primary"
+              rightIcon={<Send />}
             >
-              <span>Ask</span>
-              <Send className="w-3.5 h-3.5" />
-            </button>
+              Ask
+            </AppButton>
           </div>
         </div>
       )}

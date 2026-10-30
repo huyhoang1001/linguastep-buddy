@@ -147,7 +147,7 @@ Explanation and hints must be in ${lang}. Examples and prompt in natural English
 Core pedagogical constraints:
 - MANDATORY TARGET SKILL FIDELITY: The question prompt, concept_intro, options, and explanation MUST strictly and directly teach and test the specified Target skill: "${targetSkillName || 'Core ' + section + ' skill'}". If Target skill is "Inversion in Professional Contexts" or "Negative Inversion", you MUST test inversion structures (e.g., "Seldom have we...", "Rarely did..."). NEVER substitute an unrelated topic or generic transition words.
 - CRITICAL FOR CLOZE & SENTENCE COMPLETION: The "prompt" MUST contain both the clear instruction AND the full authentic sentence with an explicit blank "________" (e.g., 'Complete the sentence with the most appropriate formal transition word:\n\n"The team encountered unforeseen obstacles; ________, the deliverable was completed on time."'). NEVER output an instruction alone without providing the sentence itself!
-- Always provide "context_sentence" containing the full sentence with the blank "________".
+- Always provide "context_sentence" containing the full sentence with the blank "________" for cloze and sentence completion tasks. For "free_writing", do NOT provide a "context_sentence" with blanks; focus only on the realistic scenario in the "prompt".
 - If section is "vocabulary" or activity is "vocab_acquisition":
   * SUPPORT DIVERSE EXERCISE TYPES:
     1. "meaning_from_context": Present a natural sentence with target word highlighted. Ask what the word means or implies in this sentence with 4 nuanced, plausible interpretation options (NOT single words, but interpretations of attitude, nuance, or semantic role).
@@ -166,6 +166,7 @@ Core pedagogical constraints:
 - If activity is "concept_practice": For question index 0, provide multiple_choice with concise concept_intro. For question index >= 1, provide fill_in_blank or sentence completion.
 - If activity is "reading_analysis": Provide a rich "reading_passage" (120-150 words) and a comprehension or subtle inference question.
 - If activity is "writing_production" or "exit_synthesis": Provide a realistic free_writing prompt asking for 2-3 sentences.
+  * CRITICAL FOR FREE WRITING: The prompt MUST be a situational task (e.g., "Write a status update..."). It MUST NOT contain fill-in-the-blank sentences, underscores "____", or verb-form prompts in parentheses (e.g., "(be)"). The learner must produce their own sentences from scratch. Do NOT provide a sentence template for the learner to complete. Do NOT provide "context_sentence" for free_writing.
 
 JSON Output Schema:
 {
