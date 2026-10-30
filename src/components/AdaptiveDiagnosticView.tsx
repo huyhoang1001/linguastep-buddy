@@ -19,6 +19,12 @@ import {
   Briefcase
 } from 'lucide-react';
 import {
+  playUrgentMeowAlert,
+  playTimesUpChime
+} from '../services/catSoundService.ts';
+import { catCustomizationStore } from '../services/catCustomizationStore.ts';
+import { CatChibiAvatar } from './CatChibiAvatar.tsx';
+import {
   UserProfile,
   Question,
   DiagnosticSession,
@@ -187,6 +193,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   const [aiError, setAiError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
 
+  // Active diagnostic timer state
+  const [secondsElapsed, setSecondsElapsed] = useState<number>(0);
+  const [hasWarnedNearlyOut, setHasWarnedNearlyOut] = useState<boolean>(false);
+  const [showNearlyOutOfTimeAlert, setShowNearlyOutOfTimeAlert] = useState<boolean>(false);
+  const [showTimeOutModal, setShowTimeOutModal] = useState<boolean>(false);
+  const [isTimeExpired, setIsTimeExpired] = useState<boolean>(false);
+  const [hurryUpQuote, setHurryUpQuote] = useState<string>('');
+  const [catConfig, setCatConfig] = useState(() => catCustomizationStore.getConfig());
+
   // Active vocabulary learning & micro-practice panel state
   const [activeWordPractice, setActiveWordPractice] = useState<{
     word: string;
@@ -283,7 +298,64 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
       setSpeechSupported(true);
     }
     loadExistingSession();
+
+    const handleThemeChange = () => {
+      setCatConfig(catCustomizationStore.getConfig());
+    };
+    window.addEventListener('meomeo:theme-changed', handleThemeChange);
+    return () => window.removeEventListener('meomeo:theme-changed', handleThemeChange);
   }, []);
+
+  useEffect(() => {
+    if (!session || session.status !== 'in_progress') return;
+    const timer = setInterval(() => {
+      setSecondsElapsed(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [session?.status]);
+
+  const assessmentPlanForTimer = session?.plan || (session?.mode ? createDiagnosticAssessmentPlan(session.mode) : null);
+  const durationTarget = assessmentPlanForTimer?.targetDurationMinutes || 20;
+  const targetSeconds = durationTarget * 60;
+  const remainingSeconds = Math.max(0, targetSeconds - secondsElapsed);
+  const isNearlyOut = remainingSeconds <= 60 && remainingSeconds > 0;
+
+  useEffect(() => {
+    if (!session || session.status !== 'in_progress') return;
+
+    // 1. Nearly out of time: Trigger once when <= 60 seconds remaining
+    if (remainingSeconds <= 60 && remainingSeconds > 0 && !hasWarnedNearlyOut && secondsElapsed >= 5) {
+      setHasWarnedNearlyOut(true);
+      setShowNearlyOutOfTimeAlert(true);
+      const quotes = [
+        'Meo meo! ⏰ Sắp hết giờ kiểm tra rồi sen ơi! Cố gắng chốt đáp án nhanh nào! 🐟💨',
+        'Đồng hồ điểm tic-tac! ⏳ Còn 1 phút nữa thôi, tập trung cao độ về đích nào! 🐱⚡',
+        'Nhanh chân lên sen ơi! Hoàn thành bài đánh giá để nhận thưởng cá thơm ngon nào! 🐾🏆'
+      ];
+      setHurryUpQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+
+      try {
+        if (catConfig.soundEnabled) playUrgentMeowAlert();
+      } catch (e) {}
+    }
+
+    // 2. Time expired: Trigger modal when target seconds reached
+    if (remainingSeconds === 0 && !isTimeExpired && secondsElapsed >= targetSeconds && secondsElapsed >= 5) {
+      setIsTimeExpired(true);
+      setShowTimeOutModal(true);
+      setShowNearlyOutOfTimeAlert(false);
+
+      try {
+        if (catConfig.soundEnabled) playTimesUpChime();
+      } catch (e) {}
+    }
+  }, [secondsElapsed, remainingSeconds, hasWarnedNearlyOut, isTimeExpired, targetSeconds, session?.status, catConfig.soundEnabled]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   const loadExistingSession = async () => {
     setIsLoading(true);
@@ -926,6 +998,21 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               <Clock className="w-3.5 h-3.5 text-[#3D4E45] dark:text-[#A7B3AB]" />
               <span>Target: ~{plan.targetDurationMinutes} mins</span>
             </span>
+
+            <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-xl border transition-all ${
+              isNearlyOut
+                ? 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] text-[#B84728] dark:text-[#F28482] animate-pulse'
+                : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#354037] text-[#5C645E] dark:text-[#A7ABA4]'
+            }`}>
+              <span className={`w-2 h-2 rounded-full mr-1 ${isNearlyOut ? 'bg-[#E07A5F] animate-ping' : 'bg-[#52B788]'}`} />
+              <span>{formatTimer(secondsElapsed)}</span>
+              <span className="text-[#8A938C] dark:text-[#8E978F]">/ ~{durationTarget}m target</span>
+              {isNearlyOut && (
+                <span className="text-[#E07A5F] font-bold ml-1 animate-bounce">
+                  (Còn {remainingSeconds}s! 🐾)
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -1033,6 +1120,47 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               <span>Continue →</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* MeoMeo Fun Urgency Encouragement Banner */}
+      {showNearlyOutOfTimeAlert && remainingSeconds > 0 && (
+        <div className="mb-6 bg-gradient-to-r from-amber-950/90 via-orange-950/80 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-4 sm:p-5 shadow-2xl animate-bounce-short relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3.5">
+              <div className="shrink-0 relative">
+                <CatChibiAvatar
+                  companionId={catConfig.companionId}
+                  accessoryId={catConfig.accessoryId}
+                  mood="excited"
+                  size="md"
+                />
+                <span className="absolute -top-1 -right-1 text-sm animate-spin">⏰</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded-full border border-amber-400/50 flex items-center space-x-1">
+                    <span>🐾</span>
+                    <span>{catConfig.catName} Cổ Vũ Tăng Tốc!</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/40 animate-pulse">
+                    ⏳ Còn {remainingSeconds}s
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
+                  "{hurryUpQuote}"
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowNearlyOutOfTimeAlert(false)}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer"
+            >
+              <span>Cố lên MeoMeo! 💨</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1561,6 +1689,68 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           totalQuestions={activeSectionPlan?.targetQuestionsCount || totalPlannedQuestions}
           onClose={() => setActiveWordPractice(null)}
         />
+      )}
+
+      {/* Time's Up Modal: End with Results or Take Break */}
+      {showTimeOutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white dark:bg-[#1E231F] border-2 border-[#2D6A4F] dark:border-[#52B788] rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden text-[#2D312E] dark:text-[#F4F2EC]">
+            {/* Decorative top paws & cat avatar */}
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="relative">
+                <CatChibiAvatar
+                  companionId={catConfig.companionId}
+                  accessoryId={catConfig.accessoryId}
+                  mood="happy"
+                  size="lg"
+                />
+                <span className="absolute -top-2 -right-2 text-2xl animate-bounce">⏰</span>
+              </div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#2D6A4F] dark:text-[#52B788] bg-[#EFF6F1] dark:bg-[#252F28] px-3 py-1 rounded-full border border-[#CDE1D4] dark:border-[#334237]">
+                🐾 Meo Meo Thông Báo 🐾
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
+                Hết Giờ Làm Bài Rồi! ⏰✨
+              </h2>
+              <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] max-w-sm mx-auto leading-relaxed">
+                Sen đã đạt đến giới hạn thời gian <strong>{durationTarget} phút</strong> cho bài đánh giá năng lực này cùng {catConfig.catName}!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-3 text-center">
+              <div>
+                <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block uppercase">Thời gian</span>
+                <strong className="text-sm font-bold text-[#B25E00] dark:text-[#E9A825]">{durationTarget}m</strong>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] block uppercase">Câu đã làm</span>
+                <strong className="text-sm font-bold text-[#2D6A4F] dark:text-[#52B788]">{historyCount} câu</strong>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] italic">
+              "Dù chưa xong hết nhưng MeoMeo đã có đủ dữ liệu để đánh giá trình độ của sen rồi. Xem kết quả thôi nào! Meow~"
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowTimeOutModal(false);
+                handleFinishAssessment();
+              }}
+              className="w-full py-4 px-6 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-md transition flex items-center justify-between group cursor-pointer"
+            >
+              <div className="flex items-center space-x-2.5">
+                <span className="text-xl">🏆</span>
+                <div className="text-left">
+                  <span className="block font-bold">Xem Kết Quả Đánh Giá 🐟</span>
+                  <span className="text-[11px] text-[#E0DDD5] font-normal">Tổng kết năng lực & nhận lộ trình học tập</span>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
