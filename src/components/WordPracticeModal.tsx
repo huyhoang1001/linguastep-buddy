@@ -443,7 +443,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                     leftIcon={isSavedToMemory ? <BookmarkCheck className="text-[#52B788]" /> : <Bookmark className="text-[#8A938C]" />}
                     className="font-bold"
                   >
-                    {isSavedToMemory ? 'Saved to Word Stash' : 'Save to Word Stash'}
+                    {isSavedToMemory ? 'Saved' : 'Save Word'}
                   </AppButton>
                 </div>
 
@@ -670,13 +670,14 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                                 }`}>
                                   {rel.formality}
                                 </div>
-                                <button
-                                  type="button"
+                                <AppButton
                                   onClick={() => setActiveWord(rel.word)}
-                                  className="block text-[10px] font-bold text-[#2D6A4F] dark:text-[#52B788] hover:underline"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto py-1 px-2 text-[10px]"
                                 >
-                                  Deep Dive →
-                                </button>
+                                  Deep Dive
+                                </AppButton>
                               </div>
                             </div>
 

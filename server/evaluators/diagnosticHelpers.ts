@@ -4,7 +4,8 @@ import {
   PersonalizedStudyPlan,
   SkillProficiencyEstimate,
   UserProfile,
-  WritingRubricScore
+  WritingRubricScore,
+  WritingTaskConfig
 } from '../../src/types/learning.js';
 import { polishWritingText } from '../fallbacks/lessonFallbacks.js';
 
@@ -12,10 +13,17 @@ export function createFallbackWritingRubric(
   userAnswer: string,
   prompt: string,
   profile: UserProfile,
-  aiRubric?: any
+  aiRubric?: any,
+  writingConfig?: WritingTaskConfig
 ): WritingRubricScore {
-  const sentences = userAnswer.trim().split(/[.!?]+/).filter(Boolean).length;
-  const isPass = sentences >= 2 && userAnswer.trim().length >= 30;
+  const trimmed = userAnswer.trim();
+  const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+
+  const targetSentences = writingConfig?.min_sentences || 2;
+  const targetWords = writingConfig?.min_words || 15;
+
+  const isPass = sentences >= targetSentences && wordCount >= targetWords;
   const fallbackPolished = polishWritingText(userAnswer, prompt, profile);
 
   return {

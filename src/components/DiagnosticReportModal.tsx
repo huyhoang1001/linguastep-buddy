@@ -8,6 +8,7 @@ import {
   X
 } from 'lucide-react';
 import { DiagnosticReport } from '../types/learning.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface DiagnosticReportModalProps {
   report: DiagnosticReport;
@@ -264,13 +265,14 @@ export const DiagnosticReportModal: React.FC<DiagnosticReportModalProps> = ({
             Ready to inspect your evidence-based personalized study plan?
           </p>
 
-          <button
+          <AppButton
             onClick={onProceedToPlan}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
+            variant="primary"
+            size="md"
+            rightIcon={<ArrowRight />}
           >
-            <span>Review & Approve Study Plan</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+            Review & Approve Study Plan
+          </AppButton>
         </div>
       </div>
     </div>

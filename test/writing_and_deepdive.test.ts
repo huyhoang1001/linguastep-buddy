@@ -59,7 +59,8 @@ async function runWritingAndDeepDiveTests() {
 
   let writingEval: any = null;
   try {
-    writingEval = await aiService.evaluateAnswer(writingQuestion, rawUserWriting, mockProfile);
+    const res = await aiService.evaluateAnswer(writingQuestion, rawUserWriting, mockProfile);
+    writingEval = res.evaluation;
   } catch (err: any) {
     if (err instanceof AIException && (err.code === 'QUOTA_EXHAUSTED' || err.code === 'RATE_LIMITED')) {
       console.log('✓ PASS: AI quota correctly blocked live request without substituting mock answer');
@@ -110,7 +111,8 @@ async function runWritingAndDeepDiveTests() {
   const meetingUserWriting = 'In meeting we discussed about new design and because of budget so we will decide next time.';
   let meetingEval: any = null;
   try {
-    meetingEval = await aiService.evaluateAnswer(meetingQuestion, meetingUserWriting, mockProfile);
+    const res = await aiService.evaluateAnswer(meetingQuestion, meetingUserWriting, mockProfile);
+    meetingEval = res.evaluation;
   } catch (err: any) {
     if (err instanceof AIException && (err.code === 'QUOTA_EXHAUSTED' || err.code === 'RATE_LIMITED')) {
       console.log('✓ PASS: AI quota correctly blocked live request without substituting mock answer');
@@ -300,23 +302,23 @@ async function runWritingAndDeepDiveTests() {
   };
 
   // Test selecting D (accept) -> MUST BE INCORRECT
-  const wrongOptionEval = await aiService.evaluateAnswer(vocabClozeQuestion, 'D', mockProfile);
+  const { evaluation: wrongOptionEval } = await aiService.evaluateAnswer(vocabClozeQuestion, 'D', mockProfile);
   assert(wrongOptionEval.verdict === 'incorrect', 'Selecting distractor D returns verdict "incorrect"');
   assert(wrongOptionEval.needs_retry === true, 'Incorrect selection sets needs_retry to true');
   assert(Boolean(wrongOptionEval.expected_answer?.includes('A') || wrongOptionEval.expected_answer?.includes('adopt')), 'Expected answer clearly highlights option A / adopt');
   assert(Boolean(wrongOptionEval.contrast_explanation), 'Provides contrast explanation explaining why the chosen option is not suitable');
 
   // Test selecting D by text ('accept') -> MUST BE INCORRECT
-  const wrongTextEval = await aiService.evaluateAnswer(vocabClozeQuestion, 'accept', mockProfile);
+  const { evaluation: wrongTextEval } = await aiService.evaluateAnswer(vocabClozeQuestion, 'accept', mockProfile);
   assert(wrongTextEval.verdict === 'incorrect', 'Selecting distractor text "accept" returns verdict "incorrect"');
 
   // Test selecting A (adopt) -> MUST BE CORRECT
-  const correctOptionEval = await aiService.evaluateAnswer(vocabClozeQuestion, 'A', mockProfile);
+  const { evaluation: correctOptionEval } = await aiService.evaluateAnswer(vocabClozeQuestion, 'A', mockProfile);
   assert(correctOptionEval.verdict === 'correct', 'Selecting correct option A returns verdict "correct"');
   assert(correctOptionEval.needs_retry === false, 'Correct selection does not need retry');
 
   // Test selecting A by text ('adopt') -> MUST BE CORRECT
-  const correctTextEval = await aiService.evaluateAnswer(vocabClozeQuestion, 'adopt', mockProfile);
+  const { evaluation: correctTextEval } = await aiService.evaluateAnswer(vocabClozeQuestion, 'adopt', mockProfile);
   assert(correctTextEval.verdict === 'correct', 'Selecting correct text "adopt" returns verdict "correct"');
 
   // Test AI Hallucination Scenario: expected_answer_ids was mistakenly generated as ['D']
@@ -342,11 +344,11 @@ async function runWritingAndDeepDiveTests() {
     explanation_rule: 'We use "adopt a tool" to mean choose and begin to use a new tool or method.'
   };
 
-  const reconciledEvalWrong = await aiService.evaluateAnswer(hallucinatedAIQuestion, 'D', mockProfile);
+  const { evaluation: reconciledEvalWrong } = await aiService.evaluateAnswer(hallucinatedAIQuestion, 'D', mockProfile);
   assert(reconciledEvalWrong.verdict === 'incorrect', 'Selecting D (accept) against hallucinated AI question key correctly returns verdict "incorrect"');
   assert(reconciledEvalWrong.expected_answer?.includes('adopt'), 'Expected answer is reconciled to adopt');
 
-  const reconciledEvalCorrect = await aiService.evaluateAnswer(hallucinatedAIQuestion, 'A', mockProfile);
+  const { evaluation: reconciledEvalCorrect } = await aiService.evaluateAnswer(hallucinatedAIQuestion, 'A', mockProfile);
   assert(reconciledEvalCorrect.verdict === 'correct', 'Selecting A (adopt) against hallucinated AI question key correctly returns verdict "correct"');
 
   // -------------------------------------------------------------------------
@@ -436,19 +438,19 @@ async function runWritingAndDeepDiveTests() {
   };
 
   // 1. Lowercase "what" entered against "What"
-  const evalLowercase = await aiService.evaluateAnswer(cleftFillInQuestion, 'what', mockProfile);
+  const { evaluation: evalLowercase } = await aiService.evaluateAnswer(cleftFillInQuestion, 'what', mockProfile);
   assert(evalLowercase.verdict === 'correct', 'Entering lowercase "what" against capitalized "What" returns verdict "correct"');
   assert(!evalLowercase.needs_retry, 'Lowercase "what" does not trigger retry');
 
   // 2. Capitalized "What" entered
-  const evalCapitalized = await aiService.evaluateAnswer(cleftFillInQuestion, 'What', mockProfile);
+  const { evaluation: evalCapitalized } = await aiService.evaluateAnswer(cleftFillInQuestion, 'What', mockProfile);
   assert(evalCapitalized.verdict === 'correct', 'Entering capitalized "What" returns verdict "correct"');
 
   // 3. Lowercase with trailing period "what." or spaces " what "
-  const evalPunctuation = await aiService.evaluateAnswer(cleftFillInQuestion, 'what.', mockProfile);
+  const { evaluation: evalPunctuation } = await aiService.evaluateAnswer(cleftFillInQuestion, 'what.', mockProfile);
   assert(evalPunctuation.verdict === 'correct', 'Entering "what." with punctuation matches correctly');
 
-  const evalWhitespace = await aiService.evaluateAnswer(cleftFillInQuestion, '  what  ', mockProfile);
+  const { evaluation: evalWhitespace } = await aiService.evaluateAnswer(cleftFillInQuestion, '  what  ', mockProfile);
   assert(evalWhitespace.verdict === 'correct', 'Entering "  what  " with whitespace matches correctly');
 
   // 4. Multiple-choice cleft question where expected option text is "What"
@@ -473,10 +475,10 @@ async function runWritingAndDeepDiveTests() {
     explanation_rule: 'Use "What" in a wh-cleft sentence to highlight the cause.'
   };
 
-  const evalMcLowercase = await aiService.evaluateAnswer(cleftMcQuestion, 'what', mockProfile);
+  const { evaluation: evalMcLowercase } = await aiService.evaluateAnswer(cleftMcQuestion, 'what', mockProfile);
   assert(evalMcLowercase.verdict === 'correct', 'Typing lowercase "what" for multiple-choice option "What" returns verdict "correct"');
 
-  const evalMcDistractor = await aiService.evaluateAnswer(cleftMcQuestion, 'it', mockProfile);
+  const { evaluation: evalMcDistractor } = await aiService.evaluateAnswer(cleftMcQuestion, 'it', mockProfile);
   assert(evalMcDistractor.verdict === 'incorrect', 'Selecting incorrect option "it" returns verdict "incorrect"');
 
   console.log('\n========================================');

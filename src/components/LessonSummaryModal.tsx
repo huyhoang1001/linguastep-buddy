@@ -19,6 +19,7 @@ import { DailySummary } from '../types/learning.ts';
 import { playEnglishSpeech } from '../services/api.ts';
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
 import { catCustomizationStore } from '../services/catCustomizationStore.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface LessonSummaryModalProps {
   summary: DailySummary;
@@ -335,29 +336,29 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Call it a day vs Jump into next session */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#EBE4D7] dark:border-[#2C332E]">
-          <button
-            type="button"
+          <AppButton
             onClick={onClose}
-            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] bg-white dark:bg-[#252C26] hover:bg-[#FAF7F2] text-xs font-bold border border-[#EBE4D7] dark:border-[#333D35] transition flex items-center justify-center space-x-2 cursor-pointer"
+            variant="secondary"
+            size="md"
+            fullWidth
+            leftIcon={<Coffee />}
           >
-            <Coffee className="w-4 h-4 text-[#8A938C]" />
-            <span>Call it a day &amp; return Home</span>
-          </button>
+            Finish and go home
+          </AppButton>
 
-          <button
-            type="button"
+          <AppButton
             onClick={() => {
               onClose();
               onStartNewLesson(nextMinutes);
             }}
-            className="w-full sm:w-1/2 py-3 px-4 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold transition shadow-sm hover:shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+            variant="primary"
+            size="md"
+            fullWidth
+            rightIcon={<ArrowRight />}
           >
-            <Sparkles className="w-4 h-4 text-[#FAF7F2]" />
-            <span>Start Next Session ({nextMinutes}m)</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+            Start next session
+          </AppButton>
         </div>
       </div>
     </div>

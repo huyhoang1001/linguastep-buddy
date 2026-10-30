@@ -276,6 +276,16 @@ export interface QuestionOption {
   text: string;
 }
 
+export interface WritingTaskConfig {
+  min_words?: number;
+  max_words?: number;
+  min_sentences?: number;
+  max_sentences?: number;
+  task_type: 'micro' | 'paragraph' | 'email' | 'argument' | 'essay';
+  complexity: 'basic' | 'developing' | 'independent' | 'advanced';
+  estimated_minutes: number;
+}
+
 export interface Question {
   id: string;
   section: SectionType;
@@ -313,6 +323,10 @@ export interface Question {
   hint: string;
   explanation_rule: string;
   sentence_translation?: string; // Translated meaning of the sentence or target structure in learner's language
+  
+  // Adaptive Writing Fields
+  writing_config?: WritingTaskConfig;
+  model_answer?: string; // Internal model answer, never shown before submission
 }
 
 export interface AnswerEvaluation {
@@ -357,6 +371,7 @@ export interface Attempt {
   user_answer: string;
   verdict: Verdict;
   evaluation: AnswerEvaluation;
+  writing_rubric?: WritingRubricScore;
   created_at: string;
 }
 

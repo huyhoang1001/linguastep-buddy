@@ -26,6 +26,7 @@ import {
   buildFallbackDiagnosticReport,
   buildFallbackPersonalizedStudyPlan
 } from '../evaluators/diagnosticHelpers.js';
+import { getWritingTaskConfig } from './writingPolicy.js';
 
 export class DiagnosticService {
   public async generateDiagnosticBatchQuestions(
@@ -105,13 +106,24 @@ export class DiagnosticService {
     const topic: 'general' | 'workplace_tech' = isTechGoal ? 'workplace_tech' : 'general';
     const existingPassage = targetSection === 'reading' && secAttempts.length > 0 ? secAttempts[secAttempts.length - 1].question.reading_passage : null;
 
-    const systemPrompt = buildAdaptiveDiagnosticSystemPrompt(targetSection, activeSectionPlan, session.questionIndexInSection, targetLevel, topic, profile, answered, existingPassage);
+    let writingConfig;
+    if (targetSection === 'writing') {
+      writingConfig = getWritingTaskConfig(profile, 20, 'diagnostic');
+    }
+
+    const systemPrompt = buildAdaptiveDiagnosticSystemPrompt(targetSection, activeSectionPlan, session.questionIndexInSection, targetLevel, topic, profile, answered, existingPassage, writingConfig);
     const prompt = `Generate item ${session.questionIndexInSection + 1}/${activeSectionPlan.targetQuestionsCount} for section ${targetSection} at CEFR ${targetLevel}.`;
 
     const generated = await callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'diagnostic_question' });
     if (generated && generated.prompt && !answeredIds.has(generated.id) && !answeredPrompts.has(generated.prompt.trim().toLowerCase())) {
       const sanitized = sanitizeAndReconcileQuestion(generated);
-      return { ...sanitized, id: `diag-gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section: targetSection, difficulty: sanitized.difficulty || targetLevel };
+      return { 
+        ...sanitized, 
+        id: `diag-gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
+        section: targetSection, 
+        difficulty: sanitized.difficulty || targetLevel,
+        writing_config: generated.writing_config || writingConfig
+      };
     }
 
     throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate diagnostic question from AI.', { retryable: true });

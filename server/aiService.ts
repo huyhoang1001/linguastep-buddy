@@ -36,13 +36,14 @@ import { buildRuleBasedWordFamily } from './fallbacks/wordFamilyFallbacks.js';
 import { evaluateMultipleChoiceAnswer, normalizeAnswerText, buildFallbackDailySummary, buildFallbackTomorrowPlan } from './evaluators/lessonHelpers.js';
 import { diagnosticService } from './services/diagnosticService.js';
 import { CurriculumScheduler } from '../src/services/curriculumScheduler.js';
+import { getWritingTaskConfig } from './services/writingPolicy.js';
 
 export { AIException, classifyGeminiError, type AIErrorCode };
 
 export interface LearningModelProvider {
   generateLessonPlan(profile: UserProfile, skillStates: LearnerSkillState[], recentErrors: string[]): Promise<LessonPlan>;
-  generateQuestion(section: SectionType, profile: UserProfile, targetSkillName?: string, contextTopic?: 'general' | 'workplace_tech', activityType?: string, questionIndex?: number, totalInActivity?: number, sessionObjective?: string): Promise<Question>;
-  evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<AnswerEvaluation>;
+  generateQuestion(section: SectionType, profile: UserProfile, targetSkillName?: string, contextTopic?: 'general' | 'workplace_tech', activityType?: string, questionIndex?: number, totalInActivity?: number, sessionObjective?: string, sessionDuration?: 10 | 20 | 30): Promise<Question>;
+  evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }>;
   tutorAssist(question: Question, action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity', profile: UserProfile): Promise<TutorAssistantResponse>;
   generateLessonSummary(lesson: LessonPlan, attempts: Array<{ question: Question; evaluation: AnswerEvaluation; userAnswer: string }>, profile: UserProfile, timeSpentMinutes?: number): Promise<DailySummary>;
   handleDiscoveryTurn(history: DiscoveryMessage[], userMessage: string, currentProfile: UserProfile): Promise<any>;
@@ -290,7 +291,10 @@ export class GeminiLearningProvider implements LearningModelProvider {
   }
 
   public async evaluateDiagnosticAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }> {
-    return diagnosticService.evaluateDiagnosticAnswer((p, s, o) => this.callGeminiJson(p, s, o), (q, u, pr) => this.evaluateAnswer(q, u, pr), question, userAnswer, profile);
+    return diagnosticService.evaluateDiagnosticAnswer((p, s, o) => this.callGeminiJson(p, s, o), async (q, u, pr) => {
+      const res = await this.evaluateAnswer(q, u, pr);
+      return res.evaluation;
+    }, question, userAnswer, profile);
   }
 
   public async computeDiagnosticReport(session: DiagnosticSession, profile: UserProfile): Promise<DiagnosticReport> {
@@ -437,13 +441,14 @@ export class GeminiLearningProvider implements LearningModelProvider {
   }
 
   public async populatePlanQuestions(plan: LessonPlan, profile: UserProfile): Promise<LessonPlan> {
+    const sessionDuration = (plan.estimated_duration_minutes as 10 | 20 | 30) || 20;
     const updatedSections = await Promise.all(
       plan.sections.map(async sec => {
         if (sec.questions && sec.questions.length >= sec.target_questions_count) return sec;
         const targetCount = sec.target_questions_count || 1;
         const promises: Promise<Question>[] = [];
         for (let qIdx = 0; qIdx < targetCount; qIdx++) {
-          promises.push(this.generateQuestion(sec.section, profile, sec.skill_target, undefined, sec.activity_type, qIdx, targetCount, plan.primary_objective));
+          promises.push(this.generateQuestion(sec.section, profile, sec.skill_target, undefined, sec.activity_type, qIdx, targetCount, plan.primary_objective, sessionDuration));
         }
         const questions = await Promise.all(promises);
         return { ...sec, questions };
@@ -452,15 +457,37 @@ export class GeminiLearningProvider implements LearningModelProvider {
     return { ...plan, sections: updatedSections };
   }
 
-  public async generateQuestion(section: SectionType, profile: UserProfile, targetSkillName?: string, contextTopic?: 'general' | 'workplace_tech', activityType?: string, questionIndex = 0, totalInActivity = 1, sessionObjective?: string): Promise<Question> {
+  public async generateQuestion(
+    section: SectionType, 
+    profile: UserProfile, 
+    targetSkillName?: string, 
+    contextTopic?: 'general' | 'workplace_tech', 
+    activityType?: string, 
+    questionIndex = 0, 
+    totalInActivity = 1, 
+    sessionObjective?: string,
+    sessionDuration: 10 | 20 | 30 = 20
+  ): Promise<Question> {
     const topic = contextTopic || (Math.random() * 100 > profile.general_vs_work_ratio ? 'workplace_tech' : 'general');
-    const systemPrompt = buildQuestionSystemPrompt(section, profile, targetSkillName, topic, activityType, questionIndex, totalInActivity, sessionObjective);
+    
+    let writingConfig;
+    if (section === 'writing' || activityType === 'writing_production' || activityType === 'exit_synthesis') {
+      const purpose = activityType === 'exit_synthesis' ? 'synthesis' : 'independent-writing';
+      writingConfig = getWritingTaskConfig(profile, sessionDuration, purpose);
+    }
+
+    const systemPrompt = buildQuestionSystemPrompt(section, profile, targetSkillName, topic, activityType, questionIndex, totalInActivity, sessionObjective, writingConfig);
     const prompt = `Generate question ${questionIndex + 1} of ${totalInActivity} for ${section}.`;
 
     const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
     if (result && result.prompt) {
       const sanitized = sanitizeAndReconcileQuestion(result);
-      return { ...sanitized, id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, section };
+      return { 
+        ...sanitized, 
+        id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
+        section,
+        writing_config: result.writing_config || writingConfig // AI might override or use our suggested
+      };
     }
 
     throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate lesson question from AI.', { retryable: true });
@@ -469,7 +496,7 @@ export class GeminiLearningProvider implements LearningModelProvider {
   // =========================================================================
   // 4. ANSWER EVALUATION & TUTOR ASSIST
   // =========================================================================
-  public async evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<AnswerEvaluation> {
+  public async evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }> {
     const trimmed = userAnswer.trim();
     const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
     question = sanitizeAndReconcileQuestion(question);
@@ -481,16 +508,18 @@ export class GeminiLearningProvider implements LearningModelProvider {
 
       if (isCorrect) {
         return {
-          verdict: 'correct',
-          user_answer: selectedOption ? `${selectedOption.id}. ${selectedOption.text}` : userAnswer,
-          expected_answer: `${expectedId}. ${expectedText}`,
-          full_correct_sentence: question.prompt.replace('____', `**${expectedText}**`),
-          decisive_clue: question.explanation_rule || `Correct! Option ${expectedId} is right.`,
-          explanation: question.explanation_rule || `Well done! Option ${expectedId} is correct.`,
-          sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
-          error_tags: [],
-          needs_retry: false,
-          next_action: 'continue'
+          evaluation: {
+            verdict: 'correct',
+            user_answer: selectedOption ? `${selectedOption.id}. ${selectedOption.text}` : userAnswer,
+            expected_answer: `${expectedId}. ${expectedText}`,
+            full_correct_sentence: question.prompt.replace('____', `**${expectedText}**`),
+            decisive_clue: question.explanation_rule || `Correct! Option ${expectedId} is right.`,
+            explanation: question.explanation_rule || `Well done! Option ${expectedId} is correct.`,
+            sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+            error_tags: [],
+            needs_retry: false,
+            next_action: 'continue'
+          }
         };
       }
 
@@ -509,17 +538,19 @@ export class GeminiLearningProvider implements LearningModelProvider {
       }
 
       return {
-        verdict: 'incorrect',
-        user_answer: selectedOption ? `${selectedOption.id}. ${selectedOption.text}` : userAnswer,
-        expected_answer: `${expectedId}. ${expectedText}`,
-        full_correct_sentence: question.prompt.includes('____') ? question.prompt.replace('____', `**${expectedText}**`) : `${question.prompt} → **${expectedText}**`,
-        decisive_clue: decisiveClue,
-        contrast_explanation: contrastExplanation,
-        explanation: question.explanation_rule || `Option ${expectedId} is correct.`,
-        sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
-        error_tags: ['distractor_choice'],
-        needs_retry: true,
-        next_action: 'retry'
+        evaluation: {
+          verdict: 'incorrect',
+          user_answer: selectedOption ? `${selectedOption.id}. ${selectedOption.text}` : userAnswer,
+          expected_answer: `${expectedId}. ${expectedText}`,
+          full_correct_sentence: question.prompt.includes('____') ? question.prompt.replace('____', `**${expectedText}**`) : `${question.prompt} → **${expectedText}**`,
+          decisive_clue: decisiveClue,
+          contrast_explanation: contrastExplanation,
+          explanation: question.explanation_rule || `Option ${expectedId} is correct.`,
+          sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+          error_tags: ['distractor_choice'],
+          needs_retry: true,
+          next_action: 'retry'
+        }
       };
     }
 
@@ -535,23 +566,26 @@ export class GeminiLearningProvider implements LearningModelProvider {
       }
 
       const polished = polishWritingText(trimmed, question.prompt, profile);
-      const rubric = createFallbackWritingRubric(trimmed, question.prompt, profile, aiRubric);
-      const isSufficient = rubric.accuracy >= 3 && trimmed.length >= 15;
+      const rubric = createFallbackWritingRubric(trimmed, question.prompt, profile, aiRubric, question.writing_config);
+      const isSufficient = rubric.accuracy >= 3 && (rubric.taskCompletion >= 3 || trimmed.length >= 15);
 
       return {
-        verdict: isSufficient ? 'correct' : 'partially_correct',
-        user_answer: userAnswer,
-        expected_answer: 'Coherent written output',
-        full_correct_sentence: rubric.correctedVersion || polished.polishedText,
-        decisive_clue: rubric.feedbackSummary || (isVi ? 'Ý văn truyền tải tốt.' : 'Clear communicative phrasing.'),
-        explanation: rubric.feedbackSummary || (isVi ? 'Bài viết mạch lạc! Tham khảo phiên bản trau chuốt bên dưới.' : 'Good response! Review the AI-polished native version below.'),
-        corrected_text: rubric.correctedVersion || polished.polishedText,
-        key_corrections: rubric.keyCorrections && rubric.keyCorrections.length > 0 ? rubric.keyCorrections : polished.keyCorrections,
-        useful_phrases: polished.usefulPhrases,
-        reusable_pattern: polished.reusablePattern,
-        error_tags: isSufficient ? [] : ['Writing structure'],
-        needs_retry: false,
-        next_action: 'continue'
+        evaluation: {
+          verdict: isSufficient ? 'correct' : 'partially_correct',
+          user_answer: userAnswer,
+          expected_answer: 'Coherent written output',
+          full_correct_sentence: rubric.correctedVersion || polished.polishedText,
+          decisive_clue: rubric.feedbackSummary || (isVi ? 'Ý văn truyền tải tốt.' : 'Clear communicative phrasing.'),
+          explanation: rubric.feedbackSummary || (isVi ? 'Bài viết mạch lạc! Tham khảo phiên bản trau chuốt bên dưới.' : 'Good response! Review the AI-polished native version below.'),
+          corrected_text: rubric.correctedVersion || polished.polishedText,
+          key_corrections: rubric.keyCorrections && rubric.keyCorrections.length > 0 ? rubric.keyCorrections : polished.keyCorrections,
+          useful_phrases: polished.usefulPhrases,
+          reusable_pattern: polished.reusablePattern,
+          error_tags: isSufficient ? [] : ['Writing structure'],
+          needs_retry: false,
+          next_action: 'continue'
+        },
+        writingRubric: rubric
       };
     }
 
@@ -573,31 +607,35 @@ export class GeminiLearningProvider implements LearningModelProvider {
 
     if (isMatch) {
       return {
-        verdict: 'correct',
-        user_answer: userAnswer,
-        expected_answer: expected,
-        full_correct_sentence: fullSentence,
-        decisive_clue: question.explanation_rule || `Correct! The expected answer is "${expected}".`,
-        explanation: question.explanation_rule || `Well done! "${expected}" is the correct answer.`,
-        sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
-        error_tags: [],
-        needs_retry: false,
-        next_action: 'continue'
+        evaluation: {
+          verdict: 'correct',
+          user_answer: userAnswer,
+          expected_answer: expected,
+          full_correct_sentence: fullSentence,
+          decisive_clue: question.explanation_rule || `Correct! The expected answer is "${expected}".`,
+          explanation: question.explanation_rule || `Well done! "${expected}" is the correct answer.`,
+          sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+          error_tags: [],
+          needs_retry: false,
+          next_action: 'continue'
+        }
       };
     }
 
     return {
-      verdict: 'incorrect',
-      user_answer: userAnswer,
-      expected_answer: expected,
-      full_correct_sentence: fullSentence,
-      decisive_clue: question.explanation_rule || `The expected answer is "${expected}".`,
-      explanation: `The expected answer is "${expected}". ${question.explanation_rule || ''}`,
-      contrast_explanation: `You entered "${trimmed}". The expected answer is "${expected}".`,
-      sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
-      error_tags: [question.skill_name || 'Grammar precision'],
-      needs_retry: true,
-      next_action: 'retry'
+      evaluation: {
+        verdict: 'incorrect',
+        user_answer: userAnswer,
+        expected_answer: expected,
+        full_correct_sentence: fullSentence,
+        decisive_clue: question.explanation_rule || `The expected answer is "${expected}".`,
+        explanation: `The expected answer is "${expected}". ${question.explanation_rule || ''}`,
+        contrast_explanation: `You entered "${trimmed}". The expected answer is "${expected}".`,
+        sentence_translation: question.sentence_translation || question.vocab_card?.meaning,
+        error_tags: [question.skill_name || 'Grammar precision'],
+        needs_retry: true,
+        next_action: 'retry'
+      }
     };
   }
 

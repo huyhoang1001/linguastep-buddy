@@ -20,6 +20,7 @@ import { MilestoneBadge, MilestoneStats } from '../types/milestone.ts';
 import { DailySummary, Attempt } from '../types/learning.ts';
 import { WeeklyProgressChart } from './WeeklyProgressChart.tsx';
 import { localStore } from '../services/localStore.ts';
+import { AppButton } from './ui/AppButton.tsx';
 
 interface MilestonesModalProps {
   isOpen: boolean;
@@ -336,16 +337,17 @@ export const MilestonesModal: React.FC<MilestonesModalProps> = ({
             Consistent 10-20 minute daily study sessions build lasting fluency and unlock badges! 🐾
           </p>
 
-          <button
+          <AppButton
             onClick={() => {
               onClose();
               if (onJumpToPractice) onJumpToPractice();
             }}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white text-xs font-bold transition shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer"
+            variant="primary"
+            size="md"
+            rightIcon={<ChevronRight />}
           >
-            <span>Back to Study Desk</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            Back to Study Desk
+          </AppButton>
         </div>
       </div>
     </div>

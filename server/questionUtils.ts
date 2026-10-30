@@ -33,7 +33,7 @@ export function sanitizeAndReconcileQuestion(q: Question): Question {
         question.prompt = `${cleanPrompt}\n\n"${cleanContext}"`;
       }
     }
-  } else if (!hasBlankInPrompt) {
+  } else if (!hasBlankInPrompt && question.section !== 'reading' && question.question_type !== 'free_writing' && question.question_type !== 'reading_comprehension') {
     const synthesizedSentence = `The team faced a challenging situation; ________, we delivered all project milestones on schedule.`;
     question.context_sentence = synthesizedSentence;
     question.prompt = `${question.prompt.trim()}\n\n"${synthesizedSentence}"`;

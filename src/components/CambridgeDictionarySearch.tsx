@@ -224,9 +224,8 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
               size="sm"
               variant="primary"
               rightIcon={<CornerDownLeft />}
-              className="font-bold shadow-md"
             >
-              Tra từ
+              Search
             </AppButton>
           )}
         </div>

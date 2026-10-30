@@ -502,7 +502,8 @@ export async function evaluateAnswer(
     })
   });
 
-  const evaluation: AnswerEvaluation = await parseAIResponse<AnswerEvaluation>(res, 'Failed to evaluate answer');
+  const result: { evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore } = await parseAIResponse(res, 'Failed to evaluate answer');
+  const { evaluation, writingRubric } = result;
 
   // Persist attempt locally in IndexedDB and update mastery metrics
   const attempt: Attempt = {
@@ -514,6 +515,7 @@ export async function evaluateAnswer(
     user_answer: userAnswer,
     verdict: evaluation.verdict,
     evaluation,
+    writing_rubric: writingRubric,
     created_at: new Date().toISOString()
   };
 

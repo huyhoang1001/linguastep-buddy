@@ -1,4 +1,4 @@
-import { UserProfile, SectionType, LearnerSkillState, NextSessionCustomContext } from '../../src/types/learning.js';
+import { UserProfile, SectionType, LearnerSkillState, NextSessionCustomContext, WritingTaskConfig } from '../../src/types/learning.js';
 
 export function buildLessonPlanSystemPrompt(
   profile: UserProfile,
@@ -128,7 +128,8 @@ export function buildQuestionSystemPrompt(
   activityType?: string,
   questionIndex: number = 0,
   totalInActivity: number = 1,
-  sessionObjective?: string
+  sessionObjective?: string,
+  writingConfig?: WritingTaskConfig
 ): string {
   const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
 
@@ -165,8 +166,13 @@ Core pedagogical constraints:
 - If activity is "warmup_review": Provide a swift retrieval check testing recognition or identifying a common error.
 - If activity is "concept_practice": For question index 0, provide multiple_choice with concise concept_intro. For question index >= 1, provide fill_in_blank or sentence completion.
 - If activity is "reading_analysis": Provide a rich "reading_passage" (120-150 words) and a comprehension or subtle inference question.
-- If activity is "writing_production" or "exit_synthesis": Provide a realistic free_writing prompt asking for 2-3 sentences.
-  * CRITICAL FOR FREE WRITING: The prompt MUST be a situational task (e.g., "Write a status update..."). It MUST NOT contain fill-in-the-blank sentences, underscores "____", or verb-form prompts in parentheses (e.g., "(be)"). The learner must produce their own sentences from scratch. Do NOT provide a sentence template for the learner to complete. Do NOT provide "context_sentence" for free_writing.
+- If activity is "writing_production" or "exit_synthesis": Provide a realistic free_writing prompt.
+  * CRITICAL FOR FREE WRITING: The prompt MUST be a situational task (e.g., "Write a status update..."). It MUST NOT contain fill-in-the-blank sentences, underscores "____", or verb-form prompts in parentheses (e.g., "(be)"). The learner must produce their own sentences from scratch. Do NOT provide a sentence template for the learner to complete. Do NOT provide "context_sentence" for free_writing. Do NOT reveal the "model_answer" or any part of it in the prompt field.
+  ${writingConfig ? `* ADAPTIVE TARGET:
+    - Task Type: ${writingConfig.task_type}
+    - Complexity: ${writingConfig.complexity}
+    - Target length: ${writingConfig.min_words ? `${writingConfig.min_words}-${writingConfig.max_words} words` : `${writingConfig.min_sentences}-${writingConfig.max_sentences} sentences`}
+    - Instructions MUST specify this target length to the learner and you MUST NOT provide any sentence for them to complete.` : ''}
 
 JSON Output Schema:
 {
@@ -189,6 +195,15 @@ JSON Output Schema:
   },
   "reading_passage": { "title": string, "text": string, "word_count": number, "topic": string },
   "prompt": string,
+  "writing_config": {
+    "task_type": string,
+    "complexity": string,
+    "min_words": number,
+    "max_words": number,
+    "min_sentences": number,
+    "max_sentences": number
+  },
+  "model_answer": string (A natural, native-level response to the writing prompt. NEVER reveal this in the prompt field!),
   "options": [ { "id": "A"|"B"|"C"|"D", "text": string } ],
   "expected_answer_ids": ["A"|"B"|"C"|"D"],
   "expected_answer_text": string,
@@ -198,3 +213,4 @@ JSON Output Schema:
   "sentence_translation": string
 }`;
 }
+

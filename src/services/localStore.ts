@@ -17,7 +17,8 @@ import {
   WordFormMasteryStatus,
   WordFamilyData,
   EnglishLevel,
-  CompanionChatMessage
+  CompanionChatMessage,
+  WritingRubricScore
 } from '../types/learning.ts';
 import {
   DEFAULT_PROFILE
@@ -436,7 +437,9 @@ class LocalLearningStore {
       errorTag,
       undefined,
       undefined,
-      attempt.created_at
+      attempt.created_at,
+      undefined,
+      attempt.writing_rubric
     );
 
     return attempt;
@@ -455,7 +458,8 @@ class LocalLearningStore {
     questionType?: string,
     questionDifficulty?: EnglishLevel,
     attemptTimestamp?: string,
-    isProgressCheck?: boolean
+    isProgressCheck?: boolean,
+    writingRubric?: WritingRubricScore
   ): Promise<LearnerSkillState> {
     const skills = await this.getSkills();
     let currentSkill = skills.find(s => s.skill_id === skillId || s.skill_name.toLowerCase() === skillName.toLowerCase());
@@ -469,7 +473,8 @@ class LocalLearningStore {
       questionType,
       questionDifficulty,
       attemptTimestamp,
-      isProgressCheck
+      isProgressCheck,
+      writingRubric
     });
 
     const updated = result.updatedSkill;

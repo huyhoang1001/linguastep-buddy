@@ -42,6 +42,7 @@ export function buildWritingRubricPrompt(
   profile: UserProfile
 ): string {
   const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
+  const config = question.writing_config;
 
   return `You are a native English writing examiner evaluating a learner's free-writing response.
 Target Level: ${profile.current_level}.
@@ -50,11 +51,18 @@ Question Prompt: "${(question.prompt || '').replace(/"/g, "'")}".
 Target Skill / Rule: ${question.skill_name || question.explanation_rule || 'Cohesive paragraph structure'}.
 Learner Answer: "${userAnswer.replace(/"/g, "'")}".
 
+${config ? `ADAPTIVE TASK CONTEXT:
+- Expected Task: ${config.task_type}
+- Complexity: ${config.complexity}
+- Target Length: ${config.min_words ? `${config.min_words}-${config.max_words} words` : `${config.min_sentences}-${config.max_sentences} sentences`}
+Evaluate strictly based on whether a learner at ${profile.current_level} can successfully complete this ${config.task_type} with the requested ${config.complexity} complexity.` : ''}
+
 Provide rigorous feedback in ${lang}:
 1. Score each dimension on a 1.0 to 5.0 scale (accuracy, vocabularyRange, sentenceComplexity, coherence, naturalness, taskCompletion).
 2. Polished Version: Provide a refined, native-sounding rephrasing of the learner's response.
 3. Decisive Clue / Highlight: Point out 1 specific grammar/word choice improvement.
 4. Reusable Pattern: Provide 1 key sentence template or connector pattern the learner can reuse.
+5. Task Alignment: Comment on whether the learner met the requested word/sentence length and complexity.
 
 Output strictly JSON:
 {
@@ -66,6 +74,8 @@ Output strictly JSON:
   "taskCompletion": number,
   "feedbackSummary": string,
   "correctedVersion": string,
-  "keyCorrections": [ { "original": string, "corrected": string, "reason": string } ]
+  "keyCorrections": [ { "original": string, "corrected": string, "reason": string } ],
+  "reusable_pattern": string
 }`;
 }
+

@@ -825,13 +825,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               onClick={() => setShowNearlyOutOfTimeAlert(false)}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-bold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0"
+              variant="primary"
+              size="md"
+              rightIcon={<ArrowRight />}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 border-none shadow-md"
             >
-              <span>Keep Going</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              Keep Going
+            </AppButton>
           </div>
         </div>
       )}
@@ -1097,7 +1099,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    placeholder="Write 2 to 3 sentences in English..."
+                    placeholder={
+                      currentQuestion?.writing_config?.min_words 
+                        ? `Write ${currentQuestion.writing_config.min_words} to ${currentQuestion.writing_config.max_words} words in English...`
+                        : `Write ${currentQuestion?.writing_config?.min_sentences || 2} to ${currentQuestion?.writing_config?.max_sentences || 3} sentences in English...`
+                    }
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
                     data-enable-grammarly="false"
@@ -1119,7 +1125,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-[#5C645E] dark:text-[#A7ABA4]">
-                  <span>Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: 2-3)</span>
+                  {currentQuestion?.writing_config?.min_words ? (
+                    <span>Words: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong> (target: {currentQuestion.writing_config.min_words}-{currentQuestion.writing_config.max_words})</span>
+                  ) : (
+                    <span>Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: {currentQuestion?.writing_config?.min_sentences || (currentQuestion?.difficulty === 'A1' ? 1 : 3)}-{currentQuestion?.writing_config?.max_sentences || (currentQuestion?.difficulty === 'A1' ? 2 : 5)})</span>
+                  )}
                   {speechSupported && (
                     <span className="text-[11px] text-[#8A938C]">
                       Mic uses browser voice dictation
@@ -1580,29 +1590,29 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {/* Choice Buttons */}
             <div className="space-y-3 pt-1">
               {/* Choice 1: Take a Break & View Summary */}
-              <button
-                type="button"
+              <AppButton
                 onClick={async () => {
                   setShowTimeOutModal(false);
                   await clearActiveLessonState();
                   const timeSpent = Math.max(1, Math.round(secondsElapsed / 60));
                   onFinishLesson(lessonAttempts, timeSpent);
                 }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-bold text-sm shadow-md transition flex items-center justify-between group cursor-pointer"
+                variant="primary"
+                size="lg"
+                fullWidth
+                rightIcon={<ArrowRight />}
               >
-                <div className="flex items-center space-x-2.5">
+                <div className="flex items-center space-x-2.5 text-left">
                   <span className="text-xl">😴</span>
-                  <div className="text-left">
-                    <span className="block font-bold">Nghỉ Ngơi & Mai Tiếp Tục 🐟</span>
-                    <span className="text-[11px] text-[#E0DDD5] font-normal">Xem tổng kết thành tích & lưu streak hôm nay</span>
+                  <div>
+                    <span className="block font-bold">Take a Break 🐟</span>
+                    <span className="text-[11px] opacity-80 font-normal">View summary & save streak</span>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
-              </button>
+              </AppButton>
 
               {/* Choice 2: Continue Studying (+5m) */}
-              <button
-                type="button"
+              <AppButton
                 onClick={() => {
                   setShowTimeOutModal(false);
                   setExtraMinutesAdded(prev => prev + 5);
@@ -1610,17 +1620,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   setHasWarnedNearlyOut(false);
                   setShowNearlyOutOfTimeAlert(false);
                 }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EFF6F1] dark:hover:bg-[#2E3831] border border-[#EBE4D7] dark:border-[#354037] text-[#2D312E] dark:text-[#F4F2EC] font-bold text-sm transition flex items-center justify-between group shadow-sm cursor-pointer"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                rightIcon={<ArrowRight />}
               >
-                <div className="flex items-center space-x-2.5">
+                <div className="flex items-center space-x-2.5 text-left">
                   <span className="text-xl">⚡</span>
-                  <div className="text-left">
-                    <span className="block font-bold text-[#B25E00] dark:text-[#E9A825]">Cộng Thêm 5 Phút & Học Tiếp 🐾</span>
-                    <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] font-normal">Đang hăng say, giải nốt các câu hỏi hôm nay!</span>
+                  <div>
+                    <span className="block font-bold text-[#B25E00] dark:text-[#E9A825]">Study More (+5m) 🐾</span>
+                    <span className="text-[11px] opacity-80 font-normal">Keep going with next questions</span>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#B25E00] dark:text-[#E9A825] group-hover:translate-x-1 transition-transform" />
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>

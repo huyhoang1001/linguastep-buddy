@@ -595,13 +595,14 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               onClick={() => setIsEditingGoal(!isEditingGoal)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] text-[#2D6A4F] dark:text-[#52B788] border border-[#EBE4D7] dark:border-[#354037] flex items-center space-x-1.5 transition cursor-pointer"
+              size="sm"
+              variant="secondary"
+              leftIcon={<Pencil />}
             >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>{isEditingGoal ? 'Close Selector' : 'Change Major / Field'}</span>
-            </button>
+              {isEditingGoal ? 'Close' : 'Change Major'}
+            </AppButton>
           </div>
 
           {isEditingGoal ? (
@@ -710,28 +711,23 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   Selected Focus: <strong className="text-[#2D6A4F] dark:text-[#52B788]">{getEffectiveMajorName()}</strong>
                 </span>
                 <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingGoal(false)}
-                    className="px-3.5 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] text-[#3D4E45] dark:text-[#A7B3AB] text-xs font-semibold transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveGoalContext}
-                    disabled={isSavingGoal}
-                    className="px-5 py-2 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs shadow-xs transition disabled:opacity-50 flex items-center space-x-1.5 cursor-pointer"
-                  >
-                    {isSavingGoal ? (
-                      <span>Saving Focus...</span>
-                    ) : (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Save & Apply to Exam</span>
-                      </>
-                    )}
-                  </button>
+                    <AppButton
+                      onClick={() => setIsEditingGoal(false)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Cancel
+                    </AppButton>
+                    <AppButton
+                      onClick={handleSaveGoalContext}
+                      disabled={isSavingGoal}
+                      isLoading={isSavingGoal}
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<Check />}
+                    >
+                      Save Focus
+                    </AppButton>
                 </div>
               </div>
             </div>
@@ -764,14 +760,14 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 )}
               </div>
 
-              <button
-                type="button"
+              <AppButton
                 onClick={() => setIsEditingGoal(true)}
-                className="self-start md:self-auto px-3.5 py-2 rounded-xl bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] border border-[#EBE4D7] dark:border-[#354037] text-xs text-[#2D312E] dark:text-[#F4F2EC] font-semibold transition shrink-0 flex items-center space-x-1.5 cursor-pointer"
+                variant="outline"
+                size="sm"
+                leftIcon={<Pencil />}
               >
-                <Pencil className="w-3 h-3 text-[#2D6A4F] dark:text-[#52B788]" />
-                <span>Customize Field Focus</span>
-              </button>
+                Customize Field
+              </AppButton>
             </div>
           )}
         </div>
@@ -824,20 +820,19 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('quick')}
-              className="w-full py-3 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] dark:hover:bg-[#2E3730] disabled:opacity-50 text-[#1B4332] dark:text-[#F4F2EC] font-bold text-xs border border-[#EBE4D7] dark:border-[#354037] transition flex items-center justify-center space-x-2 cursor-pointer"
+              variant="secondary"
+              fullWidth
+              size="md"
             >
               {startingMode === 'quick' ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
-                  <span>Starting Express Exam...</span>
-                </>
+                <span>Starting Express Exam...</span>
               ) : (
                 <span className="truncate">Start Express Exam</span>
               )}
-            </button>
+            </AppButton>
           </div>
 
           {/* 2. Standard Mode (Recommended) */}
@@ -889,23 +884,20 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('standard')}
-              className="w-full py-3.5 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] disabled:opacity-50 text-white dark:text-[#0F291E] font-extrabold text-xs shadow-xs transition flex items-center justify-center space-x-2 cursor-pointer"
+              variant="primary"
+              fullWidth
+              size="md"
+              rightIcon={!startingMode && <ArrowRight />}
             >
               {startingMode === 'standard' ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Starting Standard Exam...</span>
-                </>
+                <span>Starting Standard Exam...</span>
               ) : (
-                <>
-                  <span className="truncate">Start Standard Exam</span>
-                  <ArrowRight className="w-4 h-4 shrink-0" />
-                </>
+                <span className="truncate">Start Standard Exam</span>
               )}
-            </button>
+            </AppButton>
           </div>
 
           {/* 3. Comprehensive Mode */}
@@ -954,20 +946,19 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               disabled={Boolean(startingMode)}
               onClick={() => handleStartMode('comprehensive')}
-              className="w-full py-3 rounded-2xl bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] dark:hover:bg-[#2E3730] disabled:opacity-50 text-[#1B4332] dark:text-[#F4F2EC] font-bold text-xs border border-[#EBE4D7] dark:border-[#354037] transition flex items-center justify-center space-x-2 cursor-pointer"
+              variant="secondary"
+              fullWidth
+              size="md"
             >
               {startingMode === 'comprehensive' ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-[#2D6A4F] border-t-transparent rounded-full animate-spin" />
-                  <span>Starting Comprehensive Exam...</span>
-                </>
+                <span>Starting Comprehensive Exam...</span>
               ) : (
                 <span className="truncate">Start Comprehensive Exam</span>
               )}
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -1035,23 +1026,25 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
           <div className="flex items-center space-x-2">
             {(canStop || mustStop || historyCount >= totalPlannedQuestions) && (
-              <button
+              <AppButton
                 onClick={handleFinishAssessment}
-                className="px-4 py-2 rounded-xl bg-[#2D6A4F] hover:bg-[#1B4332] dark:bg-[#52B788] dark:hover:bg-[#40916C] text-white dark:text-[#0F291E] font-bold text-xs transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                variant="primary"
+                size="sm"
+                leftIcon={<Award />}
               >
-                <Award className="w-4 h-4" />
-                <span>Complete & View Report 🎉</span>
-              </button>
+                Complete Exam
+              </AppButton>
             )}
 
-            <button
+            <AppButton
               onClick={handlePause}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#3D4E45] dark:text-[#A7B3AB] hover:text-[#1B4332] dark:hover:text-white bg-[#FAF7F2] dark:bg-[#252C27] hover:bg-[#EBE4D7] border border-[#EBE4D7] dark:border-[#354037] transition cursor-pointer"
+              variant="secondary"
+              size="sm"
+              leftIcon={<PauseCircle />}
               title="Pause and resume later"
             >
-              <PauseCircle className="w-3.5 h-3.5" />
-              <span>Save & Pause</span>
-            </button>
+              Save & Pause
+            </AppButton>
           </div>
         </div>
 
@@ -1131,12 +1124,14 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
             </div>
           </div>
           {sectionCompletedNotice.nextSection && (
-            <button
+            <AppButton
               onClick={loadNextQuestion}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center space-x-1"
+              variant="primary"
+              size="sm"
+              rightIcon={<ArrowRight />}
             >
-              <span>Continue →</span>
-            </button>
+              Continue
+            </AppButton>
           )}
         </div>
       )}
@@ -1171,13 +1166,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               </div>
             </div>
 
-            <button
+            <AppButton
               onClick={() => setShowNearlyOutOfTimeAlert(false)}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold transition shadow-md flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer"
+              variant="primary"
+              size="md"
+              rightIcon={<ArrowRight />}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 border-none shadow-md"
             >
-              <span>Keep Going</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              Keep Going
+            </AppButton>
           </div>
         </div>
       )}
@@ -1420,7 +1417,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    placeholder="Write your response in English (e.g. 3 to 5 sentences)..."
+                    placeholder={
+                      currentQuestion?.writing_config?.min_words 
+                        ? `Write ${currentQuestion.writing_config.min_words} to ${currentQuestion.writing_config.max_words} words in English...`
+                        : `Write ${currentQuestion?.writing_config?.min_sentences || 3} to ${currentQuestion?.writing_config?.max_sentences || 5} sentences in English...`
+                    }
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
                     className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed"
@@ -1441,9 +1442,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-[#3D4E45] dark:text-[#A7B3AB]">
-                  <span>
-                    Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: 3-4)
-                  </span>
+                  {currentQuestion?.writing_config?.min_words ? (
+                    <span>
+                      Words: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong> (target: {currentQuestion.writing_config.min_words}-{currentQuestion.writing_config.max_words})
+                    </span>
+                  ) : (
+                    <span>
+                      Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: {currentQuestion?.writing_config?.min_sentences || (currentQuestion?.difficulty === 'A1' ? 1 : 3)}-{currentQuestion?.writing_config?.max_sentences || (currentQuestion?.difficulty === 'A1' ? 2 : 5)})
+                    </span>
+                  )}
                   <span>
                     Word count: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong>
                   </span>

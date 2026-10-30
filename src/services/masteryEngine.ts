@@ -2,7 +2,8 @@ import {
   LearnerSkillState,
   SkillMasteryStage,
   EnglishLevel,
-  QuestionType
+  QuestionType,
+  WritingRubricScore
 } from '../types/learning.ts';
 
 export interface SkillEvidenceInput {
@@ -15,6 +16,7 @@ export interface SkillEvidenceInput {
   errorTag?: string;
   attemptTimestamp?: string;
   isProgressCheck?: boolean;
+  writingRubric?: WritingRubricScore;
 }
 
 export interface MasteryUpdateResult {
@@ -111,6 +113,21 @@ export class MasteryEngine {
         // If retrieved after >= 2 days or during progress check, credit retention check
         if ((delayDays >= 2 || input.isProgressCheck) && skill.consecutive_correct >= 2) {
           skill.retention_checks_passed = (skill.retention_checks_passed || 0) + 1;
+        }
+
+        // Writing specific bonus: if rubric is high, boost mastery more
+        if (input.writingRubric) {
+          const avgScore = (
+            input.writingRubric.accuracy +
+            input.writingRubric.vocabularyRange +
+            input.writingRubric.sentenceComplexity +
+            input.writingRubric.coherence +
+            input.writingRubric.naturalness +
+            input.writingRubric.taskCompletion
+          ) / 6;
+          // Scale rubric 1-5 to a 0-20 bonus point scale
+          const rubricBonus = Math.round((avgScore - 3) * 10);
+          skill.mastery_score = Math.min(100, (skill.mastery_score || 0) + Math.max(0, rubricBonus));
         }
       } else {
         skill.consecutive_correct = 0;

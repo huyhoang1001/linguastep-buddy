@@ -6,7 +6,8 @@ import {
   DiagnosticAssessmentPlan,
   DiagnosticMode,
   Question,
-  EnglishLevel
+  EnglishLevel,
+  WritingTaskConfig
 } from '../../src/types/learning.js';
 
 export function buildAdaptiveDiagnosticSystemPrompt(
@@ -17,7 +18,8 @@ export function buildAdaptiveDiagnosticSystemPrompt(
   topic: 'general' | 'workplace_tech',
   profile: UserProfile,
   answered: Array<{ question: Question; evaluation: any }>,
-  existingPassage?: { title: string; text: string; word_count: number; topic: string } | null
+  existingPassage?: { title: string; text: string; word_count: number; topic: string } | null,
+  writingConfig?: WritingTaskConfig
 ): string {
   const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
   const userGoal = profile.goal_summary && profile.goal_summary.trim().length > 0
@@ -55,8 +57,15 @@ SECTION SPECIFIC RULES:
   ${existingPassage && currentQuestionIndexInSection < 3
     ? `Reuse the existing reading passage "${existingPassage.title}" and generate a brand-new follow-up comprehension, inference, or vocabulary-in-context question at level ${targetLevel}.`
     : `Generate an accessible reading passage (80-120 words for A1/A2, 140-180 words for B1/B2/C1) and 1 reading comprehension question with 4 options. Topic MUST be about ${topic === 'general' ? 'travel, daily culture, personal growth, or general interest' : 'software engineering, team collaboration, or workplace management'}.`}
-- If section is "writing": Provide a level-appropriate scenario prompt: for A1/A2 ask for 2-3 simple sentences; for B1/B2/C1 ask for a structured 3-4 sentence workplace or general update. Set question_type to "free_writing". Do NOT provide a "context_sentence" with blanks for writing; focus strictly on the scenario.
-- NEVER duplicate any prompt or skill from previously answered questions: ${JSON.stringify(answered.map(a => a.question.prompt.slice(0, 40)))}.
+- If section is "writing": Provide a level-appropriate scenario prompt.
+  * Set question_type to "free_writing".
+  * Do NOT provide a "context_sentence" with blanks for writing; focus strictly on the scenario. Do NOT reveal the "model_answer" or any part of it in the prompt field.
+  ${writingConfig ? `* ADAPTIVE TARGET:
+    - Task Type: ${writingConfig.task_type}
+    - Complexity: ${writingConfig.complexity}
+    - Target length: ${writingConfig.min_words ? `${writingConfig.min_words}-${writingConfig.max_words} words` : `${writingConfig.min_sentences}-${writingConfig.max_sentences} sentences`}
+    - Instructions MUST specify this target length to the learner and you MUST NOT provide any sentence for them to complete.` : ''}
+- NEVER duplicate any prompt or skill from previously answered questions.
 - Keep hints and explanations in ${lang}.
 
 Output strictly in JSON format:
@@ -70,6 +79,15 @@ Output strictly in JSON format:
   "context_topic": "${topic}",
   "reading_passage": { "title": string, "text": string, "word_count": number, "topic": string } (only if reading),
   "prompt": string,
+  "writing_config": {
+    "task_type": string,
+    "complexity": string,
+    "min_words": number,
+    "max_words": number,
+    "min_sentences": number,
+    "max_sentences": number
+  },
+  "model_answer": string (A natural, native-level response to the writing prompt. NEVER reveal this in the prompt field!),
   "options": [ { "id": "A"|"B"|"C"|"D", "text": string } ] (if multiple choice),
   "expected_answer_ids": ["A"|"B"|"C"|"D"] (single letter array if multiple choice),
   "expected_answer_text": string,
@@ -79,6 +97,7 @@ Output strictly in JSON format:
   "sentence_translation": string (The natural translated meaning of the complete sentence / target structure in ${lang})
 }`;
 }
+
 
 export function buildDiagnosticReportSystemPrompt(
   session: DiagnosticSession,
@@ -211,8 +230,10 @@ Quality & Formatting Rules:
    - All questions in the reading section must reference this passage for reading comprehension, factual detail, or author's intent.
 5. Writing Section:
    - The final section items (${plan.sections.find(s => s.section === 'writing')?.targetQuestionsCount || 1} items) MUST have question_type "free_writing".
-   - Prompt the learner for an authentic 3-4 sentence workplace or daily scenario response aligned with "${userGoal}". Do NOT provide a "context_sentence" with blanks for writing.
-   - "expected_answer_text" can be "Original coherent written response".
+   - Prompt the learner for an authentic workplace or daily scenario response aligned with "${userGoal}".
+   - Do NOT provide a "context_sentence" with blanks for writing.
+   - Provide a native-level model response in "model_answer".
+   - Include level-appropriate "writing_config" (task_type, complexity, min_sentences, max_sentences).
 6. Output JSON: Return strictly a valid JSON object matching this schema:
 {
   "questions": [
@@ -237,8 +258,25 @@ Quality & Formatting Rules:
       "hint": "Pay attention to 'yesterday' as a completed past time marker.",
       "explanation_rule": "We use Past Simple with definite past time markers.",
       "sentence_translation": "Đội ngũ của chúng tôi đã hoàn tất việc triển khai ngày hôm qua trước khi khách hàng gọi đến."
+    },
+    {
+      "id": "diag-writing-1",
+      "section": "writing",
+      "skill_id": "prof_email_writing",
+      "skill_name": "Professional Email Drafting",
+      "question_type": "free_writing",
+      "difficulty": "B2",
+      "context_topic": "${topic}",
+      "prompt": "Task: Write a brief email to a colleague explaining that you have finished the code review for the new feature and suggest a quick meeting to discuss the feedback.\n\nInstructions: Write 3-5 sentences. Use professional register.",
+      "writing_config": { "task_type": "email", "complexity": "independent", "min_sentences": 3, "max_sentences": 5 },
+      "model_answer": "Hi team, I have completed the code review for the latest feature. I've left several comments regarding optimization. Could we schedule a 10-minute sync tomorrow morning to discuss them?",
+      "hint": "Start with a professional greeting and state your progress clearly.",
+      "explanation_rule": "Professional emails should be concise and action-oriented.",
+      "sentence_translation": "Nhiệm vụ: Viết một email ngắn cho đồng nghiệp giải thích rằng bạn đã hoàn thành việc xem xét mã cho tính năng mới và đề xuất một cuộc họp nhanh để thảo luận về phản hồi."
     }
   ]
-}`;
 }
+`;
+}
+
 

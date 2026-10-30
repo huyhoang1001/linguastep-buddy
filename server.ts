@@ -370,9 +370,9 @@ app.post('/api/ai/lesson-evaluate', checkAIBudget, async (req: Request, res: Res
       return res.status(400).json({ error: 'Question, userAnswer, and profile context are required.' });
     }
 
-    const evaluation = await aiService.evaluateAnswer(question, userAnswer, profile);
+    const result = await aiService.evaluateAnswer(question, userAnswer, profile);
     // Server does NOT store this attempt. Result is returned for client-side persistence in IndexedDB.
-    res.json(evaluation);
+    res.json(result);
   } catch (err: any) {
     handleAiRouteError(res, err);
   }

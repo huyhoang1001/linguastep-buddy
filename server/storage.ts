@@ -310,7 +310,8 @@ export class MultiUserMemoryStore {
     skillName: string,
     category: string,
     isCorrect: boolean,
-    errorTag?: string
+    errorTag?: string,
+    writingRubric?: any
   ): LearnerSkillState {
     const u = this.users.get(userId);
     if (!u) throw new Error(`User not found: ${userId}`);
@@ -322,7 +323,8 @@ export class MultiUserMemoryStore {
       skillName,
       category,
       isCorrect,
-      errorTag
+      errorTag,
+      writingRubric
     });
 
     const updated = result.updatedSkill;
@@ -389,9 +391,17 @@ export class MultiUserMemoryStore {
     if (!u) throw new Error(`User not found: ${userId}`);
 
     u.attempts.push(attempt);
-    const isCorrect = attempt.verdict === 'correct';
+    const isCorrect = attempt.verdict === 'correct' || attempt.verdict === 'partially_correct';
     const errorTag = attempt.evaluation.decisive_clue || (attempt.evaluation.error_tags && attempt.evaluation.error_tags[0]);
-    this.updateSkillState(userId, attempt.question_id, attempt.skill_name, attempt.section, isCorrect, errorTag);
+    this.updateSkillState(
+      userId, 
+      attempt.question_id, 
+      attempt.skill_name, 
+      attempt.section, 
+      isCorrect, 
+      errorTag,
+      attempt.writing_rubric
+    );
     this.persistAtomic();
     return attempt;
   }
