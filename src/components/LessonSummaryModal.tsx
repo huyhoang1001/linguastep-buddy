@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   Sparkles,
@@ -37,6 +37,17 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
   );
   const [nextMinutes, setNextMinutes] = useState<number>(summary.target_duration_minutes || 20);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const durationOptions = [
     { mins: 10, label: '10m', sub: 'Quick check' },
     { mins: 15, label: '15m', sub: 'Targeted' },
@@ -48,7 +59,12 @@ export const LessonSummaryModal: React.FC<LessonSummaryModalProps> = ({
   const isHighAccuracy = accuracyPercent >= 80;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm"
+    >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[90vh] overflow-y-auto space-y-6 relative font-sans">
         {/* Close button */}
         <button

@@ -1,6 +1,5 @@
 process.env.NODE_ENV = 'test';
 
-import assert from 'assert';
 import { DailySummary, Attempt } from '../src/types/learning.js';
 
 interface DayProgressPoint {
@@ -233,7 +232,7 @@ async function runWeeklyProgressTests() {
       }
     ];
 
-    const { chartData, weeklyMetrics } = computeWeeklyProgress(mockSummaries, [], 80, fixedNow);
+    const { chartData } = computeWeeklyProgress(mockSummaries, [], 80, fixedNow);
     
     // Find day for 2026-10-26
     const day26 = chartData.find(d => d.fullDate === '2026-10-26');

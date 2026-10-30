@@ -1,11 +1,5 @@
 import {
-  UserProfile,
-  LessonPlan,
-  Question,
-  AnswerEvaluation,
-  SectionType,
-  TutorAssistantResponse,
-  DeepDiveInquiryResponse
+  UserProfile
 } from '../../src/types/learning.js';
 
 export function polishWritingText(

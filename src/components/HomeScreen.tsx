@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Play,
-  Sparkles,
   BookOpen,
   Brain,
   Compass,
@@ -13,11 +12,11 @@ import {
   Cat
 } from 'lucide-react';
 import { UserProfile, LessonPlan, DailySummary, VocabularyItem, LearnerSkillState } from '../types/learning.ts';
-import { CatCustomizationConfig, CAT_COMPANIONS, CAT_THEMES, CatMood } from '../types/catTheme.ts';
+import { CatCustomizationConfig, CAT_THEMES, CatMood } from '../types/catTheme.ts';
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
 import { playPatHeadSound } from '../services/catSoundService.ts';
 import { playEnglishSpeech } from '../services/api.ts';
-import { AppButton, InfoCard, FilterChip, ActionChip, StatusBadge, IconButton } from './ui/index.ts';
+import { AppButton, InfoCard, FilterChip, ActionChip, IconButton } from './ui/index.ts';
 
 interface HomeScreenProps {
   profile: UserProfile;

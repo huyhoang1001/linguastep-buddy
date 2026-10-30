@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  Sparkles,
   Volume2,
-  VolumeX,
   Palette,
   Heart,
   Check,
-  RotateCcw,
-  Cat
+  RotateCcw
 } from 'lucide-react';
 import {
   CatCustomizationConfig,
-  CatThemeId,
-  CatCompanionId,
-  CatAccessoryId,
   CAT_THEMES,
   CAT_COMPANIONS,
   CAT_ACCESSORIES,
   DEFAULT_CAT_CONFIG
 } from '../types/catTheme.ts';
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
-import { playMeowSound, playPurrSound, playBabyCatMeow, playPatHeadSound } from '../services/catSoundService.ts';
+import { playPurrSound, playBabyCatMeow, playPatHeadSound } from '../services/catSoundService.ts';
 import { catCustomizationStore } from '../services/catCustomizationStore.ts';
 
 interface CatCustomizerModalProps {
@@ -51,6 +45,18 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
       setPreviewMood('happy');
     }
   }, [isOpen, currentConfig]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -126,6 +132,9 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh]">
@@ -207,6 +216,11 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
                   type="text"
                   value={config.catName}
                   onChange={(e) => updateConfig({ ...config, catName: e.target.value.slice(0, 24) })}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-enable-grammarly="false"
                   className="bg-white/90 dark:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] rounded-xl px-2.5 py-1 text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC] max-w-[170px] focus:outline-none focus:border-[#2D6A4F]"
                   placeholder="Đặt tên cho mèo..."
                 />

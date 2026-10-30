@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, BookOpen, Volume2, Bookmark, Sparkles, ArrowRight, CornerDownLeft } from 'lucide-react';
+import { Search, X, BookOpen, Bookmark, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { localStore } from '../services/api.ts';
 import { VocabularyItem } from '../types/learning.ts';
 
@@ -85,16 +85,20 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFocused]);
 
-  // Click outside to close dropdown
+  // Click or tap outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsFocused(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -181,6 +185,11 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
           autoFocus={autoFocus}
           onChange={e => setSearchTerm(e.target.value)}
           onFocus={() => setIsFocused(true)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-enable-grammarly="false"
           placeholder={placeholder}
           aria-label="Search English vocabulary in Cambridge dictionary"
           className={`w-full bg-white dark:bg-[#1E231F] hover:bg-[#FAF7F2] dark:hover:bg-[#222924] focus:bg-white dark:focus:bg-[#1E231F] border border-[#D8CFBF] dark:border-[#3C443E] focus:border-[#2D6A4F] dark:focus:border-[#52B788] rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 shadow-inner transition-all ${

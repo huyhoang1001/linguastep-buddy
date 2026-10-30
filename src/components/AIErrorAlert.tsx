@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Clock, RotateCcw, X, ShieldAlert, Sparkles } from 'lucide-react';
+import { AlertCircle, Clock, RotateCcw, X, ShieldAlert } from 'lucide-react';
 import { AIClientError } from '../services/api.ts';
 
 interface AIErrorAlertProps {
@@ -20,7 +20,6 @@ export const AIErrorAlert: React.FC<AIErrorAlertProps> = ({
   if (!error) return null;
 
   const code = (error as any)?.code || 'GENERAL_ERROR';
-  const retryable = (error as any)?.retryable ?? (code === 'RATE_LIMITED' || code === 'SERVICE_UNAVAILABLE' || code === 'TIMEOUT');
   const initialCooldown = (error as any)?.retryAfterSeconds || (code === 'RATE_LIMITED' ? 5 : 0);
 
   const [cooldown, setCooldown] = useState<number>(initialCooldown);

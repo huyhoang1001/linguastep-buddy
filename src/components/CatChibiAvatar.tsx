@@ -35,7 +35,7 @@ export const CatChibiAvatar: React.FC<CatChibiAvatarProps> = ({
     xl: 120
   }[size];
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     if (interactive) {
       if (mood === 'purring') {
         playPurrSound();

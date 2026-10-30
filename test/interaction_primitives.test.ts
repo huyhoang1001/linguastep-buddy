@@ -5,7 +5,6 @@ import { StatusBadge } from '../src/components/ui/StatusBadge.tsx';
 import { FilterChip } from '../src/components/ui/FilterChip.tsx';
 import { ActionChip } from '../src/components/ui/ActionChip.tsx';
 import { InteractiveWord } from '../src/components/ui/InteractiveWord.tsx';
-import React from 'react';
 
 function assert(condition: boolean, message: string) {
   if (!condition) {

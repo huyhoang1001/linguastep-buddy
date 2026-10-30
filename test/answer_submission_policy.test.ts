@@ -134,7 +134,7 @@ async function runTests() {
   let isSubmitting = false;
   let evaluationResult: { verdict: string } | null = null;
 
-  async function mockSubmit(ans: string) {
+  async function mockSubmit(_ans: string) {
     if (isSubmitting || evaluationResult) {
       return; // Ignore rapid duplicate calls
     }

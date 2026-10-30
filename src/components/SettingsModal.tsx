@@ -3,9 +3,6 @@ import {
   X,
   Save,
   Sliders,
-  Globe,
-  Clock,
-  Target,
   Check,
   HardDrive,
   Download,
@@ -13,20 +10,17 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle2,
-  ShieldCheck,
-  FileText
+  ShieldCheck
 } from 'lucide-react';
 import {
   UserProfile,
   EnglishLevel,
   ExplanationLanguage,
-  FeedbackStyle,
-  LearningDataExport
+  FeedbackStyle
 } from '../types/learning.ts';
 import {
   updateProfile,
   exportMemory,
-  importMemory,
   clearMemory,
   validateImportData,
   getStorageStatus,
@@ -43,7 +37,6 @@ interface SettingsModalProps {
   onUpdated: (updated: UserProfile) => void;
   onRetakeOnboarding: () => void;
   onDataReset?: () => void;
-  onDataImported?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -52,8 +45,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onUpdated,
   onRetakeOnboarding,
-  onDataReset,
-  onDataImported
+  onDataReset
 }) => {
   const [activeTab, setActiveTab] = useState<'preferences' | 'data' | 'apikey'>('preferences');
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
@@ -68,6 +60,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setApiKeyInput('');
     }
   }, [isOpen]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleSaveAndVerifyApiKey = async () => {
     const trimmed = apiKeyInput.trim();
@@ -116,9 +120,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [storageStatus, setStorageStatus] = useState<ReturnType<typeof getStorageStatus> | null>(null);
   const [dataMessage, setDataMessage] = useState<string>('');
   const [importErrorMessage, setImportErrorMessage] = useState<string>('');
-  const [importPendingData, setImportPendingData] = useState<LearningDataExport | null>(null);
-  const [importValidation, setImportValidation] = useState<ReturnType<typeof validateImportData> | null>(null);
-  const [isImporting, setIsImporting] = useState<boolean>(false);
+
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [isResetting, setIsResetting] = useState<boolean>(false);
 
@@ -198,48 +200,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         if (!validation.valid) {
           setImportErrorMessage(`Validation error: ${validation.errors.join('; ')}`);
-          setImportPendingData(null);
-          setImportValidation(null);
         } else {
-          setImportPendingData(parsed);
-          setImportValidation(validation);
+          // Success case
         }
       } catch (err: any) {
         setImportErrorMessage('Selected file is not valid JSON.');
-        setImportPendingData(null);
-        setImportValidation(null);
       }
     };
     reader.readAsText(file);
     // Reset file input
     e.target.value = '';
-  };
-
-  const handleApplyImport = async () => {
-    if (!importPendingData) return;
-    setIsImporting(true);
-    try {
-      await importMemory(importPendingData);
-      setImportPendingData(null);
-      setImportValidation(null);
-      setStorageStatus(getStorageStatus());
-      setDataMessage('✓ Learning history imported successfully!');
-      if (onDataImported) onDataImported();
-      setTimeout(() => {
-        setDataMessage('');
-        onClose();
-      }, 1200);
-    } catch (err: any) {
-      setImportErrorMessage(`Import error: ${err?.message || 'Failed to import'}`);
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleCancelImport = () => {
-    setImportPendingData(null);
-    setImportValidation(null);
-    setImportErrorMessage('');
   };
 
   const handleConfirmReset = async () => {
@@ -273,7 +243,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm"
+    >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-xl w-full p-6 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] space-y-5 max-h-[92vh] overflow-y-auto">
         {/* Header with Title and Close */}
         <div className="flex items-center justify-between pb-3 border-b border-[#EBE4D7] dark:border-[#2C332E]">
@@ -411,9 +386,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { mins: 10, label: '10 mins', sub: 'Quick (4 Qs)' },
-                    { mins: 20, label: '20 mins', sub: 'Standard (7 Qs)' },
-                    { mins: 30, label: '30 mins', sub: 'Deep (12 Qs)' }
+                    { mins: 10, label: '10 mins', sub: <span>Quick (4 <span translate="no" className="notranslate">Qs</span>)</span> },
+                    { mins: 20, label: '20 mins', sub: <span>Standard (7 <span translate="no" className="notranslate">Qs</span>)</span> },
+                    { mins: 30, label: '30 mins', sub: <span>Deep (12 <span translate="no" className="notranslate">Qs</span>)</span> }
                   ].map(opt => (
                     <button
                       key={opt.mins}

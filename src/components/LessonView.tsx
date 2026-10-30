@@ -12,11 +12,9 @@ import {
   Sparkles,
   Mic,
   MicOff,
-  Flame,
   Check,
   PauseCircle,
   ChevronDown,
-  ChevronUp,
   FileText,
   Loader2,
   Globe,
@@ -36,7 +34,7 @@ import { TutorDeepDiveChat } from './TutorDeepDiveChat.tsx';
 import { AIErrorAlert } from './AIErrorAlert.tsx';
 import { ClickableSentenceText } from './ClickableSentenceText.tsx';
 import { WordPracticeModal } from './WordPracticeModal.tsx';
-import { AppButton, ActionChip, StatusBadge, IconButton } from './ui/index.ts';
+import { AppButton } from './ui/index.ts';
 import {
   generateQuestion,
   generateFullSessionQuestions,
@@ -63,9 +61,6 @@ interface LessonViewProps {
     attempts: Array<{ question: Question; evaluation: AnswerEvaluation; userAnswer: string }>,
     timeSpentMinutes?: number
   ) => void;
-  onOpenSummary: () => void;
-  onBuildNextSession?: () => void;
-  isBuildingSession?: boolean;
   onReturnHome?: () => void;
 }
 
@@ -73,9 +68,6 @@ export const LessonView: React.FC<LessonViewProps> = ({
   profile,
   plan,
   onFinishLesson,
-  onOpenSummary,
-  onBuildNextSession,
-  isBuildingSession,
   onReturnHome
 }) => {
   // Current section & question navigation
@@ -1073,6 +1065,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   placeholder="Type your answer here..."
                   value={userAnswer}
                   onChange={e => setUserAnswer(e.target.value)}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-enable-grammarly="false"
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !evaluation && !isSubmitting && userAnswer.trim()) {
                       e.preventDefault();
@@ -1094,6 +1091,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     placeholder="Write 2 to 3 sentences in English..."
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-enable-grammarly="false"
                     className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed"
                   />
                   {speechSupported && !evaluation && (

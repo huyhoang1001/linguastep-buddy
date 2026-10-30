@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Compass,
-  CheckCircle2,
   XCircle,
   AlertTriangle,
   ArrowRight,
   PauseCircle,
-  FileText,
   Sparkles,
   Clock,
   Mic,
   MicOff,
   Flag,
   BookOpen,
-  Layers,
-  HelpCircle,
+  CheckCircle2,
   Check,
-  ChevronRight,
   Award,
   Pencil,
   Globe,
   Volume2,
-  Briefcase,
-  GraduationCap
+  Briefcase
 } from 'lucide-react';
 import {
   UserProfile,
@@ -32,8 +26,7 @@ import {
   AnswerEvaluation,
   WritingRubricScore,
   DiagnosticReport,
-  PersonalizedStudyPlan,
-  DiagnosticAssessmentPlan
+  PersonalizedStudyPlan
 } from '../types/learning.ts';
 import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';
 import {
@@ -718,11 +711,11 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~2.5m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 <span translate="no" className="notranslate">Qs</span> • ~2.5m</strong>
                   </div>
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~2.5m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 <span translate="no" className="notranslate">Qs</span> • ~2.5m</strong>
                   </div>
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
@@ -752,7 +745,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Express Exam...</span>
                 </>
               ) : (
-                <span className="truncate">Start Express (8 Qs • Tailored to {getEffectiveMajorName()})</span>
+                <span className="truncate">Start Express (8 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
               )}
             </button>
           </div>
@@ -783,15 +776,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 Qs • ~4m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 <span translate="no" className="notranslate">Qs</span> • ~4m</strong>
                   </div>
                   <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">4 Qs • ~3.5m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">4 <span translate="no" className="notranslate">Qs</span> • ~3.5m</strong>
                   </div>
                   <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 Qs • ~5.5m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">3 <span translate="no" className="notranslate">Qs</span> • ~5.5m</strong>
                   </div>
                   <div className="bg-white dark:bg-[#1E231F] p-2 rounded-xl border border-[#CDE1D4] dark:border-[#2F4738]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">4. Writing</span>
@@ -818,7 +811,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 </>
               ) : (
                 <>
-                  <span className="truncate">Start Standard Exam (13 Qs • Tailored to {getEffectiveMajorName()})</span>
+                  <span className="truncate">Start Standard Exam (13 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
                   <ArrowRight className="w-4 h-4 shrink-0" />
                 </>
               )}
@@ -848,15 +841,15 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">1. Grammar</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">8 Qs • ~6.5m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">8 <span translate="no" className="notranslate">Qs</span> • ~6.5m</strong>
                   </div>
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">2. Vocabulary</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">7 Qs • ~6m</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">7 <span translate="no" className="notranslate">Qs</span> • ~6m</strong>
                   </div>
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">3. Reading</span>
-                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 Qs (2 Passages)</strong>
+                    <strong className="text-[#1B4332] dark:text-[#F4F2EC]">5 <span translate="no" className="notranslate">Qs</span> (2 Passages)</strong>
                   </div>
                   <div className="bg-[#FAF7F2] dark:bg-[#252C27] p-2 rounded-xl border border-[#EBE4D7] dark:border-[#313B33]">
                     <span className="text-[#3D4E45] dark:text-[#A7B3AB] block text-[10px]">4. Writing</span>
@@ -882,7 +875,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   <span>Starting Comprehensive Exam...</span>
                 </>
               ) : (
-                <span className="truncate">Start Comprehensive (22 Qs • Tailored to {getEffectiveMajorName()})</span>
+                <span className="truncate">Start Comprehensive (22 <span translate="no" className="notranslate">Qs</span> • Tailored to {getEffectiveMajorName()})</span>
               )}
             </button>
           </div>
@@ -962,8 +955,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           {plan.sections.map((sec, idx) => {
             const isCompleted = idx < currentSectionIndex || sec.completed;
             const isActive = idx === currentSectionIndex;
-            const isUpcoming = idx > currentSectionIndex && !sec.completed;
-            const secDoneCount = session.history.filter(h => h.question.section === sec.section).length;
+
 
             return (
               <div
@@ -992,7 +984,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   {sec.section}
                 </div>
                 <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] mt-1 flex items-center justify-between">
-                  <span>{isCompleted ? `${sec.targetQuestionsCount}/${sec.targetQuestionsCount} done` : isActive ? `${sectionAttemptsCount + 1}/${sec.targetQuestionsCount}` : `${sec.targetQuestionsCount} Qs`}</span>
+                  <span>{isCompleted ? `${sec.targetQuestionsCount}/${sec.targetQuestionsCount} done` : isActive ? `${sectionAttemptsCount + 1}/${sec.targetQuestionsCount}` : <>{sec.targetQuestionsCount} <span translate="no" className="notranslate">Qs</span></>}</span>
                   <span className="font-mono text-[10px]">25% wt</span>
                 </div>
               </div>

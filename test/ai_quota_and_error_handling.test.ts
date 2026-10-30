@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test';
 
 import assert from 'assert';
-import { classifyGeminiError, AIException } from '../server/aiErrors.js';
+import { classifyGeminiError } from '../server/aiErrors.js';
 import { aiService } from '../server/aiService.js';
 import { budgetManager } from '../server/usageBudget.js';
 import { AIClientError } from '../src/services/api.js';

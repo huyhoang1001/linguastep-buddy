@@ -7,18 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { aiService } from './server/aiService.js';
 import { budgetManager } from './server/usageBudget.js';
-import { classifyGeminiError, AIException } from './server/aiErrors.js';
-import {
-  UserProfile,
-  LessonPlan,
-  Question,
-  AnswerEvaluation,
-  SectionType,
-  LearnerSkillState,
-  DiagnosticSession,
-  DiagnosticReport
-} from './src/types/learning.js';
-
+import { classifyGeminiError } from './server/aiErrors.js';
 import cookieParser from 'cookie-parser';
 import {
   verifyGoogleIdToken,
@@ -159,7 +148,7 @@ function checkAIBudget(req: Request, res: Response, next: NextFunction) {
 // --- API ROUTES ---
 
 // Health & Status (confirms local-first stateless architecture)
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     architecture: 'local_first_stateless',
@@ -322,7 +311,7 @@ app.post('/api/ai/verify-key', async (req: Request, res: Response) => {
 // 1. Generate Lesson Plan
 app.post('/api/ai/lesson-plan', checkAIBudget, async (req: Request, res: Response) => {
   try {
-    const { profile, skills = [], recentErrors = [], dailyMinutes, lessonHistory = [], customContext } = req.body;
+    const { profile, skills = [], recentErrors = [], lessonHistory = [], customContext } = req.body;
     if (!profile || typeof profile !== 'object') {
       return res.status(400).json({ error: 'Valid learner profile is required in request context.' });
     }
@@ -558,7 +547,7 @@ app.post('/api/ai/diagnostic-study-plan', checkAIBudget, async (req: Request, re
 // OPTIONAL LEGACY EXPORT (READ-ONLY DEVELOPER ARCHIVE - NEVER WRITTEN TO)
 // =========================================================================
 
-app.get('/api/legacy/export', (req: Request, res: Response) => {
+app.get('/api/legacy/export', (_req: Request, res: Response) => {
   try {
     const legacyPath = path.resolve(process.cwd(), 'data', 'db.json');
     if (fs.existsSync(legacyPath)) {
@@ -586,7 +575,7 @@ async function startServer() {
   } else {
     const distPath = path.resolve(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
+    app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }

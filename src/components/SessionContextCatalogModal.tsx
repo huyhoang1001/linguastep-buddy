@@ -4,16 +4,11 @@ import {
   Sparkles,
   Check,
   Plus,
-  Trash2,
   Briefcase,
   AlertTriangle,
   BookOpen,
   GraduationCap,
   Sliders,
-  Clock,
-  RotateCcw,
-  CheckCircle2,
-  Layers,
   ArrowRight
 } from 'lucide-react';
 import {
@@ -21,11 +16,10 @@ import {
   LearnerSkillState,
   VocabularyItem,
   DailySummary,
-  PersonalizedStudyPlan,
   NextSessionCustomContext
 } from '../types/learning.ts';
 import { localStore } from '../services/api.ts';
-import { CURATED_MAJORS, CuratedMajor } from './AdaptiveDiagnosticView.tsx';
+import { CURATED_MAJORS } from './AdaptiveDiagnosticView.tsx';
 
 // CEFR-calibrated grammar curriculum catalog
 interface GrammarCatalogItem {
@@ -195,7 +189,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
   const [skills, setSkills] = useState<LearnerSkillState[]>([]);
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
-  const [studyPlan, setStudyPlan] = useState<PersonalizedStudyPlan | null>(null);
+
   const [isLoadingMemory, setIsLoadingMemory] = useState<boolean>(true);
 
   // 1. Session Duration & Pace
@@ -225,6 +219,18 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
   // 6. Freeform Custom Instructions for AI
   const [customInstructions, setCustomInstructions] = useState<string>('');
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Load memory and initialize sensible recommendations
   useEffect(() => {
     if (!isOpen) return;
@@ -233,11 +239,10 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
     const fetchMemoryData = async () => {
       setIsLoadingMemory(true);
       try {
-        const [loadedSkills, loadedVocab, loadedSummaries, loadedPlan] = await Promise.all([
+        const [loadedSkills, loadedVocab, loadedSummaries] = await Promise.all([
           localStore.getSkills(),
           localStore.getVocabulary(),
-          localStore.getSummaries(),
-          localStore.getStudyPlan()
+          localStore.getSummaries()
         ]);
 
         if (!isMounted) return;
@@ -245,7 +250,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
         setSkills(loadedSkills);
         setVocabulary(loadedVocab);
         setSummaries(loadedSummaries);
-        setStudyPlan(loadedPlan);
 
         // Pre-select top recurring mistakes (up to 3)
         const errorList: string[] = [];
@@ -386,6 +390,9 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
   return (
     <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#161A17]/70 backdrop-blur-sm animate-fadeIn"
       role="dialog"
       aria-modal="true"

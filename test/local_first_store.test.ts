@@ -2,14 +2,12 @@ process.env.NODE_ENV = 'test';
 
 import { LocalLearningStore } from '../src/services/localStore.js';
 import {
-  UserProfile,
   LessonPlan,
   Question,
   AnswerEvaluation,
   Attempt,
   DiagnosticSession,
   DiagnosticReport,
-  PersonalizedStudyPlan,
   ActiveLessonState
 } from '../src/types/learning.js';
 

@@ -7,23 +7,18 @@ import {
   XCircle,
   ArrowLeft,
   Sparkles,
-  BookOpen,
   ArrowRight,
   Layers,
   HelpCircle,
   AlertTriangle,
-  RotateCcw,
   Check,
-  Compass,
-  FileText,
   Info
 } from 'lucide-react';
 import {
   WordPracticeData,
   VocabularyItem,
   WordFamilyExercise,
-  WordFormMastery,
-  WordFamilyMember
+  WordFormMastery
 } from '../types/learning.ts';
 import { getWordPractice, localStore } from '../services/api.ts';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
@@ -64,7 +59,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
   // Word family form mastery tracking
   const [formMasteries, setFormMasteries] = useState<Record<string, WordFormMastery>>({});
   const [isSavedToMemory, setIsSavedToMemory] = useState<boolean>(false);
-  const [savedItem, setSavedItem] = useState<VocabularyItem | null>(null);
+
 
   // Micro-exam exercises state
   const [activeExerciseIndex, setActiveExerciseIndex] = useState<number>(0);
@@ -76,6 +71,17 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
     setActiveWord(word);
   }, [word]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Load word details, word family discovery, and exercises
   useEffect(() => {
     let isMounted = true;
@@ -86,7 +92,6 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
       setExerciseStates({});
       setShowHint(false);
       setIsSavedToMemory(false);
-      setSavedItem(null);
 
       try {
         const practiceData = await getWordPractice(activeWord, contextSentence, examMajor);
@@ -100,7 +105,6 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         );
         if (existing) {
           setIsSavedToMemory(true);
-          setSavedItem(existing);
           if (existing.word_form_mastery) {
             setFormMasteries(existing.word_form_mastery);
           } else {
@@ -160,7 +164,6 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
       });
 
       setIsSavedToMemory(true);
-      setSavedItem(itemToSave);
       if (onSavedToMemory) onSavedToMemory(itemToSave);
     } catch (err) {
       console.error('Failed to save vocabulary item:', err);
@@ -240,7 +243,6 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
 
       setFormMasteries(formResult.allFormMasteries);
       setIsSavedToMemory(true);
-      setSavedItem(formResult.item);
 
       // Record general vocabulary evidence
       await localStore.recordVocabularyEvidence({
@@ -319,6 +321,9 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex justify-end animate-fadeIn"
     >
       <div className="w-full max-w-3xl min-h-screen bg-[#FAF7F2] dark:bg-[#1A1F1B] border-l border-[#EBE4D7] dark:border-[#2C332E] shadow-2xl flex flex-col justify-between text-[#2D312E] dark:text-[#F4F2EC] font-sans">

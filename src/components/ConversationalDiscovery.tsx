@@ -1,21 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
+  CheckCircle2,
   Send,
   ArrowRight,
   Brain,
-  CheckCircle2,
-  Clock,
-  Compass,
-  RotateCcw,
   SkipForward,
-  MessageSquare,
   Pencil
 } from 'lucide-react';
 import {
   UserProfile,
-  DiscoveryState,
-  DiscoveryMessage
+  DiscoveryState
 } from '../types/learning.ts';
 import {
   getDiscoveryState,
@@ -31,7 +25,6 @@ interface ConversationalDiscoveryProps {
 }
 
 export const ConversationalDiscovery: React.FC<ConversationalDiscoveryProps> = ({
-  currentProfile,
   onConfirmed,
   onSkipToDiagnostic
 }) => {

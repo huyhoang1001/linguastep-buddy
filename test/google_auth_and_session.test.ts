@@ -6,11 +6,9 @@ import {
   validateSessionToken,
   revokeSessionToken,
   createGuestSession,
-  clearSessionsForTest,
-  isGoogleAuthAvailable
+  clearSessionsForTest
 } from '../server/authService.js';
 import { localStore } from '../src/services/localStore.js';
-import { UserAccount } from '../server/authTypes.js';
 
 async function runGoogleAuthAndSessionTests() {
   console.log('=== RUNNING GOOGLE IDENTITY SERVICES, SESSION & ACCOUNT ISOLATION TESTS ===\n');

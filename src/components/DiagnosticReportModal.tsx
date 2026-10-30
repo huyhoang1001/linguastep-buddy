@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Trophy,
   CheckCircle2,
   AlertCircle,
-  Brain,
   Layers,
-  Sparkles,
   ArrowRight,
-  ShieldCheck,
-  HelpCircle,
-  ChevronDown,
-  ChevronUp,
-  FileText,
   X
 } from 'lucide-react';
-import { DiagnosticReport, SectionType } from '../types/learning.ts';
+import { DiagnosticReport } from '../types/learning.ts';
 
 interface DiagnosticReportModalProps {
   report: DiagnosticReport;
@@ -27,7 +20,6 @@ export const DiagnosticReportModal: React.FC<DiagnosticReportModalProps> = ({
   onProceedToPlan,
   onClose
 }) => {
-  const [showEvidence, setShowEvidence] = useState<boolean>(false);
 
   const getConfidenceBadge = (confidence?: 'low' | 'moderate' | 'high' | 'provisional') => {
     switch (confidence) {

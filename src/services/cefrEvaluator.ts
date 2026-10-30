@@ -1,7 +1,6 @@
 import {
   EnglishLevel,
   SectionType,
-  Question,
   Verdict
 } from '../types/learning.ts';
 

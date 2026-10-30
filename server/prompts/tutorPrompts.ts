@@ -127,7 +127,6 @@ export function buildWordPracticeSystemPrompt(
   profile: UserProfile,
   majorOrField?: string
 ): string {
-  const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
   const major = majorOrField || profile.major_or_subject || 'General / Technology';
 
   return `You are an expert lexicographer, morphological linguist, and adaptive English language coach.

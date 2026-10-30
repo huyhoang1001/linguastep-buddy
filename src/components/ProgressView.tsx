@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
   Compass,
-  CheckCircle2,
   Layers,
   Sparkles,
   Trophy,
-  TrendingUp,
-  Award
+  TrendingUp
 } from 'lucide-react';
 import { UserProfile, LearnerSkillState, DailySummary, Attempt } from '../types/learning.ts';
 import { MilestoneBadge } from '../types/milestone.ts';

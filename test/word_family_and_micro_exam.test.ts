@@ -1,4 +1,4 @@
-import { buildRuleBasedWordFamily, CURATED_WORD_FAMILIES } from '../server/fallbacks/wordFamilyFallbacks.js';
+import { buildRuleBasedWordFamily } from '../server/fallbacks/wordFamilyFallbacks.js';
 import { localStore } from '../src/services/localStore.js';
 import { DEFAULT_PROFILE } from '../src/services/localSeed.js';
 import { UserProfile } from '../src/types/learning.js';

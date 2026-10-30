@@ -3,9 +3,7 @@ import {
   MessageSquare,
   Sparkles,
   Send,
-  HelpCircle,
   Lightbulb,
-  BookOpen,
   ArrowRight,
   ChevronDown,
   ChevronUp,
@@ -15,8 +13,7 @@ import {
 import {
   Question,
   AnswerEvaluation,
-  DeepDiveChatMessage,
-  SimilarWordComparison
+  DeepDiveChatMessage
 } from '../types/learning.ts';
 import { tutorDeepDive } from '../services/api.ts';
 import { AIErrorAlert } from './AIErrorAlert.tsx';

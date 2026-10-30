@@ -7,13 +7,12 @@ import { GeminiLearningProvider } from '../server/aiService.js';
 import { AIException } from '../server/aiErrors.js';
 import {
   verifyGoogleIdToken,
-  createSessionToken,
   validateSessionToken,
   createGuestSession,
   clearSessionsForTest
 } from '../server/authService.js';
 import { UserAccount } from '../server/authTypes.js';
-import { UserProfile, LessonPlan, Attempt } from '../src/types/learning.js';
+import { LessonPlan, Attempt } from '../src/types/learning.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -194,7 +193,7 @@ async function runAuthAndBudgetTests() {
   const aiProvider = new GeminiLearningProvider();
 
   // Test with mock handler
-  aiProvider.setMockHandler((prompt: string) => {
+  aiProvider.setMockHandler(() => {
     return {
       tutorReply: 'Mocked tutor response',
       quickReplies: ['Option A', 'Option B'],

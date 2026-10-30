@@ -16,14 +16,12 @@ interface WordsViewProps {
   vocabulary: VocabularyItem[];
   onPracticeWord: (word: string) => void;
   onRefreshMemory: () => Promise<void>;
-  examMajor?: string;
 }
 
 export const WordsView: React.FC<WordsViewProps> = ({
   vocabulary,
   onPracticeWord,
-  onRefreshMemory,
-  examMajor = 'General Professional English'
+  onRefreshMemory
 }) => {
   const [vocabFilter, setVocabFilter] = useState<'all' | 'due' | 'solid' | 'families'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');

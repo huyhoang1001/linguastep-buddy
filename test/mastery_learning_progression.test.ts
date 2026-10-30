@@ -1,9 +1,8 @@
 process.env.NODE_ENV = 'test';
 
-import assert from 'assert';
 import { MasteryEngine } from '../src/services/masteryEngine.js';
 import { CEFREvaluator } from '../src/services/cefrEvaluator.js';
-import { CurriculumScheduler, CURRICULUM_SKILL_CATALOG } from '../src/services/curriculumScheduler.js';
+import { CurriculumScheduler } from '../src/services/curriculumScheduler.js';
 import { LearnerSkillState, UserProfile } from '../src/types/learning.js';
 
 const mockProfile: UserProfile = {

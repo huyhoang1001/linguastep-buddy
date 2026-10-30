@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   CheckCircle2,
-  Calendar,
   Clock,
   BookOpen,
   ArrowRight,
-  Sliders,
   Layers,
   X,
   Award
@@ -29,6 +27,17 @@ export const StudyPlanModal: React.FC<StudyPlanModalProps> = ({
 }) => {
   const [selectedMinutes, setSelectedMinutes] = useState<number>(profile.daily_minutes || 20);
   const [isApproving, setIsApproving] = useState<boolean>(false);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleApprove = async () => {
     setIsApproving(true);
@@ -132,7 +141,12 @@ export const StudyPlanModal: React.FC<StudyPlanModalProps> = ({
   const currentRoutine = getRoutineForMinutes(selectedMinutes);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm"
+    >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh] overflow-y-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#EBE4D7] dark:border-[#2C332E]">
@@ -294,9 +308,9 @@ export const StudyPlanModal: React.FC<StudyPlanModalProps> = ({
 
           <div className="grid grid-cols-3 gap-2">
             {[
-              { m: 10, label: '10 mins/day', sub: '⚡ Quick (4 Qs)' },
-              { m: 20, label: '20 mins/day', sub: '🎯 Standard (7 Qs)' },
-              { m: 30, label: '30 mins/day', sub: '🔬 Deep (12 Qs)' }
+              { m: 10, label: '10 mins/day', sub: <span>⚡ Quick (4 <span translate="no" className="notranslate">Qs</span>)</span> },
+              { m: 20, label: '20 mins/day', sub: <span>🎯 Standard (7 <span translate="no" className="notranslate">Qs</span>)</span> },
+              { m: 30, label: '30 mins/day', sub: <span>🔬 Deep (12 <span translate="no" className="notranslate">Qs</span>)</span> }
             ].map(item => (
               <button
                 key={item.m}

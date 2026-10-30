@@ -18,10 +18,8 @@ import {
   WritingRubricScore,
   ActiveLessonState,
   DeepDiveInquiryResponse,
-  DiagnosticAssessmentPlan,
   WordPracticeData,
   NextSessionCustomContext,
-  CompanionChatMessage,
   CompanionChatContext
 } from '../types/learning.ts';
 import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';

@@ -11,9 +11,7 @@ import {
   Cat,
   LogOut,
   LogIn,
-  AlertTriangle,
   ChevronDown,
-  User,
   Clock
 } from 'lucide-react';
 import { UserProfile } from '../types/learning.ts';
@@ -56,18 +54,27 @@ export const Header: React.FC<HeaderProps> = ({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close profile dropdown on outside click
+  // Close profile dropdown on outside click or touch
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         setProfileMenuOpen(false);
       }
     };
     if (profileMenuOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('touchstart', handleOutsideClick);
+      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [profileMenuOpen]);
 

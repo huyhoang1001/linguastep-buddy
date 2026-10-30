@@ -1,5 +1,5 @@
 import { GeminiLearningProvider } from '../server/aiService.js';
-import { DiagnosticSession, UserProfile, Question } from '../src/types/learning.js';
+import { DiagnosticSession, UserProfile } from '../src/types/learning.js';
 import { createDiagnosticAssessmentPlan } from '../src/types/diagnosticPlans.js';
 
 async function runTests() {

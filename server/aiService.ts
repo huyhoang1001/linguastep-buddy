@@ -59,7 +59,6 @@ export class GeminiLearningProvider implements LearningModelProvider {
   private activeApiKeyInClient?: string;
   private modelCandidates = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
   private quotaCooldownUntil = 0;
-  private servedQuestionHistory: string[] = [];
   private currentApiKey?: string;
   private mockHandler: ((prompt: string, systemInstruction: string, options?: { userId?: string; operation?: string }) => any) | null = null;
   public isFallbackActive = false;
@@ -473,7 +472,6 @@ export class GeminiLearningProvider implements LearningModelProvider {
   public async evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<AnswerEvaluation> {
     const trimmed = userAnswer.trim();
     const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
-    const isVi = profile.explanation_language === 'vi';
     question = sanitizeAndReconcileQuestion(question);
 
     const hasOptions = Array.isArray(question.options) && question.options.length > 0;

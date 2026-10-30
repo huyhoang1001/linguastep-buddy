@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import {
   UserProfile,
@@ -33,7 +33,6 @@ import { CatCustomizationConfig, CAT_THEMES } from './types/catTheme.ts';
 import { NextSessionCustomContext } from './types/learning.ts';
 import {
   getAuthSession,
-  loginAsGuest,
   logout,
   getProfile,
   generateLessonPlan,
@@ -57,7 +56,6 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activePlan, setActivePlan] = useState<LessonPlan | null>(null);
   const [activeSummary, setActiveSummary] = useState<DailySummary | null>(null);
-  const [mistakesCount, setMistakesCount] = useState<number>(0);
   const [milestonesData, setMilestonesData] = useState<ReturnType<typeof calculateMilestones> | null>(null);
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [recentAttempts, setRecentAttempts] = useState<Attempt[]>([]);
@@ -208,8 +206,6 @@ export default function App() {
       setRecentAttempts(mem.attempts || []);
       setSkills(mem.skills || []);
       setVocabulary(mem.vocabulary || []);
-      const totalErrors = mem.skills?.flatMap(s => s.recurring_errors)?.length || 0;
-      setMistakesCount(totalErrors);
 
       const computedMilestones = calculateMilestones(mem);
       setMilestonesData(computedMilestones);
@@ -282,8 +278,6 @@ export default function App() {
       setVocabulary(mem.vocabulary || []);
       const computed = calculateMilestones(mem);
       setMilestonesData(computed);
-      const totalErrors = mem.skills?.flatMap(s => s.recurring_errors)?.length || 0;
-      setMistakesCount(totalErrors);
     } catch (err) {
       console.error('Failed to refresh milestones:', err);
     }
@@ -470,9 +464,6 @@ export default function App() {
               profile={profile}
               plan={activePlan}
               onFinishLesson={handleLessonFinished}
-              onOpenSummary={() => setShowSummaryModal(true)}
-              onBuildNextSession={handleOpenBuildCatalog}
-              isBuildingSession={isBuildingSession}
               onReturnHome={() => setNavigationDestination('home')}
             />
           ) : (
@@ -519,7 +510,6 @@ export default function App() {
             vocabulary={vocabulary}
             onPracticeWord={(word) => setActiveDictionaryWord(word)}
             onRefreshMemory={refreshMilestones}
-            examMajor={profile.major_or_subject}
           />
         ) : navigationDestination === 'progress' ? (
           <ProgressView
@@ -662,7 +652,6 @@ export default function App() {
           setShowOnboarding(true);
         }}
         onDataReset={initApp}
-        onDataImported={initApp}
       />
 
       {/* Cambridge Dictionary Word Practice & Memory Modal */}

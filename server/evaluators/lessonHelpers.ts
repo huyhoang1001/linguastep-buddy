@@ -7,7 +7,6 @@ import {
   TomorrowPlanPreview,
   UserProfile
 } from '../../src/types/learning.js';
-import { polishWritingText } from '../fallbacks/lessonFallbacks.js';
 
 export function normalizeAnswerText(text: string): string {
   if (!text) return '';

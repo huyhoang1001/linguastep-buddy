@@ -1,5 +1,4 @@
 import {
-  WordFamilyData,
   WordFamilyExercise,
   WordPracticeData,
   UserProfile
@@ -418,8 +417,8 @@ export const CURATED_WORD_FAMILIES: Record<string, WordFamilyKnowledge> = {
 export function buildRuleBasedWordFamily(
   rawWord: string,
   contextSentence: string,
-  profile: UserProfile,
-  majorOrField?: string
+  _profile: UserProfile,
+  _majorOrField?: string
 ): WordPracticeData {
   const cleaned = rawWord.trim().toLowerCase().replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
   const curated = CURATED_WORD_FAMILIES[cleaned];

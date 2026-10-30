@@ -1,6 +1,6 @@
 import { aiService } from '../server/aiService.js';
 import { AIException } from '../server/aiErrors.js';
-import { UserProfile, Question, AnswerEvaluation } from '../src/types/learning.js';
+import { UserProfile, Question } from '../src/types/learning.js';
 
 async function runWritingAndDeepDiveTests() {
   console.log('=== RUNNING WRITING POLISHING & TUTOR DEEP-DIVE INQUIRY TESTS ===\n');

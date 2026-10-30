@@ -5,8 +5,7 @@ import {
   DeterministicLessonPlanBlueprint,
   DeterministicSectionBlueprint,
   NextSessionCustomContext,
-  EnglishLevel,
-  ActivityType
+  EnglishLevel
 } from '../types/learning.ts';
 import { MasteryEngine } from './masteryEngine.ts';
 

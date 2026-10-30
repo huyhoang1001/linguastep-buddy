@@ -3,15 +3,12 @@ import {
   DiscoveryMessage,
   DiagnosticSession,
   DiagnosticReport,
-  PersonalizedStudyPlan,
-  Question,
-  SectionType,
-  SkillProficiencyEstimate
+  SectionType
 } from '../../src/types/learning.js';
 import { createDiagnosticAssessmentPlan } from '../../src/types/diagnosticPlans.js';
 
 export function fallbackDiscoveryTurn(
-  history: DiscoveryMessage[],
+  _history: DiscoveryMessage[],
   userMessage: string,
   currentProfile: UserProfile,
   turnsCount: number

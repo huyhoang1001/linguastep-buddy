@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Background Circle Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D6A4F" />
+      <stop offset="100%" stop-color="#1B4332" />
+    </linearGradient>
+    <!-- Cat Fur Gradient -->
+    <linearGradient id="furGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF9F2" />
+      <stop offset="100%" stop-color="#F7EEDB" />
+    </linearGradient>
+    <!-- Ear Inner Pink Gradient -->
+    <linearGradient id="earPink" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFB4C2" />
+      <stop offset="100%" stop-color="#FF8DA1" />
+    </linearGradient>
+    <!-- Eye Gradient -->
+    <linearGradient id="eyeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1A2E26" />
+      <stop offset="100%" stop-color="#2D6A4F" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Cozy Circle -->
+  <rect width="64" height="64" rx="18" fill="url(#bgGrad)" />
+
+  <!-- Subtle Glow -->
+  <circle cx="32" cy="34" r="24" fill="#52B788" opacity="0.15" />
+
+  <!-- Left Ear -->
+  <path d="M16 26 L12 11 Q19 14 26 19 Z" fill="url(#furGrad)" stroke="#3E2723" stroke-width="1.8" stroke-linejoin="round" />
+  <path d="M16 24 L14 14 Q19 16 23 20 Z" fill="url(#earPink)" />
+
+  <!-- Right Ear -->
+  <path d="M48 26 L52 11 Q45 14 38 19 Z" fill="url(#furGrad)" stroke="#3E2723" stroke-width="1.8" stroke-linejoin="round" />
+  <path d="M48 24 L50 14 Q45 16 41 20 Z" fill="url(#earPink)" />
+
+  <!-- Head Base -->
+  <ellipse cx="32" cy="36" rx="20" ry="17" fill="url(#furGrad)" stroke="#3E2723" stroke-width="2" />
+
+  <!-- Cute Calico Patch on Head -->
+  <path d="M38 20 Q44 21 47 27 Q41 30 36 26 Q35 21 38 20 Z" fill="#E07A5F" opacity="0.9" />
+
+  <!-- Left Eye - Big Kawaii Boba Eye -->
+  <ellipse cx="24" cy="35" rx="3.8" ry="4.5" fill="url(#eyeGrad)" />
+  <circle cx="22.5" cy="33.2" r="1.6" fill="#FFFFFF" />
+  <circle cx="25.2" cy="37" r="0.8" fill="#FFFFFF" />
+
+  <!-- Right Eye - Big Kawaii Boba Eye -->
+  <ellipse cx="40" cy="35" rx="3.8" ry="4.5" fill="url(#eyeGrad)" />
+  <circle cx="38.5" cy="33.2" r="1.6" fill="#FFFFFF" />
+  <circle cx="41.2" cy="37" r="0.8" fill="#FFFFFF" />
+
+  <!-- Cheeks Blush -->
+  <ellipse cx="18" cy="39" rx="3.2" ry="1.8" fill="#FF8DA1" opacity="0.55" />
+  <ellipse cx="46" cy="39" rx="3.2" ry="1.8" fill="#FF8DA1" opacity="0.55" />
+
+  <!-- Cute Nose -->
+  <polygon points="32,38 30.5,36.5 33.5,36.5" fill="#E07A5F" />
+
+  <!-- W-shaped Smile -->
+  <path d="M29 39 Q30.5 41.5 32 39.5 Q33.5 41.5 35 39" fill="none" stroke="#3E2723" stroke-width="1.6" stroke-linecap="round" />
+
+  <!-- Whiskers -->
+  <line x1="12" y1="36" x2="6" y2="34" stroke="#8D6E63" stroke-width="1.3" stroke-linecap="round" />
+  <line x1="12" y1="39" x2="6" y2="40" stroke="#8D6E63" stroke-width="1.3" stroke-linecap="round" />
+  <line x1="52" y1="36" x2="58" y2="34" stroke="#8D6E63" stroke-width="1.3" stroke-linecap="round" />
+  <line x1="52" y1="39" x2="58" y2="40" stroke="#8D6E63" stroke-width="1.3" stroke-linecap="round" />
+
+  <!-- Little Paw Under Chin -->
+  <ellipse cx="32" cy="49" rx="5" ry="3.5" fill="#FFF9F2" stroke="#3E2723" stroke-width="1.5" />
+  <ellipse cx="32" cy="48.5" rx="2.5" ry="1.8" fill="#FFB4C2" />
+</svg>

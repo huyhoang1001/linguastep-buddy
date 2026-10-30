@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  Search,
   X,
   Compass,
   BookMarked,
@@ -8,8 +7,7 @@ import {
   Sparkles,
   Cat,
   Sliders,
-  ArrowRight,
-  BookOpen
+  ArrowRight
 } from 'lucide-react';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 
@@ -30,7 +28,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenSettings,
   onOpenCatStudio
 }) => {
-  const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,8 +35,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
-    } else {
-      setQuery('');
     }
   }, [isOpen]);
 

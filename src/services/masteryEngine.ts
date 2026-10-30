@@ -2,8 +2,7 @@ import {
   LearnerSkillState,
   SkillMasteryStage,
   EnglishLevel,
-  QuestionType,
-  SectionType
+  QuestionType
 } from '../types/learning.ts';
 
 export interface SkillEvidenceInput {

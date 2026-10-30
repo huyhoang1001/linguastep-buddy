@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
-  LineChart,
   BarChart,
   Area,
   Bar,
@@ -16,8 +15,6 @@ import {
 import {
   TrendingUp,
   Activity,
-  Award,
-  CheckCircle2,
   Calendar,
   Flame,
   Clock,

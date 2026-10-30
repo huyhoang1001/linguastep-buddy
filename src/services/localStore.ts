@@ -20,9 +20,7 @@ import {
   CompanionChatMessage
 } from '../types/learning.ts';
 import {
-  DEFAULT_PROFILE,
-  INITIAL_SKILLS,
-  INITIAL_VOCABULARY
+  DEFAULT_PROFILE
 } from './localSeed.ts';
 import { MasteryEngine } from './masteryEngine.ts';
 
@@ -76,7 +74,7 @@ class LocalLearningStore {
     if (!this.isIndexedDBAvailable) return null;
     if (this.db) return this.db;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onupgradeneeded = (event) => {
@@ -297,7 +295,6 @@ class LocalLearningStore {
    */
   public async migrateGuestDataToAccount(targetAccountId: string): Promise<boolean> {
     if (!targetAccountId || targetAccountId === 'learner-primary') return false;
-    const currentActive = this.activeAccountId;
     try {
       this.activeAccountId = 'learner-primary';
       const guestProfile = await this.getStoreData<UserProfile>('profile', 'current');
