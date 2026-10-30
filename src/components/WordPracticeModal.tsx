@@ -66,6 +66,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
   const [exerciseStates, setExerciseStates] = useState<Record<number, ExerciseSubmissionState>>({});
   const [showHint, setShowHint] = useState<boolean>(false);
 
+  // Compare & Choose state
+  const [selectedComparisonWord, setSelectedComparisonWord] = useState<string | null>(null);
+  const [activeComparisonExerciseIndex, setActiveComparisonExerciseIndex] = useState<number>(0);
+  const [comparisonExerciseStates, setComparisonExerciseStates] = useState<Record<number, ExerciseSubmissionState>>({});
+
   // Sync activeWord if prop changes
   useEffect(() => {
     setActiveWord(word);
@@ -92,6 +97,9 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
       setExerciseStates({});
       setShowHint(false);
       setIsSavedToMemory(false);
+      setSelectedComparisonWord(null);
+      setActiveComparisonExerciseIndex(0);
+      setComparisonExerciseStates({});
 
       try {
         const practiceData = await getWordPractice(activeWord, contextSentence, examMajor);
@@ -112,6 +120,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
           }
         } else {
           setFormMasteries({});
+        }
+
+        // Initialize selected comparison word
+        if (practiceData.comparison_data?.related_words?.length) {
+          setSelectedComparisonWord(practiceData.comparison_data.related_words[0].word);
         }
       } catch (err: any) {
         if (!isMounted) return;
@@ -598,7 +611,269 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
                 </div>
               )}
 
-              {/* 3. REDESIGNED MICRO-EXAM: WORD FORM SELECTION & GRAMMATICAL MASTERY */}
+              {/* 3. COMPARE & CHOOSE SECTION */}
+              {data.comparison_data && (
+                <div className="bg-white dark:bg-[#222924] border border-[#EBE4D7] dark:border-[#303B33] rounded-3xl p-5 md:p-6 shadow-sm space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EBE4D7] dark:border-[#303B33] pb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] tracking-tight">
+                          Compare & Choose
+                        </h3>
+                        <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
+                          Master the subtle nuances between similar words for <strong>{data.comparison_data.target_meaning_sense}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Related Word Chips */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4]">
+                      Related words for this context:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {data.comparison_data.related_words.map((rel) => (
+                        <button
+                          key={rel.word}
+                          type="button"
+                          onClick={() => setSelectedComparisonWord(rel.word)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                            selectedComparisonWord === rel.word
+                              ? 'bg-[#2D6A4F] text-white border-[#2D6A4F]'
+                              : 'bg-[#FAF7F2] dark:bg-[#1E231F] text-[#5C645E] dark:text-[#A7ABA4] border-[#EBE4D7] dark:border-[#2C332E] hover:border-[#2D6A4F]'
+                          }`}
+                        >
+                          {rel.word}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Selected Word Detail Card */}
+                  {data.comparison_data.related_words.find(r => r.word === selectedComparisonWord) && (
+                    <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-4 space-y-4 animate-fadeIn">
+                      {(() => {
+                        const rel = data.comparison_data.related_words.find(r => r.word === selectedComparisonWord)!;
+                        return (
+                          <>
+                            <div className="flex items-start justify-between border-b border-[#EBE4D7] dark:border-[#2C332E] pb-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2">
+                                  <h4 className="text-lg font-bold text-[#1B4332] dark:text-[#F4F2EC]">{rel.word}</h4>
+                                  <span className="text-[10px] font-mono text-[#5C645E] dark:text-[#A7ABA4]">{rel.ipa}</span>
+                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-white dark:bg-[#272E29] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#38423A]">
+                                    {rel.part_of_speech}
+                                  </span>
+                                </div>
+                                <div className="text-xs font-medium text-[#2D6A4F] dark:text-[#52B788]">
+                                  {rel.meaning_vi} · {rel.meaning_en}
+                                </div>
+                              </div>
+                              <div className="text-right space-y-1">
+                                <div className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full inline-block ${
+                                  rel.formality === 'formal' 
+                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/30'
+                                    : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-100 dark:border-green-800/30'
+                                }`}>
+                                  {rel.formality}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveWord(rel.word)}
+                                  className="block text-[10px] font-bold text-[#2D6A4F] dark:text-[#52B788] hover:underline"
+                                >
+                                  Deep Dive →
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                              <div className="space-y-2">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4]">Semantic Nuance:</span>
+                                  <p className="text-[#2D312E] dark:text-[#F4F2EC] leading-relaxed">{rel.semantic_difference}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4]">Common Collocations:</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {rel.collocations.map(c => (
+                                      <span key={c} className="px-1.5 py-0.5 rounded bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#38423A] font-mono text-[10px]">
+                                        {c}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4]">Interchangeable?</span>
+                                  <div className="flex items-center space-x-2">
+                                    {rel.can_replace_original ? (
+                                      <CheckCircle2 className="w-4 h-4 text-[#2D6A4F]" />
+                                    ) : (
+                                      <XCircle className="w-4 h-4 text-[#E07A5F]" />
+                                    )}
+                                    <span className="font-medium">{rel.can_replace_original ? 'Yes' : 'No'}</span>
+                                  </div>
+                                  <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] italic">{rel.substitutability_note}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C645E] dark:text-[#A7ABA4]">Example:</span>
+                                  <p className="italic text-[#1B4332] dark:text-[#F4F2EC]">"{rel.example}"</p>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Contrastive Scenario */}
+                  <div className="bg-[#EFF6F1] dark:bg-[#202B24] border border-[#CDE1D4] dark:border-[#334237] rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
+                      <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">Same Situation, Different Meaning</h4>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-[#1B4332] dark:text-[#F4F2EC]">
+                        Scenario: {data.comparison_data.contrastive_scenario.scenario_description_en}
+                      </p>
+                      <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] italic">
+                        ({data.comparison_data.contrastive_scenario.scenario_description_vi})
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      {data.comparison_data.contrastive_scenario.word_usages.map((usage, idx) => (
+                        <div key={idx} className="bg-white/50 dark:bg-[#1A1F1B]/50 p-3 rounded-xl border border-[#CDE1D4] dark:border-[#334237] space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="px-2 py-0.5 rounded bg-[#2D6A4F] text-white text-[10px] font-bold">
+                              {usage.word}
+                            </span>
+                            <p className="text-xs font-medium text-[#1B4332] dark:text-[#F4F2EC]">"{usage.sentence}"</p>
+                          </div>
+                          <div className="pl-2 border-l-2 border-[#52B788]/30 space-y-1">
+                            <p className="text-[11px] font-semibold text-[#1B4332] dark:text-[#F4F2EC]">{usage.meaning_in_context_en} ({usage.meaning_in_context_vi})</p>
+                            <p className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4]">{usage.nuance_explanation}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Comparison Exercises */}
+                  {data.comparison_data.exercises && data.comparison_data.exercises.length > 0 && (
+                    <div className="space-y-4 pt-4 border-t border-[#EBE4D7] dark:border-[#303B33]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
+                          <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">Practice the Difference</h4>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          {data.comparison_data.exercises.map((_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setActiveComparisonExerciseIndex(i)}
+                              className={`w-6 h-6 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
+                                activeComparisonExerciseIndex === i
+                                  ? 'bg-[#2D6A4F] text-white'
+                                  : 'bg-[#FAF7F2] dark:bg-[#1A1F1B] text-[#5C645E] dark:text-[#A7ABA4] border border-[#EBE4D7] dark:border-[#303B33]'
+                              }`}
+                            >
+                              {i + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const ex = data.comparison_data.exercises[activeComparisonExerciseIndex];
+                        const sub = comparisonExerciseStates[activeComparisonExerciseIndex] || {
+                          selectedOptionId: null,
+                          isSubmitted: false,
+                          isCorrect: false
+                        };
+
+                        const handleCompSelect = (optId: string) => {
+                          if (sub.isSubmitted) return;
+                          const isCorrect = optId === ex.expected_answer_id;
+                          setComparisonExerciseStates(prev => ({
+                            ...prev,
+                            [activeComparisonExerciseIndex]: {
+                              selectedOptionId: optId,
+                              isSubmitted: true,
+                              isCorrect
+                            }
+                          }));
+                          if (isCorrect) playCorrectMeowChime();
+                          else playMeowSound(0.85);
+                        };
+
+                        return (
+                          <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-4 space-y-4 animate-fadeIn">
+                            <p className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] leading-relaxed">
+                              {ex.prompt}
+                            </p>
+
+                            {ex.options && (
+                              <div className="grid grid-cols-1 gap-2">
+                                {ex.options.map(opt => (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => handleCompSelect(opt.id)}
+                                    disabled={sub.isSubmitted}
+                                    className={`text-left p-3 rounded-xl border text-xs font-medium transition flex items-center justify-between ${
+                                      sub.isSubmitted
+                                        ? opt.id === ex.expected_answer_id
+                                          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500'
+                                          : sub.selectedOptionId === opt.id
+                                          ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-500 text-rose-700 dark:text-rose-300 ring-1 ring-rose-500'
+                                          : 'bg-white/50 dark:bg-[#1A1F1B]/50 border-[#EBE4D7] dark:border-[#2C332E] opacity-50'
+                                        : sub.selectedOptionId === opt.id
+                                        ? 'bg-[#EFF6F1] dark:bg-[#252F28] border-[#2D6A4F] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#2D6A4F]'
+                                        : 'bg-white dark:bg-[#272E29] border-[#EBE4D7] dark:border-[#38423A] hover:border-[#2D6A4F]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      <span className="w-5 h-5 rounded bg-white dark:bg-[#272E29] border border-[#EBE4D7] dark:border-[#38423A] flex items-center justify-center text-[10px] font-bold">
+                                        {opt.id}
+                                      </span>
+                                      <span>{opt.text}</span>
+                                    </div>
+                                    {sub.isSubmitted && opt.id === ex.expected_answer_id && <Check className="w-4 h-4 text-emerald-500" />}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {sub.isSubmitted && (
+                              <div className={`p-3 rounded-xl text-xs space-y-2 animate-fadeIn ${
+                                sub.isCorrect ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : 'bg-rose-50/50 dark:bg-rose-900/10'
+                              }`}>
+                                <div className="flex items-center space-x-2 font-bold">
+                                  {sub.isCorrect ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <XCircle className="w-4 h-4 text-rose-500" />}
+                                  <span>{sub.isCorrect ? 'Well done!' : 'Not quite right.'}</span>
+                                </div>
+                                <p className="leading-relaxed font-medium text-[#1B4332] dark:text-[#F4F2EC]">{ex.explanation_en}</p>
+                                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] italic border-t border-black/5 dark:border-white/5 pt-2">{ex.explanation_vi}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* 4. REDESIGNED MICRO-EXAM: WORD FORM SELECTION & GRAMMATICAL MASTERY */}
               {currentExercise && (
                 <div className="bg-white dark:bg-[#222924] border border-[#2D6A4F]/40 dark:border-[#52B788]/40 rounded-3xl p-5 md:p-6 shadow-sm space-y-4">
                   {/* Micro-Exam Header & Exercise Stepper */}

@@ -733,7 +733,7 @@ export class GeminiLearningProvider implements LearningModelProvider {
         operation: 'word_practice'
       });
 
-      if (aiResult && (aiResult.meaning_vi || aiResult.word_family)) {
+      if (aiResult && (aiResult.meaning_vi || aiResult.word_family || aiResult.comparison_data)) {
         const exercises = Array.isArray(aiResult.exercises) && aiResult.exercises.length > 0
           ? aiResult.exercises
           : [];
@@ -746,6 +746,8 @@ export class GeminiLearningProvider implements LearningModelProvider {
             exercises.push(...fallbackData.exercises);
           }
         }
+
+        const comparisonData = aiResult.comparison_data;
 
         const practiceQuestion = aiResult.practice_question || (exercises.length > 0 ? {
           prompt: exercises[0].prompt,
@@ -762,6 +764,7 @@ export class GeminiLearningProvider implements LearningModelProvider {
           cleaned_word: cleaned,
           context_in_exam: contextSentence,
           word_family: wordFamily,
+          comparison_data: comparisonData,
           exercises,
           practice_question: practiceQuestion
         };

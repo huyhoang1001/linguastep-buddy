@@ -128,33 +128,38 @@ export function buildWordPracticeSystemPrompt(
   majorOrField?: string
 ): string {
   const major = majorOrField || profile.major_or_subject || 'General / Technology';
+  const cefr = profile.current_level || 'B1';
+  const lang = profile.explanation_language === 'vi' ? 'Vietnamese' : 'English';
 
   return `You are an expert lexicographer, morphological linguist, and adaptive English language coach.
-A learner looked up or encountered the word: "${word}" (Discipline: "${major}").
+A learner looked up or encountered the word: "${word}" (Discipline: "${major}", Level: "${cefr}").
 Encounter context sentence: "${contextSentence || 'Exam context'}".
 
-Your mission: Redesign vocabulary learning around WORD FAMILY DISCOVERY, GRAMMATICAL FORM SELECTION, and NATURAL USAGE.
+Your mission: Redesign vocabulary learning around WORD FAMILY DISCOVERY, COMPARE & CHOOSE (Semantic Nuance), and NATURAL USAGE.
 
 CRITICAL PEDAGOGICAL DIRECTIVES:
 1. WORD FAMILY DISCOVERY:
-   - Identify the word's canonical root and discover all VALID derivational forms: noun, verb, adjective, adverb, plus person/agent nouns where applicable (e.g., collaborate -> collaborator).
-   - Distinguish DERIVATION from INFLECTION (e.g., "collaborate" vs "collaborated" is just tense inflection; do NOT list inflections as family members. Focus on derivational forms like "collaborative", "collaboration", "collaboratively").
-   - NEVER invent or hallucinate non-existent words. If modern English lacks a common form (e.g., discrepancy has no common verb or adverb), explain this explicitly in "missing_forms_note" instead of fabricating words.
-   - For each member provide: "form", "part_of_speech", "suffix_or_pattern" (e.g. "-tion (noun)", "-ive (adjective)", "-ly (adverb)"), "meaning_vi", and an authentic "example_sentence".
+   - Identify the word's canonical root and discover all VALID derivational forms: noun, verb, adjective, adverb, plus person/agent nouns.
+   - Distinguish DERIVATION from INFLECTION. Do NOT list inflections (tenses, plurals) as family members.
+   - NEVER invent or hallucinate non-existent words. Use "missing_forms_note" for gaps.
 
-2. PRIMARY EXERCISE — WORD FORM SELECTION:
-   - Generate a context-based fill-in-the-blank question testing a DIFFERENT available word form in the family (do NOT test the exact same word the user just entered!).
-   - Example pattern: "The teams worked _____ to deliver the project." -> Options: collaborate (verb), collaboration (noun), collaborative (adjective), collaboratively (adverb) -> Correct: collaboratively (adverb).
-   - The syntactic clue must be decisive (e.g., modifies active verb "worked" -> requires adverb).
+2. COMPARE & CHOOSE (NEW FEATURE):
+   - Identify the specific meaning (sense) of "${word}" in the given context.
+   - Discover 3–5 semantically related words (near-synonyms or contextually related alternatives) worth comparing for THIS specific sense.
+   - Provide for each: word, IPA, POS, concise meanings (${lang} & English), key semantic difference, usage contexts, formality, collocations, and a practical example.
+   - Explicitly state "can_replace_original" (boolean) and "substitutability_note" explaining why or why not.
+   - Scenario-based Contrast: Create a "Same Situation, Different Meaning" section. Use one realistic scenario and show how choosing different words (the target word vs related words) changes the message.
 
-3. ADDITIONAL EXERCISE:
-   - Provide a secondary exercise such as "error_correction" (spotting and correcting an incorrect part of speech used in a sentence) or "sentence_transformation" (rewriting a sentence using another specified word form).
+3. INTERACTIVE EXERCISES:
+   - WORD FORM SELECTION: Generate 1-2 questions testing available word forms in the family.
+   - COMPARISON EXERCISES: Generate 2-3 short exercises based on actual differences between the compared words:
+     * "choose_best": Select the most natural option for a scenario.
+     * "compare_sentences": Explain how replacing one word changes the meaning.
+     * "rewrite": Use a different word while preserving or intentionally changing meaning.
+     * "explain_choice": Ask the learner why a word fits.
 
-4. FEEDBACK RIGOR:
-   - "grammatical_clue": Crystal clear explanation of the syntactic trigger (e.g., "Preceded by verb 'worked' and describes manner -> requires Adverb").
-   - "vietnamese_explanation": Clear explanation in Vietnamese.
-   - "distractor_explanations": Provide an object mapping each option ID to the exact reason why it is grammatically incorrect in this slot.
-   - "full_correct_sentence": The complete natural sentence.
+4. ADAPTIVE LEVELING:
+   - Adjust vocabulary difficulty and explanation complexity based on the learner's CEFR level (${cefr}).
 
 Return strictly JSON format:
 {
@@ -178,79 +183,83 @@ Return strictly JSON format:
     "members": [
       {
         "form": string,
-        "part_of_speech": "noun" | "verb" | "adjective" | "adverb" | "noun_person" | string,
+        "part_of_speech": string,
         "ipa": string,
         "suffix_or_pattern": string,
         "meaning_vi": string,
+        "meaning_en": string,
         "example_sentence": string,
         "is_headword": boolean
       }
     ]
   },
+  "comparison_data": {
+    "target_word": string,
+    "target_meaning_sense": string,
+    "related_words": [
+      {
+        "word": string,
+        "ipa": string,
+        "part_of_speech": string,
+        "meaning_en": string,
+        "meaning_vi": string,
+        "semantic_difference": string,
+        "usage_context": string,
+        "formality": string,
+        "collocations": [string],
+        "example": string,
+        "can_replace_original": boolean,
+        "substitutability_note": string
+      }
+    ],
+    "contrastive_scenario": {
+      "scenario_description_en": string,
+      "scenario_description_vi": string,
+      "word_usages": [
+        {
+          "word": string,
+          "sentence": string,
+          "meaning_in_context_en": string,
+          "meaning_in_context_vi": string,
+          "nuance_explanation": string
+        }
+      ]
+    },
+    "exercises": [
+      {
+        "id": string,
+        "exercise_type": "choose_best" | "compare_sentences" | "rewrite" | "explain_choice",
+        "prompt": string,
+        "options": [{ "id": string, "text": string }],
+        "expected_answer_id": string,
+        "expected_answer_text": string,
+        "explanation_en": string,
+        "explanation_vi": string,
+        "hint": string
+      }
+    ]
+  },
   "exercises": [
     {
-      "id": "wf-1",
-      "exercise_type": "word_form_selection",
+      "id": string,
+      "exercise_type": "word_form_selection" | "error_correction" | "sentence_transformation",
       "prompt": string,
       "target_form": string,
       "target_part_of_speech": string,
-      "options": [
-        { "id": "A", "text": string, "part_of_speech": string },
-        { "id": "B", "text": string, "part_of_speech": string },
-        { "id": "C", "text": string, "part_of_speech": string },
-        { "id": "D", "text": string, "part_of_speech": string }
-      ],
-      "expected_answer_id": "A" | "B" | "C" | "D",
+      "options": [{ "id": string, "text": string, "part_of_speech": string }],
+      "expected_answer_id": string,
       "expected_answer_text": string,
       "full_correct_sentence": string,
       "grammatical_clue": string,
       "vietnamese_explanation": string,
-      "distractor_explanations": {
-        "A": string,
-        "B": string,
-        "C": string,
-        "D": string
-      },
-      "hint": string
-    },
-    {
-      "id": "wf-2",
-      "exercise_type": "error_correction" | "sentence_transformation",
-      "prompt": string,
-      "target_form": string,
-      "target_part_of_speech": string,
-      "error_sentence": string,
-      "transformation_source_sentence": string,
-      "transformation_prompt": string,
-      "options": [
-        { "id": "A", "text": string },
-        { "id": "B", "text": string },
-        { "id": "C", "text": string },
-        { "id": "D", "text": string }
-      ],
-      "expected_answer_id": "A" | "B" | "C" | "D",
-      "expected_answer_text": string,
-      "full_correct_sentence": string,
-      "grammatical_clue": string,
-      "vietnamese_explanation": string,
-      "distractor_explanations": {
-        "A": string,
-        "B": string,
-        "C": string,
-        "D": string
-      },
+      "distractor_explanations": Record<string, string>,
       "hint": string
     }
   ],
   "practice_question": {
     "prompt": string,
-    "options": [
-      { "id": "A", "text": string },
-      { "id": "B", "text": string },
-      { "id": "C", "text": string },
-      { "id": "D", "text": string }
-    ],
-    "expected_answer_id": "A" | "B" | "C" | "D",
+    "options": [{ "id": string, "text": string }],
+    "expected_answer_id": string,
     "expected_answer_text": string,
     "explanation": string,
     "hint": string

@@ -199,6 +199,53 @@ export interface WordPracticeQuestion {
   context_sentence?: string;
 }
 
+export interface RelatedWordComparison {
+  word: string;
+  ipa: string;
+  part_of_speech: string;
+  meaning_en: string;
+  meaning_vi: string;
+  semantic_difference: string;
+  usage_context: string;
+  formality: string; // e.g., "formal", "informal", "neutral"
+  collocations: string[];
+  example: string;
+  can_replace_original: boolean;
+  substitutability_note: string;
+}
+
+export interface ContrastiveScenario {
+  scenario_description_en: string;
+  scenario_description_vi: string;
+  word_usages: Array<{
+    word: string;
+    sentence: string;
+    meaning_in_context_en: string;
+    meaning_in_context_vi: string;
+    nuance_explanation: string;
+  }>;
+}
+
+export interface WordComparisonExercise {
+  id: string;
+  exercise_type: 'choose_best' | 'compare_sentences' | 'rewrite' | 'explain_choice';
+  prompt: string;
+  options?: Array<{ id: string; text: string }>;
+  expected_answer_id?: string;
+  expected_answer_text: string;
+  explanation_en: string;
+  explanation_vi: string;
+  hint?: string;
+}
+
+export interface WordComparisonData {
+  target_word: string;
+  target_meaning_sense: string;
+  related_words: RelatedWordComparison[];
+  contrastive_scenario: ContrastiveScenario;
+  exercises: WordComparisonExercise[];
+}
+
 export interface WordPracticeData {
   word: string;
   cleaned_word: string;
@@ -218,6 +265,8 @@ export interface WordPracticeData {
   // Word Family Discovery & Redesigned Micro-Exam Exercises
   word_family: WordFamilyData;
   exercises: WordFamilyExercise[];
+  // Compare & Choose feature data
+  comparison_data?: WordComparisonData;
   // Retained for backward compatibility
   practice_question?: WordPracticeQuestion;
 }
