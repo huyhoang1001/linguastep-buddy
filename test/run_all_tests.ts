@@ -147,6 +147,13 @@ if (res21.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 22: Adaptive Vietnamese-to-English Gen Z Translation Exercises Tests...');
+const res22 = spawnSync('npx', ['tsx', 'test/vietnamese_translation_exercises.test.ts'], { stdio: 'inherit' });
+if (res22.status !== 0) {
+  console.error('Vietnamese translation exercises tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

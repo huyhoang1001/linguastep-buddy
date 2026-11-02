@@ -381,12 +381,12 @@ app.post('/api/ai/lesson-evaluate', checkAIBudget, async (req: Request, res: Res
 // 4. Tutor Assistant Actions (hint, simpler explanation, etc.)
 app.post('/api/ai/tutor-assist', checkAIBudget, async (req: Request, res: Response) => {
   try {
-    const { question, action, profile } = req.body;
+    const { question, action, profile, hintIndex } = req.body;
     if (!question || !action || !profile) {
       return res.status(400).json({ error: 'Question, action, and profile context are required.' });
     }
 
-    const response = await aiService.tutorAssist(question, action, profile);
+    const response = await aiService.tutorAssist(question, action, profile, hintIndex);
     res.json(response);
   } catch (err: any) {
     handleAiRouteError(res, err);

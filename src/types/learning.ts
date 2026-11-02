@@ -539,7 +539,7 @@ export interface DailySummary {
 }
 
 export interface TutorAssistantResponse {
-  type: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity';
+  type: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone';
   content: string;
   example_sentence?: string;
 }

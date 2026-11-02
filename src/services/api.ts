@@ -551,7 +551,8 @@ export async function evaluateAnswer(
 
 export async function requestTutorAssist(
   question: Question,
-  action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity'
+  action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone',
+  hintIndex?: number
 ): Promise<TutorAssistantResponse> {
   const profile = await localStore.getProfile();
 
@@ -561,7 +562,8 @@ export async function requestTutorAssist(
     body: JSON.stringify({
       question,
       action,
-      profile
+      profile,
+      hintIndex
     })
   });
 

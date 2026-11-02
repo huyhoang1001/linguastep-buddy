@@ -175,14 +175,17 @@ export class MasteryEngine {
         skill.next_review_at = new Date(now.getTime() + 86400000).toISOString();
         explanation = `Advanced to Recognition. Learner successfully identified the correct target form.`;
       } else if (previousStage === 'recognition') {
-        // Requires at least active recall exercise or multiple clean successes
-        const hasRecallOrMultiple = consecutive >= 2 && (diversityCount >= 2 || input.questionType === 'fill_in_blank');
+        // Requires at least active recall exercise, productive translation, or multiple clean successes
+        const isProductive = input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
+        const hasRecallOrMultiple = (consecutive >= 2 && (diversityCount >= 2 || input.questionType === 'fill_in_blank')) || (isProductive && consecutive >= 1);
         if (hasRecallOrMultiple) {
           newStage = 'active_recall';
           skill.status = 'reviewing';
           skill.mastery_score = 65;
           skill.next_review_at = new Date(now.getTime() + 86400000 * 3).toISOString(); // 3-day spaced review
-          explanation = `Advanced to Active Recall. Successfully produced target structure across varied questions.`;
+          explanation = isProductive
+            ? `Advanced to Active Recall. Successfully produced target structure in authentic conversational translation.`
+            : `Advanced to Active Recall. Successfully produced target structure across varied questions.`;
         } else {
           skill.status = 'learning';
           skill.mastery_score = 55;
@@ -190,13 +193,16 @@ export class MasteryEngine {
           explanation = `Recognizing form reliably. Ready for active recall practice.`;
         }
       } else if (previousStage === 'active_recall') {
-        // Needs diverse exercises (at least 2 types) and consecutive >= 3 to reach Application
-        if (consecutive >= 3 && diversityCount >= 2) {
+        const isProductive = input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
+        // Needs diverse exercises (at least 2 types) and consecutive >= 3 to reach Application, or strong productive translation with consecutive >= 2
+        if ((consecutive >= 3 && diversityCount >= 2) || (isProductive && consecutive >= 2)) {
           newStage = 'application';
           skill.status = 'mostly_mastered';
           skill.mastery_score = 80;
           skill.next_review_at = new Date(now.getTime() + 86400000 * 7).toISOString(); // 7-day spaced review
-          explanation = `Advanced to Application. Can flexibly apply the target rule in complex contexts.`;
+          explanation = isProductive
+            ? `Advanced to Application. Successfully applied target grammar in authentic conversational translation.`
+            : `Advanced to Application. Can flexibly apply the target rule in complex contexts.`;
         } else {
           skill.status = 'reviewing';
           skill.mastery_score = 72;

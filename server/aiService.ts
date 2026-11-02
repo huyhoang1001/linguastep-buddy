@@ -37,6 +37,7 @@ import { evaluateMultipleChoiceAnswer, normalizeAnswerText, buildFallbackDailySu
 import { diagnosticService } from './services/diagnosticService.js';
 import { CurriculumScheduler } from '../src/services/curriculumScheduler.js';
 import { getWritingTaskConfig } from './services/writingPolicy.js';
+import { selectAdaptiveTranslation, buildTranslationQuestion, evaluateTranslationOffline } from './services/translationService.js';
 
 export { AIException, classifyGeminiError, type AIErrorCode };
 
@@ -44,7 +45,7 @@ export interface LearningModelProvider {
   generateLessonPlan(profile: UserProfile, skillStates: LearnerSkillState[], recentErrors: string[]): Promise<LessonPlan>;
   generateQuestion(section: SectionType, profile: UserProfile, targetSkillName?: string, contextTopic?: 'general' | 'workplace_tech', activityType?: string, questionIndex?: number, totalInActivity?: number, sessionObjective?: string, sessionDuration?: 10 | 20 | 30): Promise<Question>;
   evaluateAnswer(question: Question, userAnswer: string, profile: UserProfile): Promise<{ evaluation: AnswerEvaluation; writingRubric?: WritingRubricScore }>;
-  tutorAssist(question: Question, action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity', profile: UserProfile): Promise<TutorAssistantResponse>;
+  tutorAssist(question: Question, action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone', profile: UserProfile, hintIndex?: number): Promise<TutorAssistantResponse>;
   generateLessonSummary(lesson: LessonPlan, attempts: Array<{ question: Question; evaluation: AnswerEvaluation; userAnswer: string }>, profile: UserProfile, timeSpentMinutes?: number): Promise<DailySummary>;
   handleDiscoveryTurn(history: DiscoveryMessage[], userMessage: string, currentProfile: UserProfile): Promise<any>;
   generateAdaptiveDiagnosticQuestion(session: DiagnosticSession, profile: UserProfile): Promise<Question>;
@@ -471,9 +472,11 @@ export class GeminiLearningProvider implements LearningModelProvider {
     sessionDuration: 10 | 20 | 30 = 20
   ): Promise<Question> {
     const topic = contextTopic || (Math.random() * 100 > profile.general_vs_work_ratio ? 'workplace_tech' : 'general');
+    const isVi = profile.explanation_language === 'vi';
     
+    const isTranslationActivity = activityType === 'conversational_translation';
     let writingConfig;
-    const isWritingSection = section === 'writing' || activityType === 'writing_production' || activityType === 'exit_synthesis';
+    const isWritingSection = (section === 'writing' || activityType === 'writing_production' || activityType === 'exit_synthesis') && !isTranslationActivity;
     
     if (isWritingSection) {
       const purpose = activityType === 'exit_synthesis' ? 'synthesis' : 'independent-writing';
@@ -483,32 +486,61 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const systemPrompt = buildQuestionSystemPrompt(section, profile, targetSkillName, topic, activityType, questionIndex, totalInActivity, sessionObjective, writingConfig);
     const prompt = `Generate question ${questionIndex + 1} of ${totalInActivity} for ${section}.`;
 
-    const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
-    if (result && result.prompt) {
-      const sanitized = sanitizeAndReconcileQuestion(result);
-      
-      // CRITICAL: Force writing section question type and configuration
-      if (isWritingSection) {
-        sanitized.question_type = 'free_writing';
-        sanitized.writing_config = writingConfig || result.writing_config;
+    try {
+      const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
+      if (result && (result.prompt || result.vietnamese_text)) {
+        const sanitized = sanitizeAndReconcileQuestion(result);
         
-        // Anti-leakage: writing tasks should NOT have a context_sentence that gets appended to prompt
-        sanitized.context_sentence = undefined;
-        
-        // Remove any common template markers that might have leaked into the prompt
-        if (sanitized.prompt) {
-          sanitized.prompt = sanitized.prompt
-            .replace(/_{2,}/g, '') // remove blanks
-            .replace(/\(.*\)\.\.\./g, '...') // remove verb prompts like (be/already complete)
-            .trim();
+        if (isTranslationActivity || sanitized.question_type === 'vi_to_en_translation') {
+          sanitized.question_type = 'vi_to_en_translation';
+          sanitized.section = 'writing';
+          sanitized.context_sentence = undefined;
+          sanitized.sentence_translation = undefined; // Never leak meaning before submission
+          
+          if (!sanitized.vietnamese_text) {
+            const bankItem = selectAdaptiveTranslation(profile, targetSkillName);
+            sanitized.vietnamese_text = bankItem.vietnameseText;
+            sanitized.translation_scenario = bankItem.scenario;
+            sanitized.translation_tone = bankItem.tone;
+            sanitized.relationship = bankItem.relationship;
+            sanitized.translation_hints = bankItem.hints;
+            sanitized.evaluation_criteria = bankItem.evaluationCriteria;
+            sanitized.model_answer = bankItem.modelAnswer;
+            sanitized.explanation_rule = isVi ? bankItem.grammarConnectionVi : bankItem.grammarConnectionEn;
+          }
+          sanitized.prompt = isVi
+            ? 'Dịch câu tiếng Việt khẩu ngữ sau sang tiếng Anh tự nhiên (Say It Like You Mean It).'
+            : 'Translate this modern Vietnamese expression into authentic, natural conversational English.';
+          sanitized.hint = sanitized.translation_hints?.[0] || 'Focus on the conversational intent, not literal word-by-word translation.';
+        } else if (isWritingSection) {
+          sanitized.question_type = 'free_writing';
+          sanitized.writing_config = writingConfig || result.writing_config;
+          sanitized.context_sentence = undefined;
+          if (sanitized.prompt) {
+            sanitized.prompt = sanitized.prompt
+              .replace(/_{2,}/g, '') // remove blanks
+              .replace(/\(.*\)\.\.\./g, '...') // remove verb prompts like (be/already complete)
+              .trim();
+          }
         }
-      }
 
-      return { 
-        ...sanitized, 
-        id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
-        section
-      };
+        return { 
+          ...sanitized, 
+          id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
+          section: isTranslationActivity ? 'writing' : section
+        };
+      }
+    } catch (err: any) {
+      if (isTranslationActivity) {
+        const bankItem = selectAdaptiveTranslation(profile, targetSkillName);
+        return buildTranslationQuestion(bankItem, profile);
+      }
+      throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate lesson question from AI.', { retryable: true });
+    }
+
+    if (isTranslationActivity) {
+      const bankItem = selectAdaptiveTranslation(profile, targetSkillName);
+      return buildTranslationQuestion(bankItem, profile);
     }
 
     throw new AIException('SERVICE_UNAVAILABLE', 'Failed to generate lesson question from AI.', { retryable: true });
@@ -643,19 +675,9 @@ export class GeminiLearningProvider implements LearningModelProvider {
         };
       }
 
-      // Very basic fallback if AI fails
+      // Robust 5-dimension local fallback evaluation if AI fails or quota is limited
       return {
-        evaluation: {
-          verdict: 'correct',
-          user_answer: userAnswer,
-          expected_answer: question.model_answer || '',
-          full_correct_sentence: question.model_answer || '',
-          decisive_clue: 'Translation received.',
-          explanation: 'Good job communicating the intent.',
-          needs_retry: false,
-          next_action: 'continue',
-          error_tags: []
-        }
+        evaluation: evaluateTranslationOffline(question, trimmed, profile)
       };
     }
 
@@ -709,13 +731,46 @@ export class GeminiLearningProvider implements LearningModelProvider {
     };
   }
 
-  public async tutorAssist(question: Question, action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity', profile: UserProfile): Promise<TutorAssistantResponse> {
+  public async tutorAssist(
+    question: Question, 
+    action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone', 
+    profile: UserProfile,
+    hintIndex?: number
+  ): Promise<TutorAssistantResponse> {
+    const isVi = profile.explanation_language === 'vi';
+    const isTranslation = question.question_type === 'vi_to_en_translation';
+
     if (action === 'hint') {
-      if (question.question_type === 'vi_to_en_translation' && question.translation_hints && question.translation_hints.length > 0) {
-        // Return progressive hint based on simple logic or random for now, or just joined
-        return { type: 'hint', content: question.translation_hints.join('\n\n') };
+      if (isTranslation && question.translation_hints && question.translation_hints.length > 0) {
+        const step = typeof hintIndex === 'number' ? Math.max(0, Math.min(hintIndex, question.translation_hints.length - 1)) : 0;
+        return { type: 'hint', content: question.translation_hints[step] };
       }
-      return { type: 'hint', content: question.hint || 'Focus on time markers and key verb forms.' };
+      return { type: 'hint', content: question.hint || (isVi ? 'Tập trung vào thì và cấu trúc diễn đạt tự nhiên.' : 'Focus on the communicative intent and natural verb forms.') };
+    }
+
+    if (isTranslation) {
+      if (action === 'grammar_reminder') {
+        const content = question.explanation_rule || (isVi 
+          ? `Nhắc nhớ ngữ pháp: Sử dụng đúng thì và trợ động từ phù hợp với sắc thái giao tiếp đời thường.` 
+          : `Grammar reminder: Apply natural tenses and auxiliaries suited to modern spoken conversation.`);
+        return { type: 'grammar_reminder', content };
+      }
+
+      if (action === 'explain_slang') {
+        const content = isVi
+          ? `Khẩu ngữ / Slang: Câu "${question.vietnamese_text || ''}" mang sắc thái thân mật, trêu đùa của Gen Z. Trong tiếng Anh, người bản xứ thường dùng thành ngữ đời thường hoặc cụm từ tự nhiên thay vì dịch máy từng chữ.`
+          : `Slang nuance: "${question.vietnamese_text || ''}" is authentic modern conversational Vietnamese. In natural English, aim for colloquial expressions or phrasal verbs rather than literal word-for-word translation.`;
+        return { type: 'explain_slang', content };
+      }
+
+      if (action === 'understand_tone') {
+        const toneStr = question.translation_tone || 'casual';
+        const relStr = (question.relationship || 'close_friends').replace(/_/g, ' ');
+        const content = isVi
+          ? `Sắc thái & Đối tượng: Giọng điệu là ${toneStr.toUpperCase()}, nói chuyện với ${relStr}. Hãy dùng các từ viết tắt (wanna, gonna, don't, I'm) và cấu trúc tự nhiên để tạo cảm giác gần gũi, đời thường.`
+          : `Tone & Relationship: The tone is ${toneStr.toUpperCase()} with ${relStr}. Use natural contractions and spoken cadence to capture the relaxed, authentic feel.`;
+        return { type: 'understand_tone', content };
+      }
     }
 
     const systemPrompt = buildTutorAssistPrompt(question, action, profile);

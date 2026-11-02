@@ -441,15 +441,22 @@ export class CurriculumScheduler {
         target_mastery_stage: 'active_recall'
       });
 
-      // Exit Synthesis / Check
+      // Exit Synthesis / Conversational Translation Check (0-1 question)
+      const isConversationalUser = input.profile.primary_goal === 'conversation' || input.profile.structured_goal?.preferred_tone === 'playful_cheeky';
+      const useTranslationIn10m = isConversationalUser || (((input.completedLessonsCount || 0) % 2) === 1);
+
       sections.push({
-        section: 'reading',
-        title: isVi ? 'Tổng hợp & Đánh giá nhanh' : 'Exit Synthesis & Check',
-        description: isVi ? 'Vận dụng ngữ cảnh ngắn gọn.' : 'Quick transfer verification.',
+        section: useTranslationIn10m ? 'writing' : 'reading',
+        title: useTranslationIn10m
+          ? (isVi ? 'Dịch tự nhiên: Say It Like You Mean It' : 'Say It Like You Mean It')
+          : (isVi ? 'Tổng hợp & Đánh giá nhanh' : 'Exit Synthesis & Check'),
+        description: useTranslationIn10m
+          ? (isVi ? 'Dịch khẩu ngữ Gen Z sang tiếng Anh đời thường tự nhiên.' : 'Translate authentic Gen Z Vietnamese into conversational English.')
+          : (isVi ? 'Vận dụng ngữ cảnh ngắn gọn.' : 'Quick transfer verification.'),
         estimated_minutes: 2,
         target_questions_count: 1,
         skill_target: selectedNewSkill.name,
-        activity_type: 'exit_synthesis',
+        activity_type: useTranslationIn10m ? 'conversational_translation' : 'exit_synthesis',
         pedagogical_focus: isProgressCheckDue ? 'progress_check' : 'production_application',
         is_progress_check: isProgressCheckDue
       });

@@ -90,8 +90,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [aiError, setAiError] = useState<any>(null);
   const [assistError, setAssistError] = useState<any>(null);
   const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
-  const [lastAssistAction, setLastAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | null>(null);
-  const [activeAssistAction, setActiveAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | null>(null);
+  const [lastAssistAction, setLastAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone' | null>(null);
+  const [activeAssistAction, setActiveAssistAction] = useState<'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone' | null>(null);
   const [activeWordPractice, setActiveWordPractice] = useState<{
     word: string;
     contextSentence: string;
@@ -112,6 +112,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [tutorAssistData, setTutorAssistData] = useState<TutorAssistantResponse | null>(null);
   const [isLoadingAssist, setIsLoadingAssist] = useState<boolean>(false);
   const [showHint, setShowHint] = useState<boolean>(false);
+  const [translationHintStep, setTranslationHintStep] = useState<number>(0);
 
   // Voice recording state for writing/speaking
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -238,6 +239,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const mapToUse = mapOverride || questionsBySection;
     if (mapToUse[sectionIdx] && mapToUse[sectionIdx][qIdx]) {
       setCurrentQuestion(mapToUse[sectionIdx][qIdx]);
+      setTranslationHintStep(0);
       setIsLoadingQuestion(false);
       return;
     }
@@ -248,6 +250,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     setUserAnswer('');
     setTutorAssistData(null);
     setShowHint(false);
+    setTranslationHintStep(0);
 
     const secPlan = plan.sections[sectionIdx] || plan.sections[0];
     try {
@@ -382,10 +385,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }
   };
 
-  const handleTutorAction = async (action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity') => {
+  const handleTutorAction = async (action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone') => {
     if (!currentQuestion || isLoadingAssist) return;
     setLastAssistAction(action);
-    if (action === 'hint' && currentQuestion.hint) {
+    if (action === 'hint' && currentQuestion.hint && currentQuestion.question_type !== 'vi_to_en_translation') {
       setShowHint(!showHint);
       return;
     }
@@ -393,7 +396,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
     setIsLoadingAssist(true);
     setAssistError(null);
     try {
-      const res = await requestTutorAssist(currentQuestion, action);
+      const hintIdx = currentQuestion.question_type === 'vi_to_en_translation' ? translationHintStep : undefined;
+      const res = await requestTutorAssist(currentQuestion, action, hintIdx);
       setTutorAssistData(res);
       if (action === 'hint') {
         setShowHint(true);
@@ -405,6 +409,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
       setIsLoadingAssist(false);
       setActiveAssistAction(null);
     }
+  };
+
+  const handleProgressiveHint = () => {
+    if (!currentQuestion) return;
+    const maxHints = currentQuestion.translation_hints?.length || 3;
+    const nextStep = Math.min(translationHintStep + 1, maxHints);
+    setTranslationHintStep(nextStep);
+    setShowHint(true);
   };
 
   const handleNextQuestionOrSection = async () => {
@@ -425,6 +437,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         setUserAnswer('');
         setTutorAssistData(null);
         setShowHint(false);
+        setTranslationHintStep(0);
       } else {
         loadQuestionForSection(currentSectionIndex, nextQIdx);
       }
@@ -441,6 +454,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         setUserAnswer('');
         setTutorAssistData(null);
         setShowHint(false);
+        setTranslationHintStep(0);
       } else {
         loadQuestionForSection(nextSecIdx, 0);
       }
@@ -1204,10 +1218,56 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Progressive Hints (Intent -> Grammar -> Phrasing) without pre-submission leakage */}
+                {!evaluation && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={handleProgressiveHint}
+                        className="text-xs font-semibold text-[#D48B16] hover:text-[#B25E00] flex items-center space-x-1.5 py-1.5 px-3 rounded-xl bg-[#FEF7E6] dark:bg-[#2C2417] border border-[#F5DC9A] dark:border-[#524128] transition cursor-pointer"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {translationHintStep === 0
+                            ? 'Get Progressive Clue (Step 1/3)'
+                            : translationHintStep === 1
+                            ? 'Next Clue: Grammar Rule (Step 2/3)'
+                            : translationHintStep === 2
+                            ? 'Next Clue: Phrasing Tip (Step 3/3)'
+                            : 'All Progressive Clues Revealed (3/3)'}
+                        </span>
+                      </button>
+                      {translationHintStep > 0 && (
+                        <span className="text-[11px] text-[#8A938C] font-medium">
+                          {translationHintStep === 1 && 'Step 1: Communicative Intent'}
+                          {translationHintStep === 2 && 'Step 2: Target Grammar Concept'}
+                          {translationHintStep >= 3 && 'Step 3: Phrasing & Slang Nuance'}
+                        </span>
+                      )}
+                    </div>
+
+                    {translationHintStep > 0 && currentQuestion.translation_hints && (
+                      <div className="space-y-2 bg-[#FEF7E6] dark:bg-[#2C2417] border border-[#F5DC9A] dark:border-[#524128] rounded-2xl p-4 text-xs text-[#2D312E] dark:text-[#F4F2EC]">
+                        {currentQuestion.translation_hints.slice(0, translationHintStep).map((h, i) => (
+                          <div key={i} className="flex items-start space-x-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#D48B16] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                              {i + 1}
+                            </span>
+                            <div className="leading-relaxed font-medium">
+                              {h}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Answer submission button (for manual submission questions like fill-in-blank / free writing) */}
+            {/* Answer submission button (for manual submission questions like fill-in-blank / free writing / translation) */}
             {!evaluation && !isAutoAssessQuestion(currentQuestion) && (
               <div className="pt-2 flex justify-end">
                 <AppButton
@@ -1218,13 +1278,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   variant="primary"
                   rightIcon={<ArrowRight />}
                 >
-                  Check Answer
+                  {currentQuestion.question_type === 'vi_to_en_translation' ? 'Submit Translation' : 'Check Answer'}
                 </AppButton>
               </div>
             )}
           </div>
 
-          {/* Tutor Controls: Hint, Simplify, Example, Ambiguous */}
+          {/* Tutor Controls: Hint, Simplify, Example, Ambiguous, Slang, Grammar, Tone */}
           <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[#2D312E] dark:text-[#F4F2EC]">
             <span className="text-[#5C645E] dark:text-[#A7ABA4] font-medium flex items-center space-x-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
@@ -1236,7 +1296,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 size="sm"
                 variant="outline"
                 disabled={isLoadingAssist}
-                onClick={() => handleTutorAction('hint')}
+                onClick={() => {
+                  if (currentQuestion.question_type === 'vi_to_en_translation') {
+                    handleProgressiveHint();
+                  } else {
+                    handleTutorAction('hint');
+                  }
+                }}
               >
                 {isLoadingAssist && activeAssistAction === 'hint' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D48B16] mr-1.5" />
@@ -1246,65 +1312,115 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <span>
                   {isLoadingAssist && activeAssistAction === 'hint'
                     ? 'Getting hint...'
+                    : currentQuestion.question_type === 'vi_to_en_translation'
+                    ? (translationHintStep === 0 ? 'I need a hint' : `Next clue (${translationHintStep}/${currentQuestion.translation_hints?.length || 3})`)
                     : showHint
                     ? 'Hide Hint'
                     : 'I need a hint'}
                 </span>
               </AppButton>
 
-              <AppButton
-                size="sm"
-                variant="outline"
-                disabled={isLoadingAssist}
-                onClick={() => handleTutorAction('simpler_explanation')}
-              >
-                {isLoadingAssist && activeAssistAction === 'simpler_explanation' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
-                )}
-                <span>
-                  {isLoadingAssist && activeAssistAction === 'simpler_explanation'
-                    ? 'Explaining simply...'
-                    : 'Explain it more simply'}
-                </span>
-              </AppButton>
+              {currentQuestion.question_type === 'vi_to_en_translation' ? (
+                <>
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('grammar_reminder')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'grammar_reminder' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    )}
+                    <span>Remind me of the grammar</span>
+                  </AppButton>
 
-              <AppButton
-                size="sm"
-                variant="outline"
-                disabled={isLoadingAssist}
-                onClick={() => handleTutorAction('another_example')}
-              >
-                {isLoadingAssist && activeAssistAction === 'another_example' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
-                ) : (
-                  <BookOpen className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
-                )}
-                <span>
-                  {isLoadingAssist && activeAssistAction === 'another_example'
-                    ? 'Generating example...'
-                    : 'Give me another example'}
-                </span>
-              </AppButton>
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('explain_slang')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'explain_slang' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E07A5F] mr-1.5" />
+                    ) : (
+                      <BookOpen className="w-3.5 h-3.5 text-[#E07A5F] mr-1.5" />
+                    )}
+                    <span>Explain the slang</span>
+                  </AppButton>
 
-              <AppButton
-                size="sm"
-                variant="outline"
-                disabled={isLoadingAssist}
-                onClick={() => handleTutorAction('clarify_ambiguity')}
-              >
-                {isLoadingAssist && activeAssistAction === 'clarify_ambiguity' ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#52796F] mr-1.5" />
-                ) : (
-                  <HelpCircle className="w-3.5 h-3.5 text-[#52796F] mr-1.5" />
-                )}
-                <span>
-                  {isLoadingAssist && activeAssistAction === 'clarify_ambiguity'
-                    ? 'Clarifying...'
-                    : 'This seems ambiguous'}
-                </span>
-              </AppButton>
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('understand_tone')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'understand_tone' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#52796F] mr-1.5" />
+                    ) : (
+                      <HelpCircle className="w-3.5 h-3.5 text-[#52796F] mr-1.5" />
+                    )}
+                    <span>Help me understand tone</span>
+                  </AppButton>
+                </>
+              ) : (
+                <>
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('simpler_explanation')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'simpler_explanation' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    )}
+                    <span>
+                      {isLoadingAssist && activeAssistAction === 'simpler_explanation'
+                        ? 'Explaining simply...'
+                        : 'Explain it more simply'}
+                    </span>
+                  </AppButton>
+
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('another_example')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'another_example' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    ) : (
+                      <BookOpen className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788] mr-1.5" />
+                    )}
+                    <span>
+                      {isLoadingAssist && activeAssistAction === 'another_example'
+                        ? 'Generating example...'
+                        : 'Give me another example'}
+                    </span>
+                  </AppButton>
+
+                  <AppButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoadingAssist}
+                    onClick={() => handleTutorAction('clarify_ambiguity')}
+                  >
+                    {isLoadingAssist && activeAssistAction === 'clarify_ambiguity' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#52796F] mr-1.5" />
+                    ) : (
+                      <HelpCircle className="w-3.5 h-3.5 text-[#52796F] mr-1.5" />
+                    )}
+                    <span>
+                      {isLoadingAssist && activeAssistAction === 'clarify_ambiguity'
+                        ? 'Clarifying...'
+                        : 'This seems ambiguous'}
+                    </span>
+                  </AppButton>
+                </>
+              )}
             </div>
 
             {/* In-Flight Loading Status Notification Banner */}
@@ -1316,6 +1432,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   {activeAssistAction === 'another_example' && 'AI Tutor is generating another realistic contextual example...'}
                   {activeAssistAction === 'clarify_ambiguity' && 'AI Tutor is analyzing this question to clarify any ambiguity...'}
                   {activeAssistAction === 'hint' && 'AI Tutor is preparing a helpful clue...'}
+                  {activeAssistAction === 'grammar_reminder' && 'AI Tutor is retrieving the target grammar concept...'}
+                  {activeAssistAction === 'explain_slang' && 'AI Tutor is explaining the authentic Gen Z slang nuance...'}
+                  {activeAssistAction === 'understand_tone' && 'AI Tutor is clarifying conversational tone and cadence...'}
                 </span>
               </div>
             )}
@@ -1409,8 +1528,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               </div>
 
-              {/* Complete Correct Sentence & Meaning Translation */}
-              {evaluation.full_correct_sentence && (
+              {/* Complete Correct Sentence & Meaning Translation (for standard questions) */}
+              {evaluation.full_correct_sentence && currentQuestion.question_type !== 'vi_to_en_translation' && (
                 <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788]">
@@ -1470,7 +1589,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Conversational Translation Detailed Feedback */}
+              {/* Say It Like You Mean It: Dedicated 6-Part Feedback */}
               {currentQuestion.question_type === 'vi_to_en_translation' && (
                 <div className="space-y-4 animate-fadeIn">
                    {/* Scores Grid */}
@@ -1485,6 +1604,33 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       </div>
                    </div>
 
+                   {/* 1. Your Translation */}
+                   <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
+                      <span className="text-[10px] uppercase text-[#5C645E] dark:text-[#A7ABA4] block mb-1 tracking-widest font-black">Your Translation</span>
+                      <p className="text-base text-[#2D312E] dark:text-[#F4F2EC] font-serif font-medium leading-relaxed">
+                        "{evaluation.user_answer || userAnswer}"
+                      </p>
+                   </div>
+
+                   {/* 2. Natural English */}
+                   <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 shadow-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <strong className="text-[10px] uppercase text-[#2D6A4F] dark:text-[#52B788] tracking-widest font-black">Natural English</strong>
+                        <button
+                          onClick={() => playEnglishSpeech((evaluation.full_correct_sentence || evaluation.corrected_text || evaluation.expected_answer).replace(/\*/g, ''))}
+                          className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#27302A] hover:bg-[#EBE4D7] text-[#2D312E] dark:text-[#F4F2EC] border border-[#C2DBC7] dark:border-[#354037] text-xs transition cursor-pointer"
+                          title="Listen to natural translation"
+                        >
+                          <Volume2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
+                          <span>Listen</span>
+                        </button>
+                      </div>
+                      <p className="text-base text-[#1B4332] dark:text-[#F4F2EC] font-serif font-bold leading-relaxed">
+                        "{evaluation.full_correct_sentence || evaluation.corrected_text || evaluation.expected_answer}"
+                      </p>
+                   </div>
+
+                   {/* 3. Meaning Preservation */}
                    {evaluation.meaning_feedback && (
                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
                         <strong className="text-[10px] uppercase text-[#52796F] dark:text-[#84A98C] block mb-1 tracking-widest font-black">Meaning Preservation</strong>
@@ -1492,13 +1638,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
                      </div>
                    )}
 
-                   {evaluation.tone_insight && (
+                   {/* 4. Another way to say it */}
+                   {evaluation.alternative_phrasing && (
                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
-                        <strong className="text-[10px] uppercase text-[#E07A5F] block mb-1 tracking-widest font-black">Tone Insight</strong>
-                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] italic font-medium leading-relaxed">{evaluation.tone_insight}</p>
+                        <strong className="text-[10px] uppercase text-[#8A938C] block mb-1 tracking-widest font-black">Another way to say it</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] font-bold">"{evaluation.alternative_phrasing}"</p>
                      </div>
                    )}
 
+                   {/* 5. Grammar Connection */}
                    {evaluation.grammar_connection && (
                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
                         <strong className="text-[10px] uppercase text-[#2D6A4F] dark:text-[#52B788] block mb-1 tracking-widest font-black">Grammar Connection</strong>
@@ -1506,17 +1654,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
                      </div>
                    )}
 
-                   {evaluation.alternative_phrasing && (
+                   {/* 6. Tone Insight */}
+                   {evaluation.tone_insight && (
                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
-                        <strong className="text-[10px] uppercase text-[#8A938C] block mb-1 tracking-widest font-black">Another way to say it</strong>
-                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] font-bold">"{evaluation.alternative_phrasing}"</p>
+                        <strong className="text-[10px] uppercase text-[#E07A5F] block mb-1 tracking-widest font-black">Tone Insight</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] italic font-medium leading-relaxed">{evaluation.tone_insight}</p>
                      </div>
                    )}
                 </div>
               )}
 
-              {/* Single Clear Explanation */}
-              {evaluation.explanation && (
+              {/* Single Clear Explanation (for non-translation questions) */}
+              {evaluation.explanation && currentQuestion.question_type !== 'vi_to_en_translation' && (
                 <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 space-y-1.5">
                   <span className="text-xs uppercase font-bold tracking-wider text-[#52796F] dark:text-[#84A98C] block mb-1">
                     Explanation
@@ -1531,8 +1680,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               )}
 
-              {/* Writing specific feedback */}
-              {evaluation.corrected_text && (
+              {/* Writing specific feedback (for free_writing questions) */}
+              {evaluation.corrected_text && currentQuestion.question_type !== 'vi_to_en_translation' && (
                 <div className="bg-[#EFF6F1] dark:bg-[#1E2B23] border border-[#C2DBC7] dark:border-[#2C4A38] rounded-2xl p-4 space-y-3">
                   <span className="text-xs uppercase font-bold tracking-wider text-[#2D6A4F] dark:text-[#52B788] block">
                     Natural Native Phrasing

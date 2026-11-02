@@ -2,7 +2,7 @@ import { Question, UserProfile, AnswerEvaluation, LessonPlan } from '../../src/t
 
 export function buildTutorAssistPrompt(
   question: Question,
-  action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity',
+  action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity' | 'grammar_reminder' | 'explain_slang' | 'understand_tone',
   profile: UserProfile
 ): string {
   return [
