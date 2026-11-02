@@ -47,10 +47,27 @@ export class DiagnosticService {
 
     if (response && Array.isArray(response.questions) && response.questions.length > 0) {
       const sanitizedList = response.questions.map((q, idx) => {
-        const sanitized = sanitizeAndReconcileQuestion(q);
+        let question = sanitizeAndReconcileQuestion(q);
+        
+        // Enforce writing policy on any writing questions in the batch
+        if (question.section === 'writing' || question.question_type === 'free_writing') {
+          const writingConfig = getWritingTaskConfig(profile, 20, 'diagnostic');
+          question.question_type = 'free_writing';
+          question.writing_config = writingConfig;
+          
+          // Anti-leakage
+          question.context_sentence = undefined;
+          if (question.prompt) {
+            question.prompt = question.prompt
+              .replace(/_{2,}/g, '') // remove blanks
+              .replace(/\(.*\)\.\.\./g, '...') // remove verb prompts
+              .trim();
+          }
+        }
+
         return {
-          ...sanitized,
-          id: sanitized.id || `diag-batch-${Date.now()}-${idx + 1}`
+          ...question,
+          id: question.id || `diag-batch-${Date.now()}-${idx + 1}`
         };
       });
 
@@ -116,13 +133,28 @@ export class DiagnosticService {
 
     const generated = await callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'diagnostic_question' });
     if (generated && generated.prompt && !answeredIds.has(generated.id) && !answeredPrompts.has(generated.prompt.trim().toLowerCase())) {
-      const sanitized = sanitizeAndReconcileQuestion(generated);
+      let sanitized = sanitizeAndReconcileQuestion(generated);
+      
+      // CRITICAL: Force writing section question type and configuration
+      if (targetSection === 'writing') {
+        sanitized.question_type = 'free_writing';
+        sanitized.writing_config = writingConfig || generated.writing_config;
+        
+        // Anti-leakage
+        sanitized.context_sentence = undefined;
+        if (sanitized.prompt) {
+          sanitized.prompt = sanitized.prompt
+            .replace(/_{2,}/g, '') // remove blanks
+            .replace(/\(.*\)\.\.\./g, '...') // remove verb prompts
+            .trim();
+        }
+      }
+
       return { 
         ...sanitized, 
         id: `diag-gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
         section: targetSection, 
-        difficulty: sanitized.difficulty || targetLevel,
-        writing_config: generated.writing_config || writingConfig
+        difficulty: sanitized.difficulty || targetLevel
       };
     }
 

@@ -11,7 +11,7 @@ import {
   Sliders,
   Cat
 } from 'lucide-react';
-import { UserProfile, LessonPlan, DailySummary, VocabularyItem, LearnerSkillState } from '../types/learning.ts';
+import { UserProfile, LessonPlan, DailySummary, VocabularyItem, LearnerSkillState, DiagnosticSession } from '../types/learning.ts';
 import { CatCustomizationConfig, CAT_THEMES, CatMood } from '../types/catTheme.ts';
 import { CatChibiAvatar } from './CatChibiAvatar.tsx';
 import { playPatHeadSound } from '../services/catSoundService.ts';
@@ -35,6 +35,8 @@ interface HomeScreenProps {
   onOpenSettings: () => void;
   onPracticeWord?: (word: string) => void;
   isBuildingSession: boolean;
+  activeDiagnosticSession?: DiagnosticSession | null;
+  onResumeDiagnostic?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -53,7 +55,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenCatalog,
   onOpenSettings,
   onPracticeWord,
-  isBuildingSession
+  isBuildingSession,
+  activeDiagnosticSession,
+  onResumeDiagnostic
 }) => {
   const [selectedPace, setSelectedPace] = useState<10 | 20 | 30>(
     (profile.daily_minutes === 10 || profile.daily_minutes === 30) ? profile.daily_minutes : 20
@@ -217,6 +221,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
       </InfoCard>
+      
+      {/* Resume Diagnostic Banner (Sticky or prominent if in progress/paused) */}
+      {activeDiagnosticSession && (activeDiagnosticSession.status === 'in_progress' || activeDiagnosticSession.status === 'paused') && (
+        <div className="bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] dark:from-[#386641] dark:to-[#1B4332] rounded-3xl p-4 sm:p-5 shadow-lg border border-[#40916C] animate-fadeIn flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+              📊
+            </div>
+            <div>
+              <h3 className="text-sm font-bold">Diagnostic Assessment in Progress</h3>
+              <p className="text-xs text-white/80 leading-relaxed max-w-md">
+                You have an unfinished assessment. Complete it to unlock your personalized learning roadmap and CEFR estimation.
+              </p>
+            </div>
+          </div>
+          <AppButton
+            variant="primary"
+            size="md"
+            onClick={onResumeDiagnostic}
+            className="bg-white text-[#1B4332] hover:bg-[#FAF7F2] border-none whitespace-nowrap"
+            rightIcon={<ArrowRight className="w-4 h-4" />}
+          >
+            Resume Assessment
+          </AppButton>
+        </div>
+      )}
 
       {/* 2. Today's Mission & Primary Action Card */}
       <InfoCard className="p-6 sm:p-8 shadow-sm space-y-6">

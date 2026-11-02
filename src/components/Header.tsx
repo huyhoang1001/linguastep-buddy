@@ -18,7 +18,7 @@ import { UserAccount, BudgetLimits } from '../types/auth.ts';
 import { StatusBadge } from './ui/StatusBadge.tsx';
 import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 
-export type NavigationDestination = 'home' | 'learn' | 'words' | 'progress';
+export type NavigationDestination = 'home' | 'learn' | 'words' | 'progress' | 'diagnostic';
 
 interface HeaderProps {
   currentDestination: NavigationDestination;

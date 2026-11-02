@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to refactor the Diagnostic Assessment from a modal into a dedicated full-page exam mode with a compact sticky header, question-first layout, and seamless save/resume functionality.",
+  "updatedAt":  "2026-11-02T05:31:38.916660343Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

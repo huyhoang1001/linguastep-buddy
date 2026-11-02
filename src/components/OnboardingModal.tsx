@@ -8,22 +8,32 @@ import { StudyPlanModal } from './StudyPlanModal.tsx';
 interface OnboardingModalProps {
   currentProfile: UserProfile;
   onComplete: () => void;
+  onStartDiagnostic?: () => void;
   initialPhase?: 'discovery' | 'diagnostic' | 'report' | 'plan';
+  initialReport?: DiagnosticReport | null;
+  initialPlan?: PersonalizedStudyPlan | null;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   currentProfile,
   onComplete,
-  initialPhase = 'discovery'
+  onStartDiagnostic,
+  initialPhase = 'discovery',
+  initialReport = null,
+  initialPlan = null
 }) => {
   const [phase, setPhase] = useState<'discovery' | 'diagnostic' | 'report' | 'plan'>(initialPhase);
   const [profile, setProfile] = useState<UserProfile>(currentProfile);
-  const [report, setReport] = useState<DiagnosticReport | null>(null);
-  const [studyPlan, setStudyPlan] = useState<PersonalizedStudyPlan | null>(null);
+  const [report, setReport] = useState<DiagnosticReport | null>(initialReport);
+  const [studyPlan, setStudyPlan] = useState<PersonalizedStudyPlan | null>(initialPlan);
 
   const handleDiscoveryConfirmed = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
-    setPhase('diagnostic');
+    if (onStartDiagnostic) {
+      onStartDiagnostic();
+    } else {
+      setPhase('diagnostic');
+    }
   };
 
   const handleAssessmentCompleted = (completedReport: DiagnosticReport, generatedPlan: PersonalizedStudyPlan) => {

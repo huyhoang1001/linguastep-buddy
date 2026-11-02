@@ -26,12 +26,12 @@ export const AppButton: React.FC<AppButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-xl select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2D6A4F] dark:focus-visible:outline-[#52B788] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97] whitespace-nowrap overflow-hidden';
+    'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-xl select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2D6A4F] dark:focus-visible:outline-[#52B788] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97] whitespace-normal';
 
   const sizeStyles = {
-    sm: 'text-xs px-3 h-8 gap-1.5',
-    md: 'text-sm px-4 h-10 gap-2',
-    lg: 'text-base px-6 h-11 gap-2.5'
+    sm: 'text-xs px-3 py-1.5 min-h-8 gap-1.5',
+    md: 'text-sm px-4 py-2 min-h-10 gap-2',
+    lg: 'text-base px-6 py-2.5 min-h-11 gap-2.5'
   };
 
   const variantStyles = {
@@ -67,7 +67,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         leftIcon && <span className={`${iconSizeClass} flex items-center justify-center shrink-0`}>{leftIcon}</span>
       )}
       {variant !== 'icon' && children && (
-        <span className="shrink-0">{children}</span>
+        <span className="flex-1 text-center">{children}</span>
       )}
       {!isLoading && rightIcon && (
         <span className={`${iconSizeClass} flex items-center justify-center shrink-0`}>{rightIcon}</span>

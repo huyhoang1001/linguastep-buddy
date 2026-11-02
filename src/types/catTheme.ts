@@ -42,6 +42,11 @@ export interface CatAccessoryInfo {
   description: string;
 }
 
+export interface CatCompanionPlacement {
+  edge: 'left' | 'right';
+  verticalRatio: number; // 0 to 1
+}
+
 export interface CatCustomizationConfig {
   themeId: CatThemeId;
   companionId: CatCompanionId;
@@ -51,6 +56,7 @@ export interface CatCustomizationConfig {
   floatingPaws: boolean;
   meowOnCorrect: boolean;
   showCompanionWidget: boolean;
+  placement?: CatCompanionPlacement;
 }
 
 export const CAT_THEMES: Record<CatThemeId, CatThemePalette> = {

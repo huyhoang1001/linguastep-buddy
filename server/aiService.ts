@@ -26,7 +26,7 @@ import { sanitizeAndReconcileQuestion } from './questionUtils.js';
 // Import modular prompt builders
 import { buildDiscoverySystemPrompt } from './prompts/discoveryPrompts.js';
 import { buildLessonPlanSystemPrompt, buildQuestionSystemPrompt } from './prompts/lessonPrompts.js';
-import { buildContrastExplanationPrompt, buildWritingRubricPrompt } from './prompts/evaluationPrompts.js';
+import { buildContrastExplanationPrompt, buildWritingRubricPrompt, buildTranslationEvaluationPrompt } from './prompts/evaluationPrompts.js';
 import { buildTutorAssistPrompt, buildDeepDiveSystemPrompt, buildLessonSummarySystemPrompt, buildWordPracticeSystemPrompt, buildCompanionChatSystemPrompt } from './prompts/tutorPrompts.js';
 import { createFallbackWritingRubric } from './evaluators/diagnosticHelpers.js';
 
@@ -471,7 +471,9 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const topic = contextTopic || (Math.random() * 100 > profile.general_vs_work_ratio ? 'workplace_tech' : 'general');
     
     let writingConfig;
-    if (section === 'writing' || activityType === 'writing_production' || activityType === 'exit_synthesis') {
+    const isWritingSection = section === 'writing' || activityType === 'writing_production' || activityType === 'exit_synthesis';
+    
+    if (isWritingSection) {
       const purpose = activityType === 'exit_synthesis' ? 'synthesis' : 'independent-writing';
       writingConfig = getWritingTaskConfig(profile, sessionDuration, purpose);
     }
@@ -482,11 +484,28 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const result = await this.callGeminiJson<Question>(prompt, systemPrompt, { userId: profile.id, operation: 'lesson_question' });
     if (result && result.prompt) {
       const sanitized = sanitizeAndReconcileQuestion(result);
+      
+      // CRITICAL: Force writing section question type and configuration
+      if (isWritingSection) {
+        sanitized.question_type = 'free_writing';
+        sanitized.writing_config = writingConfig || result.writing_config;
+        
+        // Anti-leakage: writing tasks should NOT have a context_sentence that gets appended to prompt
+        sanitized.context_sentence = undefined;
+        
+        // Remove any common template markers that might have leaked into the prompt
+        if (sanitized.prompt) {
+          sanitized.prompt = sanitized.prompt
+            .replace(/_{2,}/g, '') // remove blanks
+            .replace(/\(.*\)\.\.\./g, '...') // remove verb prompts like (be/already complete)
+            .trim();
+        }
+      }
+
       return { 
         ...sanitized, 
         id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, 
-        section,
-        writing_config: result.writing_config || writingConfig // AI might override or use our suggested
+        section
       };
     }
 
@@ -589,6 +608,55 @@ export class GeminiLearningProvider implements LearningModelProvider {
       };
     }
 
+    if (question.question_type === 'vi_to_en_translation') {
+      let aiResult: any = null;
+      try {
+        const systemPrompt = buildTranslationEvaluationPrompt(question, trimmed, profile);
+        const prompt = `Evaluate conversational translation for ${question.vietnamese_text}.`;
+        aiResult = await this.callGeminiJson<any>(prompt, systemPrompt, { userId: profile.id, operation: 'translation_evaluation' });
+      } catch (err: any) {
+        console.warn('[AI] translation evaluation fallback:', err?.message);
+      }
+
+      if (aiResult) {
+        return {
+          evaluation: {
+            verdict: aiResult.verdict || 'correct',
+            user_answer: userAnswer,
+            expected_answer: question.model_answer || 'Natural English translation',
+            full_correct_sentence: aiResult.corrected_text || question.model_answer || '',
+            decisive_clue: aiResult.explanation || 'Communicative translation captured.',
+            explanation: aiResult.explanation || 'Natural phrasing! Check the feedback below.',
+            meaning_feedback: aiResult.meaning_feedback,
+            tone_insight: aiResult.tone_insight,
+            grammar_connection: aiResult.grammar_connection,
+            alternative_phrasing: aiResult.alternative_phrasing,
+            naturalness_score: aiResult.naturalness_score,
+            tone_score: aiResult.tone_score,
+            corrected_text: aiResult.corrected_text || question.model_answer,
+            error_tags: aiResult.error_tags || [],
+            needs_retry: aiResult.verdict === 'incorrect',
+            next_action: aiResult.verdict === 'incorrect' ? 'retry' : 'continue'
+          }
+        };
+      }
+
+      // Very basic fallback if AI fails
+      return {
+        evaluation: {
+          verdict: 'correct',
+          user_answer: userAnswer,
+          expected_answer: question.model_answer || '',
+          full_correct_sentence: question.model_answer || '',
+          decisive_clue: 'Translation received.',
+          explanation: 'Good job communicating the intent.',
+          needs_retry: false,
+          next_action: 'continue',
+          error_tags: []
+        }
+      };
+    }
+
     // Handle fill_in_blank, open text, sentence completion, etc.
     const expected = (question.expected_answer_text || (question.options?.find(o => question.expected_answer_ids?.includes(o.id))?.text) || '').trim();
     const normUser = normalizeAnswerText(trimmed);
@@ -640,7 +708,13 @@ export class GeminiLearningProvider implements LearningModelProvider {
   }
 
   public async tutorAssist(question: Question, action: 'hint' | 'simpler_explanation' | 'another_example' | 'clarify_ambiguity', profile: UserProfile): Promise<TutorAssistantResponse> {
-    if (action === 'hint') return { type: 'hint', content: question.hint || 'Focus on time markers and key verb forms.' };
+    if (action === 'hint') {
+      if (question.question_type === 'vi_to_en_translation' && question.translation_hints && question.translation_hints.length > 0) {
+        // Return progressive hint based on simple logic or random for now, or just joined
+        return { type: 'hint', content: question.translation_hints.join('\n\n') };
+      }
+      return { type: 'hint', content: question.hint || 'Focus on time markers and key verb forms.' };
+    }
 
     const systemPrompt = buildTutorAssistPrompt(question, action, profile);
     const prompt = `Help the student with action: ${action}`;

@@ -394,7 +394,7 @@ export class CurriculumScheduler {
         estimated_minutes: 4,
         target_questions_count: 2,
         skill_target: selectedNewSkill.name,
-        activity_type: isProgressCheckDue ? 'exit_synthesis' : 'writing_production',
+        activity_type: isProgressCheckDue ? 'exit_synthesis' : 'conversational_translation',
         pedagogical_focus: isProgressCheckDue ? 'progress_check' : 'production_application',
         is_progress_check: isProgressCheckDue
       });
@@ -467,7 +467,7 @@ export class CurriculumScheduler {
         estimated_minutes: 6,
         target_questions_count: 3,
         skill_target: selectedNewSkill.name,
-        activity_type: isProgressCheckDue ? 'exit_synthesis' : 'writing_production',
+        activity_type: isProgressCheckDue ? 'exit_synthesis' : 'conversational_translation',
         pedagogical_focus: isProgressCheckDue ? 'progress_check' : 'production_application',
         is_progress_check: isProgressCheckDue
       });

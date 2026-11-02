@@ -1101,8 +1101,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     spellCheck={false}
                     placeholder={
                       currentQuestion?.writing_config?.min_words 
-                        ? `Write ${currentQuestion.writing_config.min_words} to ${currentQuestion.writing_config.max_words} words in English...`
-                        : `Write ${currentQuestion?.writing_config?.min_sentences || 2} to ${currentQuestion?.writing_config?.max_sentences || 3} sentences in English...`
+                        ? `Write at least ${currentQuestion.writing_config.min_words} words in English...`
+                        : `Write at least ${currentQuestion?.writing_config?.min_sentences || 1} ${
+                            (currentQuestion?.writing_config?.min_sentences || 1) === 1 ? 'sentence' : 'sentences'
+                          } in English...`
                     }
                     value={userAnswer}
                     onChange={e => setUserAnswer(e.target.value)}
@@ -1126,15 +1128,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                 <div className="flex items-center justify-between text-xs text-[#5C645E] dark:text-[#A7ABA4]">
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-0.5 rounded-md font-bold ${
+                    <span className={`px-2.5 py-1 rounded-xl font-bold transition-colors ${
                       currentQuestion?.writing_config?.min_words
-                        ? (userAnswer.trim().split(/\s+/).filter(Boolean).length >= currentQuestion.writing_config.min_words ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788]' : 'bg-[#FAF7F2] dark:bg-[#242A25]')
-                        : (countSentences(userAnswer) >= (currentQuestion?.writing_config?.min_sentences || 1) ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788]' : 'bg-[#FAF7F2] dark:bg-[#242A25]')
+                        ? (userAnswer.trim().split(/\s+/).filter(Boolean).length >= currentQuestion.writing_config.min_words ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788] border border-[#C2DBC7] dark:border-[#2C4A38]' : 'bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33]')
+                        : (countSentences(userAnswer) >= (currentQuestion?.writing_config?.min_sentences || 1) ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788] border border-[#C2DBC7] dark:border-[#2C4A38]' : 'bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33]')
                     }`}>
                       {currentQuestion?.writing_config?.min_words ? (
-                        <>Words: {userAnswer.trim().split(/\s+/).filter(Boolean).length} (target: {currentQuestion.writing_config.min_words}{currentQuestion.writing_config.max_words ? `-${currentQuestion.writing_config.max_words}` : '+'})</>
+                        <>Words: <span className="font-mono">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</span> <span className="opacity-50 font-normal">/ target: {currentQuestion.writing_config.min_words}{currentQuestion.writing_config.max_words ? `-${currentQuestion.writing_config.max_words}` : '+'}</span></>
                       ) : (
-                        <>Sentences: {countSentences(userAnswer)} (target: {currentQuestion?.writing_config?.min_sentences || 1}{currentQuestion?.writing_config?.max_sentences ? `-${currentQuestion.writing_config.max_sentences}` : '+'})</>
+                        <>Sentences: <span className="font-mono">{countSentences(userAnswer)}</span> <span className="opacity-50 font-normal">/ target: {currentQuestion?.writing_config?.min_sentences || 1}{currentQuestion?.writing_config?.max_sentences ? `-${currentQuestion.writing_config.max_sentences}` : '+'}</span></>
                       )}
                     </span>
                   </div>
@@ -1142,6 +1144,64 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     <span className="text-[11px] text-[#8A938C]">
                       Mic uses browser voice dictation
                     </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Say It Like You Mean It: VI to EN Conversational Translation */}
+            {currentQuestion.question_type === 'vi_to_en_translation' && (
+              <div className="space-y-4">
+                <div className="bg-[#FAF7F2] dark:bg-[#252C27] border border-[#EBE4D7] dark:border-[#354037] rounded-2xl p-5 md:p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#E07A5F] bg-[#FDF0ED] dark:bg-[#342421] px-2 py-0.5 rounded-md border border-[#F5D5CC] dark:border-[#4E342D] flex items-center space-x-1">
+                      <span>🐾</span>
+                      <span>Say It Like You Mean It</span>
+                    </span>
+                    <div className="flex items-center space-x-2">
+                       <span className="text-[10px] font-bold text-[#8A938C] uppercase bg-white dark:bg-[#1E231F] px-1.5 py-0.5 rounded border border-[#EBE4D7] dark:border-[#2C332E]">Tone: {currentQuestion.translation_tone || 'casual'}</span>
+                       {currentQuestion.relationship && (
+                         <span className="text-[10px] font-bold text-[#52796F] uppercase bg-white dark:bg-[#1E231F] px-1.5 py-0.5 rounded border border-[#EBE4D7] dark:border-[#2C332E]">{currentQuestion.relationship.replace('_', ' ')}</span>
+                       )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xl md:text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC] leading-tight">
+                      "{currentQuestion.vietnamese_text}"
+                    </div>
+                    {currentQuestion.translation_scenario && (
+                      <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] font-medium italic">
+                        Scenario: {currentQuestion.translation_scenario}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    rows={3}
+                    disabled={Boolean(evaluation)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    placeholder="Translate into natural conversational English..."
+                    value={userAnswer}
+                    onChange={e => setUserAnswer(e.target.value)}
+                    className="w-full bg-[#FAF7F2] dark:bg-[#242A25] border border-[#EBE4D7] dark:border-[#313B33] rounded-2xl p-4 text-[#2D312E] dark:text-[#F4F2EC] placeholder-[#8A938C] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] text-sm md:text-base leading-relaxed font-medium"
+                  />
+                  {speechSupported && !evaluation && (
+                    <button
+                      onClick={handleToggleVoiceInput}
+                      className={`absolute right-3 bottom-3 p-2 rounded-xl transition ${
+                        isRecording
+                          ? 'bg-[#E07A5F] text-white animate-pulse'
+                          : 'bg-[#FAF7F2] dark:bg-[#2C352E] hover:bg-[#EBE4D7] text-[#5C645E] dark:text-[#A7ABA4]'
+                      }`}
+                    >
+                      {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </button>
                   )}
                 </div>
               </div>
@@ -1407,6 +1467,51 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       onWordClick={(w, s) => setActiveWordPractice({ word: w, contextSentence: s })}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Conversational Translation Detailed Feedback */}
+              {currentQuestion.question_type === 'vi_to_en_translation' && (
+                <div className="space-y-4 animate-fadeIn">
+                   {/* Scores Grid */}
+                   <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-3.5 text-center shadow-xs">
+                         <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] uppercase font-bold block mb-1 tracking-wider">Naturalness</span>
+                         <div className="text-xl font-mono font-black text-[#2D6A4F] dark:text-[#52B788]">{evaluation.naturalness_score || 80}/100</div>
+                      </div>
+                      <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-3.5 text-center shadow-xs">
+                         <span className="text-[10px] text-[#5C645E] dark:text-[#A7ABA4] uppercase font-bold block mb-1 tracking-wider">Tone Match</span>
+                         <div className="text-xl font-mono font-black text-[#E07A5F]">{evaluation.tone_score || 85}/100</div>
+                      </div>
+                   </div>
+
+                   {evaluation.meaning_feedback && (
+                     <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
+                        <strong className="text-[10px] uppercase text-[#52796F] dark:text-[#84A98C] block mb-1 tracking-widest font-black">Meaning Preservation</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] font-medium leading-relaxed">{evaluation.meaning_feedback}</p>
+                     </div>
+                   )}
+
+                   {evaluation.tone_insight && (
+                     <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
+                        <strong className="text-[10px] uppercase text-[#E07A5F] block mb-1 tracking-widest font-black">Tone Insight</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] italic font-medium leading-relaxed">{evaluation.tone_insight}</p>
+                     </div>
+                   )}
+
+                   {evaluation.grammar_connection && (
+                     <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
+                        <strong className="text-[10px] uppercase text-[#2D6A4F] dark:text-[#52B788] block mb-1 tracking-widest font-black">Grammar Connection</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] font-medium leading-relaxed">{evaluation.grammar_connection}</p>
+                     </div>
+                   )}
+
+                   {evaluation.alternative_phrasing && (
+                     <div className="bg-white dark:bg-[#202722] border border-[#EBE4D7] dark:border-[#2E3730] rounded-2xl p-4 shadow-xs">
+                        <strong className="text-[10px] uppercase text-[#8A938C] block mb-1 tracking-widest font-black">Another way to say it</strong>
+                        <p className="text-sm text-[#2D312E] dark:text-[#F4F2EC] font-bold">"{evaluation.alternative_phrasing}"</p>
+                     </div>
+                   )}
                 </div>
               )}
 

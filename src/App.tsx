@@ -8,7 +8,10 @@ import {
   AnswerEvaluation,
   Attempt,
   LearnerSkillState,
-  VocabularyItem
+  VocabularyItem,
+  DiagnosticSession,
+  DiagnosticReport,
+  PersonalizedStudyPlan
 } from './types/learning.ts';
 import { UserAccount, BudgetLimits } from './types/auth.ts';
 import { Header, NavigationDestination } from './components/Header.tsx';
@@ -17,6 +20,7 @@ import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { LessonView } from './components/LessonView.tsx';
 import { WordsView } from './components/WordsView.tsx';
 import { ProgressView } from './components/ProgressView.tsx';
+import { AdaptiveDiagnosticView } from './components/AdaptiveDiagnosticView.tsx';
 import { LessonSummaryModal } from './components/LessonSummaryModal.tsx';
 import { MemoryDrawer } from './components/MemoryDrawer.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
@@ -60,9 +64,18 @@ export default function App() {
   const [recentAttempts, setRecentAttempts] = useState<Attempt[]>([]);
   const [skills, setSkills] = useState<LearnerSkillState[]>([]);
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+  const [activeDiagnosticSession, setActiveDiagnosticSession] = useState<DiagnosticSession | null>(null);
 
-  // Navigation state: 'home' | 'learn' | 'words' | 'progress'
+  // Navigation state: 'home' | 'learn' | 'words' | 'progress' | 'diagnostic'
   const [navigationDestination, setNavigationDestination] = useState<NavigationDestination>('home');
+
+  useEffect(() => {
+    if (navigationDestination === 'home') {
+      localStore.getDiagnosticSession().then(diag => {
+        setActiveDiagnosticSession(diag);
+      });
+    }
+  }, [navigationDestination]);
 
   // Global Cmd+K / Ctrl+K shortcut is now handled in Header.tsx to focus inline search
 
@@ -121,6 +134,8 @@ export default function App() {
   const [showRoadmapModal, setShowRoadmapModal] = useState<boolean>(false);
   const [showCatalogModal, setShowCatalogModal] = useState<boolean>(false);
   const [activeDictionaryWord, setActiveDictionaryWord] = useState<string | null>(null);
+  const [onboardingReport, setOnboardingReport] = useState<DiagnosticReport | null>(null);
+  const [onboardingPlan, setOnboardingPlan] = useState<PersonalizedStudyPlan | null>(null);
 
   // Cat Chibi Theme & Customization State
   const [catConfig, setCatConfig] = useState<CatCustomizationConfig>(() => catCustomizationStore.getConfig());
@@ -197,6 +212,9 @@ export default function App() {
 
       const computedMilestones = calculateMilestones(mem);
       setMilestonesData(computedMilestones);
+
+      const diag = await localStore.getDiagnosticSession();
+      setActiveDiagnosticSession(diag);
 
       if (!userProfile.onboarding_completed) {
         const disc = await localStore.getDiscoveryState();
@@ -417,21 +435,23 @@ export default function App() {
 
       {/* App Header with Milestone Progress Badge, Budget & Auth */}
       {/* App Header with MeoMeo Minimal Navigation, Overdue Words Count & Profile */}
-      <Header
-        currentDestination={navigationDestination}
-        onNavigate={(dest) => setNavigationDestination(dest)}
-        profile={profile}
-        overdueWordsCount={vocabulary.filter(v => v.next_review_at && new Date(v.next_review_at).getTime() <= Date.now()).length}
-        currentUser={currentUser}
-        budgetLimits={budgetLimits}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
-        onOpenSettings={() => setShowSettingsModal(true)}
-        onOpenCatStudio={() => setShowCatCustomizer(true)}
-        onOpenAuth={() => setShowAuthModal(true)}
-        onLogout={handleLogout}
-        onPracticeWord={(word) => setActiveDictionaryWord(word)}
-      />
+      {navigationDestination !== 'diagnostic' && (
+        <Header
+          currentDestination={navigationDestination}
+          onNavigate={(dest) => setNavigationDestination(dest)}
+          profile={profile}
+          overdueWordsCount={vocabulary.filter(v => v.next_review_at && new Date(v.next_review_at).getTime() <= Date.now()).length}
+          currentUser={currentUser}
+          budgetLimits={budgetLimits}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onOpenCatStudio={() => setShowCatCustomizer(true)}
+          onOpenAuth={() => setShowAuthModal(true)}
+          onLogout={handleLogout}
+          onPracticeWord={(word) => setActiveDictionaryWord(word)}
+        />
+      )}
 
       {/* Main Content Area with 4 Primary Destinations */}
       <main className="flex-1 pb-20 md:pb-8">
@@ -512,6 +532,18 @@ export default function App() {
               handleOpenBuildCatalog();
             }}
           />
+        ) : navigationDestination === 'diagnostic' ? (
+          <AdaptiveDiagnosticView
+            profile={profile}
+            onAssessmentCompleted={(report, plan) => {
+              setOnboardingReport(report);
+              setOnboardingPlan(plan);
+              setNavigationDestination('home');
+              setOnboardingPhase('report');
+              setShowOnboarding(true);
+            }}
+            onPaused={() => setNavigationDestination('home')}
+          />
         ) : (
           <HomeScreen
             profile={profile}
@@ -533,6 +565,8 @@ export default function App() {
             onOpenSettings={() => setShowSettingsModal(true)}
             onPracticeWord={(word) => setActiveDictionaryWord(word)}
             isBuildingSession={isBuildingSession}
+            activeDiagnosticSession={activeDiagnosticSession}
+            onResumeDiagnostic={() => setNavigationDestination('diagnostic')}
           />
         )}
       </main>
@@ -567,6 +601,12 @@ export default function App() {
         <OnboardingModal
           currentProfile={profile}
           initialPhase={onboardingPhase}
+          initialReport={onboardingReport}
+          initialPlan={onboardingPlan}
+          onStartDiagnostic={() => {
+            setShowOnboarding(false);
+            setNavigationDestination('diagnostic');
+          }}
           onComplete={handleOnboardingComplete}
         />
       )}

@@ -108,7 +108,7 @@ Output strictly JSON:
   "sections": [
     {
       "section": "grammar" | "vocabulary" | "reading" | "writing",
-      "activity_type": "warmup_review" | "concept_practice" | "vocab_acquisition" | "reading_analysis" | "writing_production" | "exit_synthesis",
+      "activity_type": "warmup_review" | "concept_practice" | "vocab_acquisition" | "reading_analysis" | "writing_production" | "exit_synthesis" | "conversational_translation",
       "title": string,
       "description": string,
       "estimated_minutes": number,
@@ -178,6 +178,24 @@ Core pedagogical constraints:
     - Complexity: ${writingConfig.complexity}
     - Target length: ${writingConfig.min_words ? `${writingConfig.min_words}-${writingConfig.max_words} words` : `${writingConfig.min_sentences}-${writingConfig.max_sentences} sentences`}
     - The instructions must explicitly state these length requirements to the learner.` : ''}
+- If activity is "conversational_translation" or question_type is "vi_to_en_translation":
+  * OBJECTIVE: Learner translates authentic, modern Vietnamese Gen Z expressions into natural conversational English.
+  * THEME: "Say It Like You Mean It".
+  * AUTHENTICITY: Use natural, funny, sarcastic, or slightly rough/cheeky Vietnamese (e.g., "Ủa alo, giờ mới rep hả?", "Tui tưởng ông bùng kèo luôn rồi").
+  * PEDAGOGICAL GROUNDING: GROUND THE SOURCE SENTENCE IN THE LEARNER'S KNOWN OR CURRENTLY PRACTICING GRAMMAR/VOCAB.
+    - Example: If target is "Past Simple", use "Hôm qua tui ngủ quên nên trễ học."
+    - Example: If target is "Third Conditional", use "Biết vậy hồi đó tui đã không nhận cái job này."
+  * NO DIRECT CLUES: Do NOT provide the English translation in the prompt or hint. The learner must produce it independently.
+  * OUTPUT FIELDS:
+    - Set "question_type" to "vi_to_en_translation".
+    - "vietnamese_text": The authentic Vietnamese source sentence.
+    - "translation_scenario": Short context (who is speaking to whom, e.g., "Teasing a close friend who replied late to a chat").
+    - "translation_tone": "casual", "playful", "sarcastic", "annoyed", "rough", "cheeky".
+    - "relationship": "close_friends", "coworkers", "partner", "online_chat", "other".
+    - "translation_hints": Progressive hints (1. Communicative intent, 2. Grammar concept reminder, 3. Small vocab clue).
+    - "evaluation_criteria": List what specifically to look for (e.g., "Correct use of 'thought', sarcastic tone preservation").
+    - "model_answer": A high-quality, natural English translation (hidden from user).
+    - "explanation_rule": Explain why this phrasing works and connect to the target grammar.
 
 JSON Output Schema:
 {
@@ -185,7 +203,7 @@ JSON Output Schema:
   "section": "${section}",
   "skill_id": string,
   "skill_name": string,
-  "question_type": "multiple_choice" | "fill_in_blank" | "reading_comprehension" | "free_writing",
+  "question_type": "multiple_choice" | "fill_in_blank" | "reading_comprehension" | "free_writing" | "vi_to_en_translation",
   "difficulty": "${profile.current_level}",
   "context_topic": "${topic}",
   "vocab_exercise_type": "meaning_from_context" | "contextual_cloze" | "usage_discrimination" | "collocations" | "meaning_distinction" | "sentence_application" | "retrieval_practice",
@@ -215,7 +233,13 @@ JSON Output Schema:
   "accepted_alternatives": [string],
   "hint": string,
   "explanation_rule": string,
-  "sentence_translation": string
+  "sentence_translation": string,
+  "vietnamese_text": string,
+  "translation_scenario": string,
+  "translation_tone": string,
+  "relationship": string,
+  "translation_hints": [string],
+  "evaluation_criteria": [string]
 }`;
 }
 

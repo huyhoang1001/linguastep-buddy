@@ -267,12 +267,12 @@ Quality & Formatting Rules:
       "question_type": "free_writing",
       "difficulty": "B2",
       "context_topic": "${topic}",
-      "prompt": "Task: Write a brief email to a colleague explaining that you have finished the code review for the new feature and suggest a quick meeting to discuss the feedback.\n\nInstructions: Write 3-5 sentences. Use professional register.",
-      "writing_config": { "task_type": "email", "complexity": "independent", "min_sentences": 3, "max_sentences": 5 },
-      "model_answer": "Hi team, I have completed the code review for the latest feature. I've left several comments regarding optimization. Could we schedule a 10-minute sync tomorrow morning to discuss them?",
-      "hint": "Start with a professional greeting and state your progress clearly.",
-      "explanation_rule": "Professional emails should be concise and action-oriented.",
-      "sentence_translation": "Nhiệm vụ: Viết một email ngắn cho đồng nghiệp giải thích rằng bạn đã hoàn thành việc xem xét mã cho tính năng mới và đề xuất một cuộc họp nhanh để thảo luận về phản hồi."
+      "prompt": "Task: Write a detailed formal email to a senior stakeholder summarizing the recent project delays and proposing a mitigation strategy.\n\nInstructions: Write a complete email. Use formal professional register.",
+      "writing_config": { "task_type": "email", "complexity": "independent", "min_sentences": 8, "max_sentences": 12 },
+      "model_answer": "Dear Stakeholders, I am writing to provide an update on the current project status...",
+      "hint": "Ensure you address both the cause of the delay and the specific steps for recovery.",
+      "explanation_rule": "High-level professional communication requires transparency and solution-oriented phrasing.",
+      "sentence_translation": "Nhiệm vụ: Viết một email chính thức chi tiết cho một bên liên quan cấp cao tóm tắt các lần trì hoãn dự án gần đây và đề xuất một chiến lược giảm thiểu."
     }
   ]
 }

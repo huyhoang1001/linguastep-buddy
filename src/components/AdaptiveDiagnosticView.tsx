@@ -12,7 +12,6 @@ import {
   BookOpen,
   CheckCircle2,
   Check,
-  Award,
   Pencil,
   Globe,
   Volume2,
@@ -830,7 +829,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               {startingMode === 'quick' ? (
                 <span>Starting Express Exam...</span>
               ) : (
-                <span className="truncate">Start Express Exam</span>
+                <span>Start Express Exam</span>
               )}
             </AppButton>
           </div>
@@ -895,7 +894,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               {startingMode === 'standard' ? (
                 <span>Starting Standard Exam...</span>
               ) : (
-                <span className="truncate">Start Standard Exam</span>
+                <span>Start Standard Exam</span>
               )}
             </AppButton>
           </div>
@@ -956,7 +955,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               {startingMode === 'comprehensive' ? (
                 <span>Starting Comprehensive Exam...</span>
               ) : (
-                <span className="truncate">Start Comprehensive Exam</span>
+                <span>Start Comprehensive Exam</span>
               )}
             </AppButton>
           </div>
@@ -977,62 +976,63 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
   // ----------------------------------------------------
   // IN-PROGRESS EXAM STATE (SEQUENTIAL SECTIONS)
   // ----------------------------------------------------
-  const plan = session.plan || createDiagnosticAssessmentPlan(session.mode);
-  const totalPlannedQuestions = session.totalQuestions || plan.totalQuestions;
-  const historyCount = session.history.length;
+  const plan = session?.plan || (session?.mode ? createDiagnosticAssessmentPlan(session.mode) : createDiagnosticAssessmentPlan('standard'));
+  const totalPlannedQuestions = session?.totalQuestions || plan.totalQuestions;
+  const historyCount = session?.history?.length || 0;
   const overallProgressPct = Math.min(100, Math.round((historyCount / totalPlannedQuestions) * 100));
 
-  const currentSection = currentQuestion?.section || plan.sections[session.currentSectionIndex || 0]?.section || 'grammar';
+  const currentSection = currentQuestion?.section || plan.sections[session?.currentSectionIndex || 0]?.section || 'grammar';
   const activeSectionPlan = plan.sections.find(s => s.section === currentSection) || plan.sections[0];
-  const sectionAttemptsCount = session.history.filter(h => h.question.section === currentSection).length;
+  const sectionAttemptsCount = session?.history?.filter(h => h.question.section === currentSection).length || 0;
   const currentSectionIndex = plan.sections.findIndex(s => s.section === currentSection);
 
-  return (
-    <div className="py-4 text-[#2D312E] dark:text-[#F4F2EC] space-y-6">
-      {/* 1. Header with Mode info & Stepper */}
-      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
-        {/* Top header row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#EBE4D7] dark:border-[#2C332E]">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-[#EFF6F1] dark:bg-[#203227] text-[#2D6A4F] dark:text-[#52B788] border border-[#CDE1D4] dark:border-[#2F4738]">
+  // ----------------------------------------------------
+  // DIAGNOSTIC COMPACT HEADER (FULL-PAGE EXAM MODE)
+  // ----------------------------------------------------
+  const renderExamHeader = () => {
+    if (!session || session.status !== 'in_progress') return null;
+
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 dark:bg-[#161A17]/95 backdrop-blur-md border-b border-[#EBE4D7] dark:border-[#262E28] h-16 flex items-center select-none shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between gap-4">
+          {/* Zone 1: Left - Assessment Mode & Current Section */}
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#2D6A4F] dark:text-[#52B788] truncate">
               {plan.title}
             </span>
-            {session.major_or_subject && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EFF6F1] dark:bg-[#203227] text-[#2D6A4F] dark:text-[#52B788] border border-[#CDE1D4] dark:border-[#2F4738] flex items-center space-x-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
-                <span>Field: {session.major_or_subject}</span>
+            <div className="flex items-center space-x-2 min-w-0">
+              <BookOpen className="w-3.5 h-3.5 text-[#5C645E] dark:text-[#A7ABA4] shrink-0" />
+              <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] truncate capitalize">
+                Section {currentSectionIndex + 1}: {currentSection}
               </span>
-            )}
-            <span className="text-xs text-[#3D4E45] dark:text-[#A7B3AB] flex items-center space-x-1">
-              <Clock className="w-3.5 h-3.5 text-[#3D4E45] dark:text-[#A7B3AB]" />
-              <span>Target: ~{plan.targetDurationMinutes} mins</span>
-            </span>
-
-            <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-xl border transition-all ${
-              isNearlyOut
-                ? 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] text-[#B84728] dark:text-[#F28482] animate-pulse'
-                : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#354037] text-[#5C645E] dark:text-[#A7ABA4]'
-            }`}>
-              <span className={`w-2 h-2 rounded-full mr-1 ${isNearlyOut ? 'bg-[#E07A5F] animate-ping' : 'bg-[#52B788]'}`} />
-              <span>{formatTimer(secondsElapsed)}</span>
-              <span className="text-[#8A938C] dark:text-[#8E978F]">/ ~{durationTarget}m target</span>
-              {isNearlyOut && (
-                <span className="text-[#E07A5F] font-bold ml-1 animate-bounce">
-                  (Còn {remainingSeconds}s! 🐾)
-                </span>
-              )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* Zone 2: Center - Question # & Timer */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-bold text-[#5C645E] dark:text-[#A7ABA4] uppercase tracking-wider">
+              Item {Math.min(totalPlannedQuestions, historyCount + 1)} of {totalPlannedQuestions}
+            </span>
+            <div className={`flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-mono font-bold transition-colors ${
+              isNearlyOut
+                ? 'bg-[#FDF0ED] dark:bg-[#32201C] border-[#E07A5F] text-[#E07A5F] animate-pulse'
+                : 'bg-[#FAF7F2] dark:bg-[#202522] border-[#EBE4D7] dark:border-[#2E3730] text-[#1B4332] dark:text-[#F4F2EC]'
+            }`}>
+              <Clock className="w-3 h-3" />
+              <span>{formatTimer(secondsElapsed)}</span>
+            </div>
+          </div>
+
+          {/* Zone 3: Right - Actions */}
+          <div className="flex items-center space-x-2 shrink-0">
             {(canStop || mustStop || historyCount >= totalPlannedQuestions) && (
               <AppButton
                 onClick={handleFinishAssessment}
                 variant="primary"
                 size="sm"
-                leftIcon={<Award />}
+                className="hidden sm:flex"
               >
-                Complete Exam
+                Complete
               </AppButton>
             )}
 
@@ -1040,70 +1040,38 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               onClick={handlePause}
               variant="secondary"
               size="sm"
-              leftIcon={<PauseCircle />}
-              title="Pause and resume later"
+              leftIcon={<PauseCircle className="w-4 h-4" />}
             >
-              Save & Pause
+              <span className="hidden xs:inline">Save & Pause</span>
+              <span className="xs:hidden">Pause</span>
             </AppButton>
           </div>
         </div>
-
-        {/* 4-Section Sequential Stepper */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
-          {plan.sections.map((sec, idx) => {
-            const isCompleted = idx < currentSectionIndex || sec.completed;
-            const isActive = idx === currentSectionIndex;
-
-
-            return (
-              <div
-                key={sec.section}
-                className={`p-3 rounded-2xl border transition-all ${
-                  isActive
-                    ? 'bg-[#EFF6F1] dark:bg-[#203227] border-[#2D6A4F] dark:border-[#52B788] ring-1 ring-[#2D6A4F] dark:ring-[#52B788]'
-                    : isCompleted
-                    ? 'bg-[#F7FAF8] dark:bg-[#1C2620] border-[#CDE1D4] dark:border-[#2C3B31] text-[#2D6A4F] dark:text-[#84A98C]'
-                    : 'bg-[#FAF7F2] dark:bg-[#252C27] border-[#EBE4D7] dark:border-[#313B33] text-[#5C645E] dark:text-[#8A938C]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                    isActive ? 'text-[#2D6A4F] dark:text-[#52B788]' : isCompleted ? 'text-[#2D6A4F] dark:text-[#84A98C]' : 'text-[#8A938C]'
-                  }`}>
-                    Section {idx + 1}
-                  </span>
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
-                  ) : isActive ? (
-                    <span className="w-2 h-2 rounded-full bg-[#2D6A4F] dark:bg-[#52B788] animate-ping" />
-                  ) : null}
-                </div>
-                <div className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] mt-0.5 truncate capitalize">
-                  {sec.section}
-                </div>
-                <div className="text-[11px] text-[#3D4E45] dark:text-[#A7B3AB] mt-1 flex items-center justify-between">
-                  <span>{isCompleted ? `${sec.targetQuestionsCount}/${sec.targetQuestionsCount} done` : isActive ? `${sectionAttemptsCount + 1}/${sec.targetQuestionsCount}` : <>{sec.targetQuestionsCount} <span translate="no" className="notranslate">Qs</span></>}</span>
-                  <span className="font-mono text-[10px]">25% wt</span>
-                </div>
-              </div>
-            );
-          })}
+        
+        {/* Visual Progress Bar (Attached to bottom of header) */}
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#EBE4D7] dark:bg-[#2C332E]">
+          <div 
+            className="h-full bg-[#2D6A4F] dark:bg-[#52B788] transition-all duration-500 ease-out"
+            style={{ width: `${overallProgressPct}%` }}
+          />
         </div>
+      </header>
+    );
+  };
 
-        {/* Overall progress indicator bar */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-xs text-[#3D4E45] dark:text-[#A7B3AB] font-medium">
-            <span>Overall Progress: Question {Math.min(totalPlannedQuestions, historyCount + 1)} of {totalPlannedQuestions}</span>
+  return (
+    <div className={`text-[#2D312E] dark:text-[#F4F2EC] ${session?.status === 'in_progress' ? 'pt-20 pb-12 min-h-screen bg-[#FAF7F2] dark:bg-[#161A17]' : 'py-8 px-4'}`}>
+      {renderExamHeader()}
+      
+      <div className={`${session?.status === 'in_progress' ? 'max-w-3xl' : 'max-w-6xl'} mx-auto space-y-8`}>
+        {/* Overall progress indicator bar (Now simplified since it's in header) */}
+        {session?.status === 'in_progress' && (
+          <div className="flex items-center justify-between text-xs text-[#3D4E45] dark:text-[#A7B3AB] font-medium opacity-60 px-4 sm:px-0">
+            <span>Overall Diagnostic Progress</span>
             <span className="font-mono">{overallProgressPct}%</span>
           </div>
-          <div className="w-full bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2C332E] h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-[#2D6A4F] dark:bg-[#52B788] h-full rounded-full transition-all duration-300"
-              style={{ width: `${overallProgressPct}%` }}
-            />
-          </div>
-        </div>
-      </div>
+        )}
+      {/* Active Question Content */}
 
       {/* Section Completed Notification Banner (when transitioning) */}
       {sectionCompletedNotice && (
@@ -1781,6 +1749,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

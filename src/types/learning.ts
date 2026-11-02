@@ -18,7 +18,8 @@ export type QuestionType =
   | 'fill_in_blank' 
   | 'sentence_rewrite' 
   | 'reading_comprehension' 
-  | 'free_writing';
+  | 'free_writing'
+  | 'vi_to_en_translation';
 
 export type Verdict = 'correct' | 'partially_correct' | 'incorrect' | 'ambiguous';
 
@@ -281,7 +282,7 @@ export interface WritingTaskConfig {
   max_words?: number;
   min_sentences?: number;
   max_sentences?: number;
-  task_type: 'micro' | 'paragraph' | 'email' | 'argument' | 'essay';
+  task_type: 'micro' | 'paragraph' | 'email' | 'argument' | 'essay' | 'report';
   complexity: 'basic' | 'developing' | 'independent' | 'advanced';
   estimated_minutes: number;
 }
@@ -324,6 +325,16 @@ export interface Question {
   explanation_rule: string;
   sentence_translation?: string; // Translated meaning of the sentence or target structure in learner's language
   
+  // Conversational Translation Fields (Say It Like You Mean It)
+  vietnamese_text?: string;
+  translation_scenario?: string;
+  translation_tone?: 'casual' | 'playful' | 'sarcastic' | 'annoyed' | 'rough' | 'cheeky' | 'cheeky_rough' | 'annoyed_sarcastic';
+  relationship?: 'close_friends' | 'coworkers' | 'partner' | 'online_chat' | 'other';
+  translation_hints?: string[]; // Progressive hints
+  evaluation_criteria?: string[];
+  target_grammar_ids?: string[];
+  target_vocab_ids?: string[];
+  
   // Adaptive Writing Fields
   writing_config?: WritingTaskConfig;
   model_answer?: string; // Internal model answer, never shown before submission
@@ -360,6 +371,14 @@ export interface AnswerEvaluation {
   error_tags: string[];
   needs_retry: boolean;
   next_action: 'continue' | 'retry' | 'transfer';
+
+  // Conversational Translation Feedback
+  meaning_feedback?: string;
+  tone_insight?: string;
+  grammar_connection?: string;
+  alternative_phrasing?: string;
+  naturalness_score?: number; // 0-100
+  tone_score?: number; // 0-100
 }
 
 export interface Attempt {
@@ -381,6 +400,7 @@ export type ActivityType =
   | 'vocab_acquisition' 
   | 'reading_analysis' 
   | 'writing_production' 
+  | 'conversational_translation'
   | 'exit_synthesis';
 
 export interface LessonSectionPlan {
