@@ -16,10 +16,10 @@ async function runHeaderSearchLayoutTests() {
     'Header must contain dedicated second row for global search'
   );
 
-  console.log('--- Test 2: Search Trigger Elements & Keyboard Shortcut Badge ---');
+  console.log('--- Test 2: Inline Search Bar & Keyboard Shortcut Badge ---');
   assert(
-    headerCode.includes('onOpenSearchPalette'),
-    'Header search bar must trigger onOpenSearchPalette'
+    headerCode.includes('CambridgeDictionarySearch'),
+    'Header must render CambridgeDictionarySearch inline'
   );
   assert(
     headerCode.includes('⌘K') || headerCode.includes('Cmd + K'),

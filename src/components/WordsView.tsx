@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
   Volume2,
-  Search,
-  Sparkles,
   Download,
   Upload,
-  ArrowRight
+  ArrowRight,
+  BookMarked,
+  Clock,
+  CheckCircle2,
+  Search
 } from 'lucide-react';
 import { VocabularyItem } from '../types/learning.ts';
 import { playEnglishSpeech, exportMemory, importMemory, validateImportData } from '../services/api.ts';
-import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 import { AppButton, InfoCard, FilterChip, StatusBadge, IconButton, ActionChip, InteractiveCard } from './ui/index.ts';
 
 interface WordsViewProps {
@@ -160,23 +161,33 @@ export const WordsView: React.FC<WordsViewProps> = ({
         </div>
       )}
 
-      {/* 2. Look Up & Add New Word Box */}
-      <InfoCard className="p-5 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#1B4332] dark:text-[#F4F2EC]">
-              Cambridge Dictionary Look Up &amp; Save
-            </span>
+      {/* 2. Vocabulary Stash Stats & Status Summary (Enhanced layout) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C]">Active Stash</span>
+            <BookMarked className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
           </div>
-          <span className="text-[11px] font-mono text-[#8A938C]">Type any English word</span>
+          <div className="text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">{vocabulary.length}</div>
+          <p className="text-[10px] text-[#8A938C]">Total saved words</p>
         </div>
-
-        <CambridgeDictionarySearch
-          onSelectWord={(w) => onPracticeWord(w)}
-          placeholder="Look up a word to explore its word family forms and add to your stash..."
-        />
-      </InfoCard>
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#E07A5F] block">Due Review</span>
+            <Clock className="w-3.5 h-3.5 text-[#E07A5F]" />
+          </div>
+          <div className="text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">{overdueCount}</div>
+          <p className="text-[10px] text-[#8A938C]">Requires attention</p>
+        </div>
+        <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-2xl p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F] dark:text-[#52B788]">Solidified</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />
+          </div>
+          <div className="text-2xl font-serif font-bold text-[#1B4332] dark:text-[#F4F2EC]">{solidCount}</div>
+          <p className="text-[10px] text-[#8A938C]">Mastered or near-mastery</p>
+        </div>
+      </div>
 
       {/* 3. Filter Bar & Search */}
       <div className="space-y-3">
@@ -248,7 +259,7 @@ export const WordsView: React.FC<WordsViewProps> = ({
               Your word stash is looking empty
             </h3>
             <p className="text-xs sm:text-sm text-[#5C645E] dark:text-[#A7ABA4] max-w-md mx-auto leading-relaxed">
-              Words you explore in the search box above or encounter during your daily lessons will automatically gather here with spaced-retention schedules.
+              Words you explore in the <strong>global search bar above</strong> or encounter during your daily lessons will automatically gather here with spaced-retention schedules.
             </p>
           </InfoCard>
         ) : filteredVocab.length === 0 ? (

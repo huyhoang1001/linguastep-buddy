@@ -33,7 +33,6 @@ interface HeaderProps {
   onOpenCatStudio: () => void;
   onOpenAuth?: () => void;
   onLogout?: () => void;
-  onOpenSearchPalette: () => void;
   onPracticeWord: (word: string) => void;
 }
 
@@ -50,7 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCatStudio,
   onOpenAuth,
   onLogout,
-  onOpenSearchPalette,
   onPracticeWord
 }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -94,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onOpenSearchPalette]);
+  }, []);
 
   // Quota warning threshold calculation (80% quota check)
   const userDailyLimit = budgetLimits?.userDailyLimit || 30;

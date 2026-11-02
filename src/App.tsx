@@ -17,7 +17,6 @@ import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { LessonView } from './components/LessonView.tsx';
 import { WordsView } from './components/WordsView.tsx';
 import { ProgressView } from './components/ProgressView.tsx';
-import { CommandPaletteModal } from './components/CommandPaletteModal.tsx';
 import { LessonSummaryModal } from './components/LessonSummaryModal.tsx';
 import { MemoryDrawer } from './components/MemoryDrawer.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
@@ -64,7 +63,6 @@ export default function App() {
 
   // Navigation state: 'home' | 'learn' | 'words' | 'progress'
   const [navigationDestination, setNavigationDestination] = useState<NavigationDestination>('home');
-  const [showCommandPalette, setShowCommandPalette] = useState<boolean>(false);
 
   // Global Cmd+K / Ctrl+K shortcut is now handled in Header.tsx to focus inline search
 
@@ -432,7 +430,6 @@ export default function App() {
         onOpenCatStudio={() => setShowCatCustomizer(true)}
         onOpenAuth={() => setShowAuthModal(true)}
         onLogout={handleLogout}
-        onOpenSearchPalette={() => setShowCommandPalette(true)}
         onPracticeWord={(word) => setActiveDictionaryWord(word)}
       />
 
@@ -676,27 +673,7 @@ export default function App() {
         onSaveConfig={(newCfg) => setCatConfig(newCfg)}
       />
 
-      {/* MeoMeo Command Palette Modal (Ctrl/Cmd + K) */}
-      <CommandPaletteModal
-        isOpen={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-        onNavigate={(dest) => {
-          setNavigationDestination(dest);
-          setShowCommandPalette(false);
-        }}
-        onPracticeWord={(word) => {
-          setShowCommandPalette(false);
-          setActiveDictionaryWord(word);
-        }}
-        onOpenSettings={() => {
-          setShowCommandPalette(false);
-          setShowSettingsModal(true);
-        }}
-        onOpenCatStudio={() => {
-          setShowCommandPalette(false);
-          setShowCatCustomizer(true);
-        }}
-      />
+
 
       {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}
       {isBuildingSession && (
