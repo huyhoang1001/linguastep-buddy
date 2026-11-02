@@ -28,6 +28,7 @@ import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';
 import { localStore } from './localStore.ts';
 import { BudgetLimits, UserAccount, AuthSessionResponse } from '../types/auth.ts';
 import { generatePersonalizedRoadmap, syncAndAdvanceRoadmap } from './roadmapGenerator.ts';
+import { CurriculumScheduler } from './curriculumScheduler.ts';
 
 // Re-export localStore for components that access it directly
 export { localStore };
@@ -141,14 +142,27 @@ async function parseAIResponse<T>(res: Response, fallbackMessage: string): Promi
     }
   }
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    const message = data.error || fallbackMessage;
-    const code = data.code || (res.status === 429 ? 'QUOTA_EXHAUSTED' : 'GENERAL_ERROR');
-    const retryable = data.retryable !== undefined ? data.retryable : (res.status === 429 && Boolean(data.retryAfterSeconds));
-    throw new AIClientError(message, code, retryable, data.retryAfterSeconds);
+  const rawText = await res.text().catch(() => '');
+  let data: any = {};
+  let isJson = false;
+
+  if (rawText && rawText.trim()) {
+    try {
+      data = JSON.parse(rawText);
+      isJson = true;
+    } catch {
+      isJson = false;
+    }
   }
-  return res.json();
+
+  if (!res.ok || !isJson) {
+    const message = (isJson && data.error) ? data.error : fallbackMessage;
+    const code = (isJson && data.code) ? data.code : (res.status === 429 ? 'QUOTA_EXHAUSTED' : 'GENERAL_ERROR');
+    const retryable = (isJson && data.retryable !== undefined) ? data.retryable : true;
+    throw new AIClientError(message, code, retryable, isJson ? data.retryAfterSeconds : undefined);
+  }
+
+  return data as T;
 }
 
 // =========================================================================
@@ -390,40 +404,86 @@ export async function generateLessonPlan(
   const recentErrors = skills.flatMap(s => s.recurring_errors);
   const roadmap = await localStore.getRoadmap();
 
-  const res = await fetch('/api/ai/lesson-plan', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
+  try {
+    const res = await fetch('/api/ai/lesson-plan', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        profile,
+        skills,
+        recentErrors,
+        dailyMinutes: profile.daily_minutes,
+        lessonHistory,
+        customContext,
+        roadmap
+      })
+    });
+
+    const plan: LessonPlan = await parseAIResponse<LessonPlan>(res, 'Failed to generate lesson plan');
+    await localStore.saveLesson(plan);
+
+    // Initialize active lesson in local storage for instant resumption
+    await localStore.saveActiveLesson({
+      lessonId: plan.lesson_id,
+      plan,
+      currentSectionIndex: 0,
+      questionIndexInSection: 0,
+      currentQuestion: null,
+      lastEvaluation: null,
+      lastUserAnswer: '',
+      attempts: [],
+      sectionProgress: {},
+      status: 'in_progress',
+      secondsElapsed: 0,
+      updatedAt: new Date().toISOString()
+    });
+
+    return plan;
+  } catch (err) {
+    console.warn('[API] AI lesson plan generation failed, using deterministic scheduler fallback:', err);
+    const blueprint = CurriculumScheduler.scheduleDailyLesson({
       profile,
-      skills,
+      skillStates: skills,
       recentErrors,
-      dailyMinutes: profile.daily_minutes,
-      lessonHistory,
+      completedLessonsCount: existingLessons.length,
       customContext,
       roadmap
-    })
-  });
+    });
 
-  const plan: LessonPlan = await parseAIResponse<LessonPlan>(res, 'Failed to generate lesson plan');
-  await localStore.saveLesson(plan);
+    const fallbackPlan: LessonPlan = {
+      lesson_id: `plan-${Date.now()}`,
+      lesson_number: existingLessons.length + 1,
+      date: todayStr,
+      primary_objective: blueprint.primary_objective,
+      reason_for_selection: blueprint.reason_for_selection,
+      estimated_duration_minutes: blueprint.estimated_duration_minutes,
+      session_pace_mode: blueprint.session_pace_mode,
+      total_planned_questions: blueprint.total_planned_questions,
+      sections: blueprint.sections.map(s => ({
+        ...s,
+        completed: false
+      })),
+      status: 'in_progress'
+    };
 
-  // Initialize active lesson in local storage for instant resumption
-  await localStore.saveActiveLesson({
-    lessonId: plan.lesson_id,
-    plan,
-    currentSectionIndex: 0,
-    questionIndexInSection: 0,
-    currentQuestion: null,
-    lastEvaluation: null,
-    lastUserAnswer: '',
-    attempts: [],
-    sectionProgress: {},
-    status: 'in_progress',
-    secondsElapsed: 0,
-    updatedAt: new Date().toISOString()
-  });
+    await localStore.saveLesson(fallbackPlan);
+    await localStore.saveActiveLesson({
+      lessonId: fallbackPlan.lesson_id,
+      plan: fallbackPlan,
+      currentSectionIndex: 0,
+      questionIndexInSection: 0,
+      currentQuestion: null,
+      lastEvaluation: null,
+      lastUserAnswer: '',
+      attempts: [],
+      sectionProgress: {},
+      status: 'in_progress',
+      secondsElapsed: 0,
+      updatedAt: new Date().toISOString()
+    });
 
-  return plan;
+    return fallbackPlan;
+  }
 }
 
 export async function generateFullSessionQuestions(plan: LessonPlan): Promise<LessonPlan> {

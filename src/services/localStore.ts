@@ -29,7 +29,7 @@ import { MasteryEngine } from './masteryEngine.ts';
 import { syncAndAdvanceRoadmap } from './roadmapGenerator.ts';
 
 const DB_NAME = 'linguastep_local_v1';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface StorageStatus {
   initialized: boolean;
@@ -125,7 +125,7 @@ class LocalLearningStore {
     const scopedId = this.getScopedId(id);
     try {
       const db = await this.openDB();
-      if (!db) {
+      if (!db || !db.objectStoreNames.contains(storeName)) {
         const val = this.memoryStore.get(`${storeName}:${scopedId}`);
         if (val !== undefined) return val;
         // Backward-compatible fallback for un-scoped primary guest data
@@ -136,23 +136,28 @@ class LocalLearningStore {
       }
 
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-        const req = store.get(scopedId);
+        try {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const req = store.get(scopedId);
 
-        req.onsuccess = () => {
-          if (req.result) {
-            resolve(req.result.data);
-          } else if (this.activeAccountId === 'learner-primary' && scopedId !== id) {
-            // Check legacy un-scoped id
-            const fallbackReq = store.get(id);
-            fallbackReq.onsuccess = () => resolve(fallbackReq.result ? fallbackReq.result.data : null);
-            fallbackReq.onerror = () => reject(fallbackReq.error);
-          } else {
-            resolve(null);
-          }
-        };
-        req.onerror = () => reject(req.error);
+          req.onsuccess = () => {
+            if (req.result) {
+              resolve(req.result.data);
+            } else if (this.activeAccountId === 'learner-primary' && scopedId !== id) {
+              // Check legacy un-scoped id
+              const fallbackReq = store.get(id);
+              fallbackReq.onsuccess = () => resolve(fallbackReq.result ? fallbackReq.result.data : null);
+              fallbackReq.onerror = () => reject(fallbackReq.error);
+            } else {
+              resolve(null);
+            }
+          };
+          req.onerror = () => reject(req.error);
+        } catch (txErr) {
+          console.warn(`[LocalStore] Read transaction error for store "${storeName}":`, txErr);
+          resolve(this.memoryStore.get(`${storeName}:${scopedId}`) || null);
+        }
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Read error';
@@ -164,7 +169,7 @@ class LocalLearningStore {
     const prefix = `${this.activeAccountId}::`;
     try {
       const db = await this.openDB();
-      if (!db) {
+      if (!db || !db.objectStoreNames.contains(storeName)) {
         const itemMap = new Map<string, T>();
         // Process un-scoped first if learner-primary, so scoped can overwrite
         if (this.activeAccountId === 'learner-primary') {
@@ -185,30 +190,35 @@ class LocalLearningStore {
       }
 
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-        const req = store.getAll();
+        try {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const req = store.getAll();
 
-        req.onsuccess = () => {
-          const itemMap = new Map<string, T>();
-          // First pass: legacy un-scoped items if learner-primary
-          if (this.activeAccountId === 'learner-primary') {
-            for (const item of (req.result || [])) {
-              if (item && typeof item.id === 'string' && !item.id.includes('::')) {
-                itemMap.set(item.id, item.data);
+          req.onsuccess = () => {
+            const itemMap = new Map<string, T>();
+            // First pass: legacy un-scoped items if learner-primary
+            if (this.activeAccountId === 'learner-primary') {
+              for (const item of (req.result || [])) {
+                if (item && typeof item.id === 'string' && !item.id.includes('::')) {
+                  itemMap.set(item.id, item.data);
+                }
               }
             }
-          }
-          // Second pass: scoped items (these overwrite any legacy items with same baseId)
-          for (const item of (req.result || [])) {
-            if (item && typeof item.id === 'string' && item.id.startsWith(prefix)) {
-              const baseId = item.id.slice(prefix.length);
-              itemMap.set(baseId, item.data);
+            // Second pass: scoped items (these overwrite any legacy items with same baseId)
+            for (const item of (req.result || [])) {
+              if (item && typeof item.id === 'string' && item.id.startsWith(prefix)) {
+                const baseId = item.id.slice(prefix.length);
+                itemMap.set(baseId, item.data);
+              }
             }
-          }
-          resolve(Array.from(itemMap.values()));
-        };
-        req.onerror = () => reject(req.error);
+            resolve(Array.from(itemMap.values()));
+          };
+          req.onerror = () => reject(req.error);
+        } catch (txErr) {
+          console.warn(`[LocalStore] Read all transaction error for store "${storeName}":`, txErr);
+          resolve([]);
+        }
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Read all error';
@@ -223,15 +233,20 @@ class LocalLearningStore {
 
     try {
       const db = await this.openDB();
-      if (!db) return;
+      if (!db || !db.objectStoreNames.contains(storeName)) return;
 
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const req = store.put({ id: scopedId, data, updatedAt: this.lastSavedAt });
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const req = store.put({ id: scopedId, data, updatedAt: this.lastSavedAt });
 
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        } catch (txErr) {
+          console.warn(`[LocalStore] Write transaction error for store "${storeName}":`, txErr);
+          resolve();
+        }
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Write error';
@@ -243,15 +258,20 @@ class LocalLearningStore {
     this.memoryStore.delete(`${storeName}:${scopedId}`);
     try {
       const db = await this.openDB();
-      if (!db) return;
+      if (!db || !db.objectStoreNames.contains(storeName)) return;
 
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const req = store.delete(scopedId);
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const req = store.delete(scopedId);
 
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        } catch (txErr) {
+          console.warn(`[LocalStore] Delete transaction error for store "${storeName}":`, txErr);
+          resolve();
+        }
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Delete error';
@@ -270,25 +290,30 @@ class LocalLearningStore {
 
     try {
       const db = await this.openDB();
-      if (!db) return;
+      if (!db || !db.objectStoreNames.contains(storeName)) return;
 
       return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
-        const req = store.getAllKeys();
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const req = store.getAllKeys();
 
-        req.onsuccess = () => {
-          const keys = req.result || [];
-          for (const key of keys) {
-            if (typeof key === 'string') {
-              if (key.startsWith(prefix) || (this.activeAccountId === 'learner-primary' && !key.includes('::'))) {
-                store.delete(key);
+          req.onsuccess = () => {
+            const keys = req.result || [];
+            for (const key of keys) {
+              if (typeof key === 'string') {
+                if (key.startsWith(prefix) || (this.activeAccountId === 'learner-primary' && !key.includes('::'))) {
+                  store.delete(key);
+                }
               }
             }
-          }
+            resolve();
+          };
+          req.onerror = () => reject(req.error);
+        } catch (txErr) {
+          console.warn(`[LocalStore] Clear store transaction error for "${storeName}":`, txErr);
           resolve();
-        };
-        req.onerror = () => reject(req.error);
+        }
       });
     } catch (err: any) {
       this.lastError = err?.message || 'Clear store error';
