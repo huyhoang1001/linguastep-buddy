@@ -18,12 +18,15 @@ import {
   WordFamilyData,
   EnglishLevel,
   CompanionChatMessage,
-  WritingRubricScore
+  WritingRubricScore,
+  CurriculumRoadmap,
+  RoadmapMilestone
 } from '../types/learning.ts';
 import {
   DEFAULT_PROFILE
 } from './localSeed.ts';
 import { MasteryEngine } from './masteryEngine.ts';
+import { syncAndAdvanceRoadmap } from './roadmapGenerator.ts';
 
 const DB_NAME = 'linguastep_local_v1';
 const DB_VERSION = 1;
@@ -93,6 +96,7 @@ class LocalLearningStore {
           'diagnostic_session',
           'diagnostic_reports',
           'study_plan',
+          'roadmap',
           'companion_chat',
           'metadata'
         ];
@@ -305,6 +309,7 @@ class LocalLearningStore {
       const guestLessons = await this.getAllStoreData<LessonPlan>('lessons');
       const guestSummaries = await this.getAllStoreData<DailySummary>('summaries');
       const guestStudyPlan = await this.getStudyPlan();
+      const guestRoadmap = await this.getRoadmap();
 
       this.activeAccountId = targetAccountId;
       const existingTargetProfile = await this.getStoreData<UserProfile>('profile', 'current');
@@ -328,6 +333,9 @@ class LocalLearningStore {
         }
         if (guestStudyPlan) {
           await this.saveStudyPlan(guestStudyPlan);
+        }
+        if (guestRoadmap) {
+          await this.saveRoadmap(guestRoadmap);
         }
       }
       return true;
@@ -363,8 +371,17 @@ class LocalLearningStore {
     return updated;
   }
 
+  public async saveProfile(profile: UserProfile): Promise<UserProfile> {
+    const updated: UserProfile = {
+      ...profile,
+      updated_at: new Date().toISOString()
+    };
+    await this.setStoreData('profile', 'current', updated);
+    return updated;
+  }
+
   // =========================================================================
-  // 2. STUDY PLAN
+  // 2. STUDY PLAN & CURRICULUM ROADMAP
   // =========================================================================
 
   public async getStudyPlan(): Promise<PersonalizedStudyPlan | null> {
@@ -374,6 +391,45 @@ class LocalLearningStore {
   public async saveStudyPlan(plan: PersonalizedStudyPlan): Promise<PersonalizedStudyPlan> {
     await this.setStoreData('study_plan', 'current', plan);
     return plan;
+  }
+
+  public async getRoadmap(): Promise<CurriculumRoadmap | null> {
+    return this.getStoreData<CurriculumRoadmap>('roadmap', 'current');
+  }
+
+  public async saveRoadmap(roadmap: CurriculumRoadmap): Promise<CurriculumRoadmap> {
+    const updated = { ...roadmap, updated_at: new Date().toISOString() };
+    await this.setStoreData('roadmap', 'current', updated);
+    return updated;
+  }
+
+  public async clearRoadmap(): Promise<void> {
+    await this.deleteStoreData('roadmap', 'current');
+  }
+
+  public async updateMilestoneProgress(milestoneId: string, updates: Partial<RoadmapMilestone>): Promise<CurriculumRoadmap | null> {
+    const roadmap = await this.getRoadmap();
+    if (!roadmap) return null;
+
+    const milestoneIndex = roadmap.milestones.findIndex(m => m.milestone_id === milestoneId);
+    if (milestoneIndex === -1) return roadmap;
+
+    const currentMilestone = roadmap.milestones[milestoneIndex];
+    roadmap.milestones[milestoneIndex] = {
+      ...currentMilestone,
+      ...updates
+    };
+
+    // If this milestone is completed and was the active one, advance to the next milestone if available
+    if (updates.status === 'completed' && roadmap.current_milestone_id === milestoneId) {
+      const nextMilestone = roadmap.milestones[milestoneIndex + 1];
+      if (nextMilestone) {
+        nextMilestone.status = 'in_progress';
+        roadmap.current_milestone_id = nextMilestone.milestone_id;
+      }
+    }
+
+    return this.saveRoadmap(roadmap);
   }
 
   // =========================================================================
@@ -479,6 +535,19 @@ class LocalLearningStore {
 
     const updated = result.updatedSkill;
     await this.setStoreData('skills', updated.skill_id, updated);
+
+    // Sync active roadmap with updated skill masteries and advance milestones if criteria met
+    try {
+      const currentRoadmap = await this.getRoadmap();
+      if (currentRoadmap) {
+        const allSkills = await this.getSkills();
+        const { roadmap: syncedRoadmap } = syncAndAdvanceRoadmap(currentRoadmap, allSkills);
+        await this.saveRoadmap(syncedRoadmap);
+      }
+    } catch (err) {
+      console.warn('[LocalStore] Roadmap sync error:', err);
+    }
+
     return updated;
   }
 
@@ -884,6 +953,7 @@ class LocalLearningStore {
     const diagnosticSession = (await this.getDiagnosticSession()) || undefined;
     const diagnosticReports = await this.getDiagnosticReports();
     const studyPlan = (await this.getStudyPlan()) || undefined;
+    const roadmap = (await this.getRoadmap()) || undefined;
 
     return {
       version: 1,
@@ -898,6 +968,7 @@ class LocalLearningStore {
       diagnosticSession,
       diagnosticReports,
       studyPlan,
+      roadmap,
       exported_at: new Date().toISOString()
     };
   }
@@ -913,6 +984,9 @@ class LocalLearningStore {
       attemptsCount: number;
       lessonsCount: number;
       reportsCount: number;
+      hasActiveLesson?: boolean;
+      hasStudyPlan?: boolean;
+      hasRoadmap?: boolean;
     };
   } {
     const errors: string[] = [];
@@ -957,7 +1031,8 @@ class LocalLearningStore {
       summariesCount: Array.isArray(data.summaries) ? data.summaries.length : 0,
       reportsCount: Array.isArray(data.diagnosticReports) ? data.diagnosticReports.length : 0,
       hasActiveLesson: Boolean(data.activeLesson),
-      hasStudyPlan: Boolean(data.studyPlan)
+      hasStudyPlan: Boolean(data.studyPlan),
+      hasRoadmap: Boolean(data.roadmap)
     };
 
     return {
@@ -1058,6 +1133,13 @@ class LocalLearningStore {
     if (data.studyPlan) {
       await this.setStoreData('study_plan', 'current', data.studyPlan);
     }
+
+    // Save roadmap
+    if (data.roadmap) {
+      await this.saveRoadmap(data.roadmap);
+    } else {
+      await this.clearRoadmap();
+    }
   }
 
   public async resetAll(): Promise<void> {
@@ -1073,7 +1155,8 @@ class LocalLearningStore {
       'discovery',
       'diagnostic_session',
       'diagnostic_reports',
-      'study_plan'
+      'study_plan',
+      'roadmap'
     ];
 
     for (const s of stores) {

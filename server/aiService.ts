@@ -313,7 +313,8 @@ export class GeminiLearningProvider implements LearningModelProvider {
     skillStates: LearnerSkillState[],
     recentErrors: string[],
     lessonHistory: any[] = [],
-    customContext?: NextSessionCustomContext
+    customContext?: NextSessionCustomContext,
+    roadmap?: any
   ): Promise<LessonPlan> {
     const rawDuration = customContext?.dailyMinutes || profile.daily_minutes || 20;
     const duration: 10 | 20 | 30 = rawDuration <= 12 ? 10 : rawDuration >= 25 ? 30 : 20;
@@ -321,13 +322,14 @@ export class GeminiLearningProvider implements LearningModelProvider {
     const totalPlannedQuestions = duration === 10 ? 6 : duration === 30 ? 15 : 10;
 
     // 1. Run deterministic curriculum scheduler to pre-select learning objectives,
-    // prioritizing overdue reviews, weak prerequisites, and recurring mistakes.
+    // prioritizing active roadmap milestones, overdue reviews, weak prerequisites, and recurring mistakes.
     const blueprint = CurriculumScheduler.scheduleDailyLesson({
       profile,
       skillStates,
       recentErrors,
       completedLessonsCount: lessonHistory.length,
-      customContext
+      customContext,
+      roadmap
     });
 
     const hasCustomConfig = Boolean(

@@ -133,6 +133,20 @@ if (res19.status !== 0) {
   process.exit(1);
 }
 
+console.log('\nRunning test suite 20: Adaptive Learning Journey & Roadmap Progression Tests...');
+const res20 = spawnSync('npx', ['tsx', 'test/adaptive_learning_journey.test.ts'], { stdio: 'inherit' });
+if (res20.status !== 0) {
+  console.error('Adaptive learning journey tests failed.');
+  process.exit(1);
+}
+
+console.log('\nRunning test suite 21: Cat Companion Positioning & Edge Snapping Tests...');
+const res21 = spawnSync('npx', ['tsx', 'test/cat_companion_positioning.test.ts'], { stdio: 'inherit' });
+if (res21.status !== 0) {
+  console.error('Cat companion positioning tests failed.');
+  process.exit(1);
+}
+
 console.log('\n======================================================');
 console.log('ALL TEST SUITES COMPLETED SUCCESSFULLY!');
 console.log('======================================================');

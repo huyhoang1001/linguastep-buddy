@@ -29,6 +29,8 @@ import {
   clearCustomApiKey,
   getCustomApiKeyMasked
 } from '../services/api.ts';
+import { generatePersonalizedRoadmap } from '../services/roadmapGenerator.ts';
+import { localStore } from '../services/localStore.ts';
 
 interface SettingsModalProps {
   profile: UserProfile;
@@ -142,6 +144,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const structuredGoal = profile.structured_goal ? {
+        ...profile.structured_goal,
+        original_free_text: goalSummary,
+        interpreted_goal: goalSummary,
+        target_level: targetLevel,
+        self_reported_level: profile.self_reported_level || level,
+        available_daily_time: dailyMinutes
+      } : undefined;
+
       const updated = await updateProfile({
         current_level: level,
         target_level: targetLevel,
@@ -149,8 +160,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         daily_minutes: dailyMinutes,
         general_vs_work_ratio: generalRatio,
         feedback_style: feedbackStyle,
-        goal_summary: goalSummary
+        goal_summary: goalSummary,
+        structured_goal: structuredGoal
       });
+
+      // Regenerate or update the roadmap to reflect updated goals
+      const newRoadmap = generatePersonalizedRoadmap(updated);
+      await localStore.saveRoadmap(newRoadmap);
+
       onUpdated(updated);
       setSavedSuccess(true);
       setTimeout(() => {
@@ -314,6 +331,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* ============================================================== */}
         {activeTab === 'preferences' && (
           <div className="space-y-4">
+            {/* Proficiency Status Card */}
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#262F28] border border-[#EBE4D7] dark:border-[#3C443E] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC] uppercase tracking-wider">
+                  Proficiency Calibration
+                </span>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold border ${
+                  profile.assessed_overall_level
+                    ? 'bg-[#EFF6F1] dark:bg-[#1E2E24] text-[#2D6A4F] dark:text-[#74A892] border-[#CDE1D4] dark:border-[#2C4438]'
+                    : 'bg-[#FAF7F2] dark:bg-[#2C332E] text-[#8A938C] border-[#EBE4D7] dark:border-[#3C443E]'
+                }`}>
+                  {profile.assessed_overall_level ? `Diagnostic Verified (${profile.assessment_confidence || 'moderate'})` : 'Self-Reported Only'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                <div className="p-2 rounded-xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7]/70 dark:border-[#2C332E]">
+                  <span className="text-[10px] text-[#8A938C] block uppercase font-medium">Self-Reported</span>
+                  <strong className="text-sm text-[#1B4332] dark:text-[#F4F2EC]">
+                    Level {profile.self_reported_level || profile.current_level}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-xl bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7]/70 dark:border-[#2C332E]">
+                  <span className="text-[10px] text-[#8A938C] block uppercase font-medium">Diagnostic Assessed</span>
+                  <strong className="text-sm text-[#2D6A4F] dark:text-[#52B788]">
+                    {profile.assessed_overall_level ? `Level ${profile.assessed_overall_level}` : 'Not tested yet'}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
             {/* Levels */}
             <div className="grid grid-cols-2 gap-3">
               <div>

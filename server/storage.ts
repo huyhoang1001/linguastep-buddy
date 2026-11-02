@@ -11,7 +11,8 @@ import {
   DiscoveryState,
   DiagnosticSession,
   DiagnosticReport,
-  PersonalizedStudyPlan
+  PersonalizedStudyPlan,
+  CurriculumRoadmap
 } from '../src/types/learning.js';
 import { UserAccount } from './authTypes.js';
 import { MasteryEngine } from '../src/services/masteryEngine.js';
@@ -28,6 +29,7 @@ export interface UserLearningData {
   diagnosticSession?: DiagnosticSession;
   diagnosticReports: DiagnosticReport[];
   studyPlan?: PersonalizedStudyPlan;
+  roadmap?: CurriculumRoadmap;
 }
 
 export interface MultiUserDatabaseSchema {
@@ -521,6 +523,28 @@ export class MultiUserMemoryStore {
     return plan;
   }
 
+  // Curriculum Roadmap
+  public getRoadmap(userId: string): CurriculumRoadmap | null {
+    const u = this.users.get(userId);
+    return u?.roadmap || null;
+  }
+
+  public saveRoadmap(userId: string, roadmap: CurriculumRoadmap): CurriculumRoadmap {
+    const u = this.users.get(userId);
+    if (!u) throw new Error(`User not found: ${userId}`);
+    u.roadmap = roadmap;
+    this.persistAtomic();
+    return roadmap;
+  }
+
+  public clearRoadmap(userId: string): void {
+    const u = this.users.get(userId);
+    if (u) {
+      delete u.roadmap;
+      this.persistAtomic();
+    }
+  }
+
   // Export / Import per user
   public exportAll(userId: string): LearningDataExport {
     const u = this.users.get(userId);
@@ -535,6 +559,7 @@ export class MultiUserMemoryStore {
       discoveryState: u?.discoveryState,
       diagnosticReports: u?.diagnosticReports || [],
       studyPlan: u?.studyPlan,
+      roadmap: u?.roadmap,
       exported_at: new Date().toISOString()
     };
   }
@@ -552,6 +577,7 @@ export class MultiUserMemoryStore {
     if (data.discoveryState) u.discoveryState = data.discoveryState;
     if (Array.isArray(data.diagnosticReports)) u.diagnosticReports = data.diagnosticReports;
     if (data.studyPlan) u.studyPlan = data.studyPlan;
+    if (data.roadmap) u.roadmap = data.roadmap;
     this.persistAtomic();
   }
 
@@ -565,10 +591,11 @@ export class MultiUserMemoryStore {
     u.attempts = [];
     u.lessons = [];
     u.summaries = [];
-    u.diagnosticReports = [];
     delete u.discoveryState;
     delete u.diagnosticSession;
+    u.diagnosticReports = [];
     delete u.studyPlan;
+    delete u.roadmap;
     this.persistAtomic();
   }
 }

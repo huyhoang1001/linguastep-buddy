@@ -13,7 +13,7 @@ import { MasteryEngine } from './masteryEngine.ts';
 export interface CurriculumSkillDefinition {
   id: string;
   name: string;
-  category: 'grammar' | 'vocabulary' | 'writing' | 'reading';
+  category: 'grammar' | 'vocabulary' | 'writing' | 'reading' | 'conversation';
   level: EnglishLevel;
   prerequisites: string[]; // IDs or names of prerequisite skills
   description: string;
@@ -62,7 +62,87 @@ export const CURRICULUM_SKILL_CATALOG: CurriculumSkillDefinition[] = [
     prerequisites: ['past_simple_regular_irregular'],
     description: 'Objective, neutral technical incident summaries and process documentation.'
   },
+  {
+    id: 'social_icebreakers_banter',
+    name: 'Natural Icebreakers & Banter Openers',
+    category: 'conversation',
+    level: 'B1',
+    prerequisites: [],
+    description: 'Playful conversational openers, rapid situational humor, and witty icebreakers.'
+  },
+  {
+    id: 'casual_present_tense_cadence',
+    name: 'Present Simple & Continuous in Casual Remarks',
+    category: 'grammar',
+    level: 'B1',
+    prerequisites: [],
+    description: 'Natural cadence for daily teasing, texting, and observational banter.'
+  },
+  {
+    id: 'genz_slang_collocations',
+    name: 'Authentic Gen Z Slang & Social Idioms',
+    category: 'vocabulary',
+    level: 'B1',
+    prerequisites: [],
+    description: 'Modern authentic idioms, playful slang, and conversational phrasings.'
+  },
+  {
+    id: 'workplace_slack_update',
+    name: 'Clear Workplace Status Updates & Blocker Memos',
+    category: 'writing',
+    level: 'B1',
+    prerequisites: ['present_perfect_past_simple'],
+    description: 'Concise, professional blocker updates and team communications.'
+  },
+  {
+    id: 'collocation_mitigate',
+    name: 'Precision Tech Collocations: Mitigate & Resolve',
+    category: 'vocabulary',
+    level: 'B1',
+    prerequisites: [],
+    description: 'Technical collocations for incidents, architecture, and workflows.'
+  },
   // B2 / Upper Intermediate
+  {
+    id: 'past_narrative_social',
+    name: 'Narrative Past Tenses in Personal Anecdotes',
+    category: 'grammar',
+    level: 'B2',
+    prerequisites: ['casual_present_tense_cadence'],
+    description: 'Weaving personal stories, dating anecdotes, and funny mishaps smoothly.'
+  },
+  {
+    id: 'phrasal_verbs_social',
+    name: 'Phrasal Verbs for Casual Chemistry & Banter',
+    category: 'vocabulary',
+    level: 'B2',
+    prerequisites: [],
+    description: 'Everyday phrasal verbs that bring authentic intimacy and casual cadence.'
+  },
+  {
+    id: 'playful_teasing_framing',
+    name: 'Playful Teasing & Sarcastic Push-Pull',
+    category: 'conversation',
+    level: 'B2',
+    prerequisites: ['social_icebreakers_banter'],
+    description: 'Charismatic push-pull banter, witty sarcasm, and confidence in casual dialogue.'
+  },
+  {
+    id: 'social_mixed_conditionals',
+    name: 'Hypothetical Conditionals for Flirty Scenarios',
+    category: 'grammar',
+    level: 'B2',
+    prerequisites: ['past_narrative_social'],
+    description: 'Playful what-if scenarios and banter hypotheses in messaging.'
+  },
+  {
+    id: 'nuanced_compliments',
+    name: 'Nuanced Compliments vs. Cheesy Tropes',
+    category: 'vocabulary',
+    level: 'B2',
+    prerequisites: ['phrasal_verbs_social'],
+    description: 'Delivering observant, genuine compliments without sounding clichéd.'
+  },
   {
     id: 'past_perfect_narrative_anchors',
     name: 'Past Perfect & Narrative Time Anchors',
@@ -97,6 +177,22 @@ export const CURRICULUM_SKILL_CATALOG: CurriculumSkillDefinition[] = [
   },
   // C1 / Advanced
   {
+    id: 'conversational_clefts',
+    name: 'Emphatic Clefts for Emotional Resonance',
+    category: 'conversation',
+    level: 'C1',
+    prerequisites: ['social_mixed_conditionals'],
+    description: 'Directing conversational focus with charisma and emotional cadence.'
+  },
+  {
+    id: 'humor_sarcasm_cadence',
+    name: 'Mastery of Irony, Subtlety & Push-Pull Cadence',
+    category: 'conversation',
+    level: 'C1',
+    prerequisites: ['playful_teasing_framing'],
+    description: 'Effortless native-like irony, timing, and magnetic social confidence.'
+  },
+  {
     id: 'cleft_sentences_focus',
     name: 'Cleft Sentences for Focus & Alignment',
     category: 'writing',
@@ -121,6 +217,7 @@ export interface SchedulerInput {
   vocabulary?: VocabularyItem[];
   completedLessonsCount?: number;
   customContext?: NextSessionCustomContext;
+  roadmap?: any; // CurriculumRoadmap
   now?: Date;
 }
 
@@ -231,14 +328,42 @@ export class CurriculumScheduler {
           description: `Target skill selected by learner: ${customName}`
         };
       }
-    } else {
+    } else if (input.roadmap && Array.isArray(input.roadmap.milestones)) {
+      const activeMs = input.roadmap.milestones.find((m: any) => m.milestone_id === input.roadmap.current_milestone_id && m.status !== 'completed')
+        || input.roadmap.milestones.find((m: any) => m.status === 'in_progress')
+        || input.roadmap.milestones[0];
+
+      if (activeMs && Array.isArray(activeMs.required_skills)) {
+        const unmasteredRoadmapSkill = activeMs.required_skills.find((rs: any) => !rs.is_mastered);
+        if (unmasteredRoadmapSkill) {
+          const inCatalog = CURRICULUM_SKILL_CATALOG.find(c => c.id === unmasteredRoadmapSkill.skill_id || c.name.toLowerCase() === unmasteredRoadmapSkill.name.toLowerCase());
+          if (inCatalog) {
+            selectedNewSkill = inCatalog;
+          } else {
+            selectedNewSkill = {
+              id: unmasteredRoadmapSkill.skill_id,
+              name: unmasteredRoadmapSkill.name,
+              category: (unmasteredRoadmapSkill.category as any) || 'grammar',
+              level: unmasteredRoadmapSkill.target_level || input.profile.current_level,
+              prerequisites: unmasteredRoadmapSkill.prerequisites || [],
+              description: `Roadmap milestone skill: ${unmasteredRoadmapSkill.name}`
+            };
+          }
+        }
+      }
+    }
+
+    if (!selectedNewSkill) {
       // Find candidate skills matching or above learner's current level first
       const levelRank: Record<string, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
       const userRank = levelRank[input.profile.current_level] || 3;
 
+      const isConversational = input.profile.primary_goal === 'conversation' || input.profile.structured_goal?.preferred_tone === 'playful_cheeky';
+
       const candidateList = CURRICULUM_SKILL_CATALOG.filter(c => {
         const existing = (input.skillStates || []).find(s => s.skill_name.toLowerCase() === c.name.toLowerCase() || s.skill_id === c.id);
-        return !existing || (existing.mastery_stage !== 'retained_mastery' && existing.status !== 'mastered');
+        const matchesCategory = isConversational ? (c.category === 'conversation' || c.category === 'grammar' || c.category === 'vocabulary') : true;
+        return matchesCategory && (!existing || (existing.mastery_stage !== 'retained_mastery' && existing.status !== 'mastered'));
       }).sort((a, b) => {
         const aDist = Math.abs((levelRank[a.level] || 3) - userRank);
         const bDist = Math.abs((levelRank[b.level] || 3) - userRank);

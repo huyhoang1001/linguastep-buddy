@@ -20,11 +20,14 @@ import {
   DeepDiveInquiryResponse,
   WordPracticeData,
   NextSessionCustomContext,
-  CompanionChatContext
+  CompanionChatContext,
+  CurriculumRoadmap,
+  EnglishLevel
 } from '../types/learning.ts';
 import { createDiagnosticAssessmentPlan } from '../types/diagnosticPlans.ts';
 import { localStore } from './localStore.ts';
 import { BudgetLimits, UserAccount, AuthSessionResponse } from '../types/auth.ts';
+import { generatePersonalizedRoadmap, syncAndAdvanceRoadmap } from './roadmapGenerator.ts';
 
 // Re-export localStore for components that access it directly
 export { localStore };
@@ -385,6 +388,7 @@ export async function generateLessonPlan(
 
   const skills = await localStore.getSkills();
   const recentErrors = skills.flatMap(s => s.recurring_errors);
+  const roadmap = await localStore.getRoadmap();
 
   const res = await fetch('/api/ai/lesson-plan', {
     method: 'POST',
@@ -395,7 +399,8 @@ export async function generateLessonPlan(
       recentErrors,
       dailyMinutes: profile.daily_minutes,
       lessonHistory,
-      customContext
+      customContext,
+      roadmap
     })
   });
 
@@ -1115,12 +1120,47 @@ export async function completeDiagnosticSession(): Promise<{
   const studyPlan: PersonalizedStudyPlan = await parseAIResponse<PersonalizedStudyPlan>(planRes, 'Failed to generate personalized study plan');
   await localStore.saveStudyPlan(studyPlan);
 
-  // Update profile level in local storage
-  const finalLevel = report.overallCEFR.includes('C1') ? 'C1' : report.overallCEFR.includes('B2') ? 'B2' : 'B1';
-  await localStore.updateProfile({
-    current_level: finalLevel as any,
-    goal_summary: `Calibrated at ${report.overallCEFR} based on adaptive diagnostic assessment.`
+  // Calibrate assessed level accurately across all CEFR bands
+  const placedLevel: EnglishLevel =
+    report.overallCEFR.includes('C1') ? 'C1' :
+    report.overallCEFR.includes('B2') ? 'B2' :
+    report.overallCEFR.includes('B1') ? 'B1' :
+    report.overallCEFR.includes('A2') ? 'A2' : 'A1';
+
+  // Extract category skill proficiencies
+  const skillProficiency: Record<string, { level: EnglishLevel; confidence: string }> = {};
+  if (session.currentEstimates) {
+    for (const [cat, est] of Object.entries(session.currentEstimates)) {
+      if (est && est.cefrRange) {
+        const catLevel: EnglishLevel =
+          est.cefrRange.includes('C1') ? 'C1' :
+          est.cefrRange.includes('B2') ? 'B2' :
+          est.cefrRange.includes('B1') ? 'B1' :
+          est.cefrRange.includes('A2') ? 'A2' : 'A1';
+        skillProficiency[cat] = {
+          level: catLevel,
+          confidence: est.confidence || 'moderate'
+        };
+      }
+    }
+  }
+
+  // Preserve self-reported level and original goal
+  const selfReported = profile.self_reported_level || profile.current_level || 'A1';
+
+  // Update profile with assessed proficiency WITHOUT destroying original goal_summary or structured_goal
+  const updatedProfile = await localStore.updateProfile({
+    self_reported_level: selfReported,
+    assessed_overall_level: placedLevel,
+    assessment_confidence: report.overallConfidence === 'low' ? 'provisional' : (report.overallConfidence || 'moderate'),
+    assessed_at: new Date().toISOString(),
+    skill_proficiency: skillProficiency,
+    current_level: placedLevel
   });
+
+  // Generate and persist the personalized roadmap matching the learner's authentic goal & assessed level
+  const roadmap = generatePersonalizedRoadmap(updatedProfile, report);
+  await localStore.saveRoadmap(roadmap);
 
   // Clear active session in local store
   await localStore.clearDiagnosticSession();
@@ -1133,7 +1173,7 @@ export async function getDiagnosticReports(): Promise<DiagnosticReport[]> {
 }
 
 // =========================================================================
-// PERSONALIZED STUDY PLAN (LOCAL-FIRST)
+// PERSONALIZED STUDY PLAN & CURRICULUM ROADMAP (LOCAL-FIRST)
 // =========================================================================
 
 export async function getStudyPlan(): Promise<{ plan: PersonalizedStudyPlan | null }> {
@@ -1160,7 +1200,36 @@ export async function approveStudyPlan(
     daily_minutes: adjustedMinutes || plan.dailyRoutineTemplate.reduce((acc, s) => acc + s.minutes, 0)
   });
 
+  // Ensure roadmap is created if none exists
+  let roadmap = await localStore.getRoadmap();
+  if (!roadmap) {
+    roadmap = generatePersonalizedRoadmap(updatedProfile);
+    await localStore.saveRoadmap(roadmap);
+  }
+
   return { success: true, plan, profile: updatedProfile };
+}
+
+export async function getCurriculumRoadmap(): Promise<CurriculumRoadmap | null> {
+  let roadmap = await localStore.getRoadmap();
+  if (!roadmap) {
+    const profile = await localStore.getProfile();
+    roadmap = generatePersonalizedRoadmap(profile);
+    await localStore.saveRoadmap(roadmap);
+  } else {
+    // Sync with existing skills
+    const skills = await localStore.getSkills();
+    const { roadmap: synced } = syncAndAdvanceRoadmap(roadmap, skills);
+    if (synced.updated_at !== roadmap.updated_at) {
+      await localStore.saveRoadmap(synced);
+      roadmap = synced;
+    }
+  }
+  return roadmap;
+}
+
+export async function advanceRoadmapMilestone(milestoneId: string): Promise<CurriculumRoadmap | null> {
+  return localStore.updateMilestoneProgress(milestoneId, { status: 'completed' });
 }
 
 // =========================================================================

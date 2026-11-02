@@ -311,12 +311,12 @@ app.post('/api/ai/verify-key', async (req: Request, res: Response) => {
 // 1. Generate Lesson Plan
 app.post('/api/ai/lesson-plan', checkAIBudget, async (req: Request, res: Response) => {
   try {
-    const { profile, skills = [], recentErrors = [], lessonHistory = [], customContext } = req.body;
+    const { profile, skills = [], recentErrors = [], lessonHistory = [], customContext, roadmap } = req.body;
     if (!profile || typeof profile !== 'object') {
       return res.status(400).json({ error: 'Valid learner profile is required in request context.' });
     }
 
-    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors, lessonHistory, customContext);
+    const plan = await aiService.generateLessonPlan(profile, skills, recentErrors, lessonHistory, customContext, roadmap);
     res.json(plan);
   } catch (err: any) {
     handleAiRouteError(res, err);

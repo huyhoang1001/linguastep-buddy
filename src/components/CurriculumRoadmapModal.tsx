@@ -10,7 +10,8 @@ import {
   Layers,
   Award
 } from 'lucide-react';
-import { UserProfile, LessonPlan, DailySummary } from '../types/learning.ts';
+import { UserProfile, LessonPlan, DailySummary, CurriculumRoadmap } from '../types/learning.ts';
+import { getCurriculumRoadmap } from '../services/api.ts';
 
 interface CurriculumRoadmapModalProps {
   isOpen: boolean;
@@ -30,69 +31,18 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
   onStartNewLesson
 }) => {
   const [isBuilding, setIsBuilding] = useState(false);
+  const [roadmap, setRoadmap] = useState<CurriculumRoadmap | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      getCurriculumRoadmap().then(r => setRoadmap(r)).catch(() => {});
+    }
+  }, [isOpen, profile.id]);
+
   if (!isOpen) return null;
 
   const isVi = profile.explanation_language === 'vi';
   const targetMins = activePlan?.estimated_duration_minutes || profile.daily_minutes || 20;
-
-  // Multi-day curriculum roadmap timeline matching B2/C1 workplace & general English
-  const roadmapDays = [
-    {
-      day: 1,
-      title: isVi ? 'Thành thạo mốc thời gian & Câu điều kiện' : 'Narrative Time Anchors & Conditionals',
-      status: 'completed',
-      focus: isVi ? 'Past Perfect, Mixed Conditionals (Type 3-2) & Mitigate/Streamline' : 'Past Perfect, Mixed Conditionals (Type 3-2) & Collocations',
-      skills: [
-        'By the time + Past Simple → Had + V3/ed',
-        'If + Had + V3... would be (Present outcome)',
-        'Collocations with Mitigate & Streamline'
-      ]
-    },
-    {
-      day: 2,
-      title: isVi ? 'Đảo ngữ nhấn mạnh & Từ nối tương phản' : 'Negative Inversion & Formal Contrast',
-      status: 'current',
-      focus: isVi ? 'Inversion with Seldom/Rarely/Hardly, Formal Connectors (Nevertheless/In spite of)' : 'Inversion with Seldom/Rarely/Hardly, Formal Connectors (Nevertheless/In spite of)',
-      skills: [
-        'Seldom / Rarely / Hardly + Auxiliary + S + V',
-        'Nevertheless / However vs. In spite of / Despite',
-        'Precision Vocabulary: Discrepancy & Contingency'
-      ]
-    },
-    {
-      day: 3,
-      title: isVi ? 'Câu chẻ nhấn mạnh & Báo cáo điều hành' : 'Cleft Sentences & Executive Status Reports',
-      status: 'upcoming',
-      focus: isVi ? 'It-clefts & What-clefts, Báo cáo tiến độ ngắn gọn cho C-Level' : 'It-clefts & What-clefts, Executive Status Briefings',
-      skills: [
-        'It was [X] that caused the bottleneck...',
-        'What we need to prioritize is [Y]...',
-        'Concise blocker updates preserving tone'
-      ]
-    },
-    {
-      day: 4,
-      title: isVi ? 'Thể bị động kỹ thuật & Biện luận giả định' : 'Passive Voice in Tech Reports & Subjunctive',
-      status: 'upcoming',
-      focus: isVi ? 'Passive in incident post-mortems & Subjunctive mood' : 'Passive in incident post-mortems & Subjunctive mood',
-      skills: [
-        'The system was configured to prevent...',
-        'It is crucial that the team deploy...',
-        'High-Impact Collocations: Leverage & Optimize'
-      ]
-    },
-    {
-      day: 5,
-      title: isVi ? 'Kiểm tra cột mốc Milestone & Đánh giá tự động' : 'Milestone Check & Comprehensive Assessment',
-      status: 'upcoming',
-      focus: isVi ? 'Tổng hợp 4 kỹ năng qua kịch bản thực tế & Nhận chứng chỉ tiến bộ' : 'Full 4-skill integration & Automated level check',
-      skills: [
-        'Adaptive Diagnostic Verification',
-        'Multi-format error clinic & polish',
-        'Personalized CEFR level progression report'
-      ]
-    }
-  ];
 
   const tomorrowPlan = activeSummary?.tomorrow_plan || {
     focus_title: isVi
@@ -215,58 +165,75 @@ export const CurriculumRoadmapModal: React.FC<CurriculumRoadmapModalProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#52796F] dark:text-[#84A98C] flex items-center space-x-1.5">
               <Layers className="w-4 h-4 text-[#2D6A4F] dark:text-[#84A98C]" />
-              <span>{isVi ? 'Khung Lộ Trình 5 Ngày' : '5-Day Curriculum Roadmap'}</span>
+              <span>{isVi ? 'Lộ Trình Học Cá Nhân Hóa' : 'Personalized Learning Milestones'}</span>
             </span>
             <span className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4]">
-              {isVi ? 'Cấp độ:' : 'Target:'} <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{profile.current_level} → {profile.target_level}</strong>
+              {isVi ? 'Mục tiêu:' : 'Target:'} <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{profile.current_level} → {profile.target_level || 'C1'}</strong>
             </span>
           </div>
 
           <div className="space-y-2.5">
-            {roadmapDays.map(item => (
-              <div
-                key={item.day}
-                className={`p-3.5 rounded-2xl border transition ${
-                  item.status === 'completed'
-                    ? 'bg-white/80 dark:bg-[#252C26] border-[#CDE1D4] dark:border-[#323D34] text-[#5C645E] dark:text-[#A7ABA4]'
-                    : item.status === 'current'
-                    ? 'bg-[#EFF6F1] dark:bg-[#27352B] border-[#74A892] dark:border-[#52B788] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#52B788]/30 shadow-sm'
-                    : 'bg-white/40 dark:bg-[#1C211D] border-[#EBE4D7] dark:border-[#2C332E] text-[#8A938C]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2.5">
-                    {item.status === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#52B788] shrink-0" />
-                    ) : item.status === 'current' ? (
-                      <div className="w-4 h-4 rounded-full bg-[#2D6A4F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                        {item.day}
+            {roadmap && roadmap.milestones && roadmap.milestones.length > 0 ? (
+              roadmap.milestones.map(item => {
+                const isCurrent = item.status === 'in_progress' || item.milestone_id === roadmap.current_milestone_id;
+                const isCompleted = item.status === 'completed';
+
+                return (
+                  <div
+                    key={item.milestone_id}
+                    className={`p-3.5 rounded-2xl border transition ${
+                      isCompleted
+                        ? 'bg-white/80 dark:bg-[#252C26] border-[#CDE1D4] dark:border-[#323D34] text-[#5C645E] dark:text-[#A7ABA4]'
+                        : isCurrent
+                        ? 'bg-[#EFF6F1] dark:bg-[#27352B] border-[#74A892] dark:border-[#52B788] text-[#1B4332] dark:text-[#F4F2EC] ring-1 ring-[#52B788]/30 shadow-sm'
+                        : 'bg-white/40 dark:bg-[#1C211D] border-[#EBE4D7] dark:border-[#2C332E] text-[#8A938C]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#52B788] shrink-0" />
+                        ) : isCurrent ? (
+                          <div className="w-4 h-4 rounded-full bg-[#2D6A4F] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                            {item.order}
+                          </div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border border-[#C5BFB3] dark:border-[#4B554D] flex items-center justify-center text-[10px] text-[#8A938C] shrink-0">
+                            {item.order}
+                          </div>
+                        )}
+                        <span className="text-xs font-bold">
+                          {isVi ? `Chặng ${item.order}: ${item.title}` : `Milestone ${item.order}: ${item.title}`}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border border-[#C5BFB3] dark:border-[#4B554D] flex items-center justify-center text-[10px] text-[#8A938C] shrink-0">
-                        {item.day}
+
+                      {isCurrent && (
+                        <span className="text-[10px] font-bold bg-[#2D6A4F] text-white px-2 py-0.5 rounded-full uppercase">
+                          {isVi ? 'Hiện tại' : 'Active'}
+                        </span>
+                      )}
+                      {item.order === 4 && (
+                        <Award className="w-4 h-4 text-[#E9A825] shrink-0" />
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-1 pl-7 leading-relaxed">
+                      {item.description}
+                    </p>
+
+                    {item.real_world_task && (
+                      <div className="mt-2 ml-7 p-2 rounded-lg bg-black/5 dark:bg-white/5 text-[11px] text-[#2D6A4F] dark:text-[#74A892]">
+                        🎯 {item.real_world_task}
                       </div>
                     )}
-                    <span className="text-xs font-bold">
-                      {isVi ? `Ngày ${item.day}: ${item.title}` : `Day ${item.day}: ${item.title}`}
-                    </span>
                   </div>
-
-                  {item.status === 'current' && (
-                    <span className="text-[10px] font-bold bg-[#2D6A4F] text-white px-2 py-0.5 rounded-full uppercase">
-                      {isVi ? 'Hiện tại' : 'Active'}
-                    </span>
-                  )}
-                  {item.day === 5 && (
-                    <Award className="w-4 h-4 text-[#E9A825] shrink-0" />
-                  )}
-                </div>
-
-                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] mt-1 pl-7 leading-relaxed">
-                  {item.focus}
-                </p>
+                );
+              })
+            ) : (
+              <div className="text-center py-4 text-xs text-[#8A938C]">
+                Loading roadmap...
               </div>
-            ))}
+            )}
           </div>
         </div>
 

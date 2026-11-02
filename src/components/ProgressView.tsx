@@ -6,10 +6,17 @@ import {
   Trophy,
   TrendingUp
 } from 'lucide-react';
-import { UserProfile, LearnerSkillState, DailySummary, Attempt } from '../types/learning.ts';
+import {
+  UserProfile,
+  LearnerSkillState,
+  DailySummary,
+  Attempt,
+  CurriculumRoadmap
+} from '../types/learning.ts';
 import { MilestoneBadge } from '../types/milestone.ts';
 import { WeeklyProgressChart } from './WeeklyProgressChart.tsx';
 import { AppButton, InfoCard, FilterChip, StatusBadge, InteractiveCard } from './ui/index.ts';
+import { getCurriculumRoadmap, advanceRoadmapMilestone } from '../services/api.ts';
 
 interface ProgressViewProps {
   profile: UserProfile;
@@ -32,6 +39,33 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'roadmap' | 'skills' | 'charts' | 'badges'>('roadmap');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [roadmap, setRoadmap] = useState<CurriculumRoadmap | null>(null);
+  const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
+
+  React.useEffect(() => {
+    loadRoadmap();
+  }, [profile.id, skills.length]);
+
+  const loadRoadmap = async () => {
+    try {
+      setIsLoadingRoadmap(true);
+      const rm = await getCurriculumRoadmap();
+      setRoadmap(rm);
+    } catch (err) {
+      console.warn('[ProgressView] Failed to load roadmap:', err);
+    } finally {
+      setIsLoadingRoadmap(false);
+    }
+  };
+
+  const handleAdvanceMilestone = async (milestoneId: string) => {
+    try {
+      const updated = await advanceRoadmapMilestone(milestoneId);
+      if (updated) setRoadmap(updated);
+    } catch (err) {
+      console.warn('[ProgressView] Failed to advance milestone:', err);
+    }
+  };
 
   const now = Date.now();
   const masteredSkills = skills.filter(
@@ -48,65 +82,6 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
   });
 
   const isVi = profile.explanation_language === 'vi';
-
-  // 5-Day Curriculum Roadmap
-  const roadmapDays = [
-    {
-      day: 1,
-      title: isVi ? 'Thành thạo mốc thời gian & Câu điều kiện' : 'Narrative Time Anchors & Conditionals',
-      status: 'completed',
-      focus: 'Past Perfect, Mixed Conditionals (Type 3-2) & Collocations',
-      skills: [
-        'By the time + Past Simple → Had + V3/ed',
-        'If + Had + V3... would be (Present outcome)',
-        'Precision collocations with mitigate & streamline'
-      ]
-    },
-    {
-      day: 2,
-      title: isVi ? 'Đảo ngữ nhấn mạnh & Từ nối tương phản' : 'Negative Inversion & Formal Contrast',
-      status: 'current',
-      focus: 'Inversion with Seldom/Rarely/Hardly, Formal Connectors (Nevertheless/In spite of)',
-      skills: [
-        'Seldom / Rarely / Hardly + Auxiliary + S + V',
-        'Nevertheless / However vs. In spite of / Despite',
-        'Workplace blocker status updates'
-      ]
-    },
-    {
-      day: 3,
-      title: isVi ? 'Mệnh đề quan hệ rút gọn & Động từ khiếm khuyết' : 'Reduced Relative Clauses & Modal Nuances',
-      status: 'upcoming',
-      focus: 'Participle Clauses (-ing / -ed) & Speculation Modals (Must have / Could have)',
-      skills: [
-        'Active reduction (The engineer designing...)',
-        'Passive reduction (The proposal submitted...)',
-        'Past deduction and risk mitigation'
-      ]
-    },
-    {
-      day: 4,
-      title: isVi ? 'Thể giả định & Ngôn ngữ đàm phán ngoại giao' : 'Subjunctive Mood & Diplomatic Hedging',
-      status: 'upcoming',
-      focus: 'Subjunctive with recommend/demand & Diplomatic Phrasing',
-      skills: [
-        'It is crucial that he be informed',
-        'Hedging with "It appears that" / "Might consider"',
-        'Executive alignment memos'
-      ]
-    },
-    {
-      day: 5,
-      title: isVi ? 'Đánh giá độc lập & Tổng kết chặng' : 'Independent Progress Evaluation & Milestone Check',
-      status: 'upcoming',
-      focus: 'Comprehensive Synthesis & Independent Progress Evaluation',
-      skills: [
-        'Mixed grammatical application test',
-        'Cross-category error correction',
-        'Level calibration verification'
-      ]
-    }
-  ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -214,66 +189,141 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
       {activeTab === 'roadmap' && (
         <div className="space-y-4">
           <InfoCard className="p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F4EFEB] dark:border-[#2B332D] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F4EFEB] dark:border-[#2B332D] pb-3">
               <div>
-                <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                  Your learning path
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                    {isVi ? 'Lộ trình học cá nhân hóa' : 'Personalized Curriculum Roadmap'}
+                  </h3>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 dark:bg-[#2D6A4F]/25 text-[#2D6A4F] dark:text-[#74A892] font-semibold border border-[#2D6A4F]/20">
+                    {profile.primary_goal === 'conversation' ? (isVi ? 'Giao tiếp & Đời sống' : 'Social & Conversation') :
+                     profile.primary_goal === 'workplace_tech' ? (isVi ? 'Kỹ thuật & Công việc' : 'Tech & Workplace') :
+                     profile.primary_goal === 'exam' ? (isVi ? 'Luyện thi & Đọc viết' : 'Exam & Academic') : (isVi ? 'Toàn diện' : 'Balanced')}
+                  </span>
+                </div>
                 <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
-                  Prioritized step-by-step to address missing prerequisites, overdue reviews, and new topics.
+                  <strong>{isVi ? 'Mục tiêu của bạn:' : 'Your Goal:'}</strong> {roadmap?.goal_summary || profile.goal_summary || 'Authentic communicative fluency'}
                 </p>
               </div>
-              <StatusBadge variant="info">
-                Level {profile.current_level} Sequence
-              </StatusBadge>
+              <div className="flex items-center gap-2">
+                <StatusBadge variant="info">
+                  {profile.assessed_overall_level ? (isVi ? `Đã chuẩn đoán: ${profile.assessed_overall_level}` : `Assessed: ${profile.assessed_overall_level}`) : `Level ${profile.current_level}`} → {profile.target_level || 'C1'}
+                </StatusBadge>
+              </div>
             </div>
 
+            {/* Milestones List */}
             <div className="space-y-3">
-              {roadmapDays.map(rd => (
-                <div
-                  key={rd.day}
-                  className={`p-4 rounded-2xl border transition ${
-                    rd.status === 'completed'
-                      ? 'bg-[#EFF6F1] dark:bg-[#202B24] border-[#CDE1D4] dark:border-[#334237]'
-                      : rd.status === 'current'
-                      ? 'bg-white dark:bg-[#242C26] border-2 border-[#2D6A4F] dark:border-[#52B788] shadow-xs'
-                      : 'bg-[#FAF7F2] dark:bg-[#1A1F1B] border-[#EBE4D7] dark:border-[#2C332E] opacity-80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                        rd.status === 'completed'
-                          ? 'bg-[#2D6A4F] text-white'
-                          : rd.status === 'current'
-                          ? 'bg-[#52B788] text-[#0F291E]'
-                          : 'bg-[#EAE4D7] dark:bg-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
-                      }`}>
-                        {rd.day}
-                      </span>
-                      <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                        {rd.title}
-                      </h4>
+              {roadmap && roadmap.milestones && roadmap.milestones.length > 0 ? (
+                roadmap.milestones.map((m) => {
+                  const isActive = m.status === 'in_progress' || m.milestone_id === roadmap.current_milestone_id;
+                  const isCompleted = m.status === 'completed';
+                  const allSkillsMastered = m.required_skills && m.required_skills.length > 0 &&
+                    m.required_skills.every(s => s.is_mastered);
+
+                  return (
+                    <div
+                      key={m.milestone_id}
+                      className={`p-4 rounded-2xl border transition ${
+                        isCompleted
+                          ? 'bg-[#EFF6F1] dark:bg-[#202B24] border-[#CDE1D4] dark:border-[#334237]'
+                          : isActive
+                          ? 'bg-white dark:bg-[#242C26] border-2 border-[#2D6A4F] dark:border-[#52B788] shadow-xs'
+                          : 'bg-[#FAF7F2] dark:bg-[#1A1F1B] border-[#EBE4D7] dark:border-[#2C332E] opacity-75'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-2.5">
+                          <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
+                            isCompleted
+                              ? 'bg-[#2D6A4F] text-white'
+                              : isActive
+                              ? 'bg-[#52B788] text-[#0F291E]'
+                              : 'bg-[#EAE4D7] dark:bg-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
+                          }`}>
+                            {isCompleted ? '✓' : m.order}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-bold text-[#1B4332] dark:text-[#F4F2EC]">
+                                {isVi ? `Chặng ${m.order}: ${m.title}` : `Milestone ${m.order}: ${m.title}`}
+                              </h4>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#EBE4D7]/50 dark:bg-[#2C332E] text-[#52796F] dark:text-[#84A98C]">
+                                Target: {m.target_cefr}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-0.5">
+                              {m.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                          <StatusBadge variant={isCompleted ? 'success' : isActive ? 'info' : 'neutral'}>
+                            {isCompleted ? (isVi ? '✓ Hoàn thành' : '✓ Completed') : isActive ? (isVi ? 'Đang học' : 'Active Focus') : (isVi ? 'Đang khóa' : 'Locked')}
+                          </StatusBadge>
+                          {isActive && (
+                            <AppButton
+                              size="sm"
+                              variant="primary"
+                              onClick={onStartNewLesson}
+                              leftIcon={<Sparkles className="w-3 h-3" />}
+                            >
+                              {isVi ? 'Học chặng này' : 'Practice Now'}
+                            </AppButton>
+                          )}
+                          {isActive && allSkillsMastered && (
+                            <AppButton
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleAdvanceMilestone(m.milestone_id)}
+                            >
+                              {isVi ? 'Mở khóa chặng sau' : 'Unlock Next'}
+                            </AppButton>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Real-world communicative outcome */}
+                      {m.real_world_task && (
+                        <div className="mt-3 p-2.5 rounded-xl bg-[#FAF7F2] dark:bg-[#1E2420] border border-[#EBE4D7]/70 dark:border-[#2C332E] text-xs text-[#1B4332] dark:text-[#E8F0EA]">
+                          <strong className="text-[#2D6A4F] dark:text-[#52B788]">{isVi ? '🎯 Kết quả thực tế đạt được: ' : '🎯 Real-World Outcome: '}</strong>
+                          {m.real_world_task}
+                        </div>
+                      )}
+
+                      {/* Required skills breakdown */}
+                      <div className="mt-3 pt-2.5 border-t border-[#EBE4D7]/60 dark:border-[#2C332E] space-y-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A938C] block">
+                          {isVi ? 'Kỹ năng cần đạt được:' : 'Target Skills Required:'}
+                        </span>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {m.required_skills.map((skill) => (
+                            <span
+                              key={skill.skill_id}
+                              className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1.5 ${
+                                skill.is_mastered
+                                  ? 'bg-[#EFF6F1] dark:bg-[#202B24] border-[#A3D9B5] text-[#2D6A4F] dark:text-[#74A892] font-semibold'
+                                  : 'bg-white/70 dark:bg-[#161A17] border-[#EBE4D7] dark:border-[#2C332E] text-[#5C645E] dark:text-[#A7ABA4]'
+                              }`}
+                            >
+                              <span>{skill.is_mastered ? '✓' : '○'}</span>
+                              <span>{skill.name}</span>
+                              <span className="text-[10px] opacity-75 font-mono">
+                                ({skill.mastery_requirement})
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-
-                    <StatusBadge variant={rd.status === 'completed' ? 'success' : rd.status === 'current' ? 'info' : 'neutral'}>
-                      {rd.status === 'completed' ? '✓ Completed' : rd.status === 'current' ? 'Active Focus' : 'Upcoming'}
-                    </StatusBadge>
-                  </div>
-
-                  <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-2 font-medium">
-                    {rd.focus}
-                  </p>
-
-                  <div className="mt-2 pt-2 border-t border-[#EBE4D7]/60 dark:border-[#2C332E] flex flex-wrap gap-2 text-[11px] text-[#2D6A4F] dark:text-[#84A98C]">
-                    {rd.skills.map((s, idx) => (
-                      <span key={idx} className="bg-white/60 dark:bg-[#161A17] px-2 py-0.5 rounded-md border border-[#EBE4D7] dark:border-[#2C332E]">
-                        &bull; {s}
-                      </span>
-                    ))}
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-xs text-[#8A938C]">
+                  {isLoadingRoadmap ? 'Loading personalized roadmap...' : 'No roadmap generated yet. Complete discovery or diagnostic to build your pathway.'}
                 </div>
-              ))}
+              )}
             </div>
           </InfoCard>
         </div>

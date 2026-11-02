@@ -99,11 +99,20 @@ export class CEFREvaluator {
     for (const lvl of ALL_LEVELS) {
       const currentStats = breakdown[lvl];
       if (currentStats.attempted === 0) {
-        // No evidence for this level; cannot place higher than last confirmed level
-        break;
+        // If higher level items were attempted and passed, lower levels are implied foundation
+        const higherLevelsAttemptedAndPassed = ALL_LEVELS.slice(ALL_LEVELS.indexOf(lvl) + 1).some(
+          hl => breakdown[hl].attempted > 0 && breakdown[hl].accuracy >= 0.5
+        );
+        if (higherLevelsAttemptedAndPassed) {
+          placedLevel = lvl;
+          continue;
+        } else {
+          // No evidence for this level or higher; cannot place higher than last confirmed level
+          break;
+        }
       }
 
-      // Check prerequisite foundation: all levels below lvl must have >= 50% accuracy
+      // Check prerequisite foundation: all tested levels below lvl must have >= 50% accuracy
       const lvlIndex = ALL_LEVELS.indexOf(lvl);
       const prerequisitesIntact = ALL_LEVELS.slice(0, lvlIndex).every(p => {
         const pStats = breakdown[p];

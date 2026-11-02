@@ -27,6 +27,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [report, setReport] = useState<DiagnosticReport | null>(initialReport);
   const [studyPlan, setStudyPlan] = useState<PersonalizedStudyPlan | null>(initialPlan);
 
+  React.useEffect(() => {
+    if (initialPhase) setPhase(initialPhase);
+  }, [initialPhase]);
+
+  React.useEffect(() => {
+    if (initialReport) setReport(initialReport);
+  }, [initialReport]);
+
+  React.useEffect(() => {
+    if (initialPlan) setStudyPlan(initialPlan);
+  }, [initialPlan]);
+
+  React.useEffect(() => {
+    if (currentProfile) setProfile(currentProfile);
+  }, [currentProfile]);
+
   const handleDiscoveryConfirmed = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
     if (onStartDiagnostic) {
@@ -59,7 +75,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           <ConversationalDiscovery
             currentProfile={profile}
             onConfirmed={handleDiscoveryConfirmed}
-            onSkipToDiagnostic={() => setPhase('diagnostic')}
+            onSkipToDiagnostic={() => {
+              if (onStartDiagnostic) {
+                onStartDiagnostic();
+              } else {
+                setPhase('diagnostic');
+              }
+            }}
           />
         )}
 

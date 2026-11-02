@@ -24,7 +24,13 @@ export function fallbackDiscoveryTurn(
   const lower = userMessage.toLowerCase();
   const updated: Partial<UserProfile> = {};
 
-  if (lower.includes('work') || lower.includes('tech') || lower.includes('software') || lower.includes('công việc') || lower.includes('kỹ thuật')) {
+  const isDatingOrSocial = lower.includes('tán') || lower.includes('gái') || lower.includes('dating') || lower.includes('flirt') || lower.includes('crush') || lower.includes('hẹn hò') || lower.includes('bạn gái') || lower.includes('tinder') || lower.includes('tán gái');
+
+  if (isDatingOrSocial) {
+    updated.primary_goal = 'conversation';
+    updated.general_vs_work_ratio = 5;
+    updated.goal_summary = userMessage.trim();
+  } else if (lower.includes('work') || lower.includes('tech') || lower.includes('software') || lower.includes('công việc') || lower.includes('kỹ thuật') || lower.includes('engineer') || lower.includes('developer') || lower.includes('dev')) {
     updated.primary_goal = 'workplace_tech';
     updated.general_vs_work_ratio = 80;
   } else if (lower.includes('conversa') || lower.includes('giao tiếp') || lower.includes('nói') || lower.includes('hàng ngày') || lower.includes('daily')) {
@@ -45,16 +51,22 @@ export function fallbackDiscoveryTurn(
     updated.goal_summary = userMessage.trim();
   }
 
+  let detectedLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | undefined;
   if (lower.includes('a1') || lower.includes('mất gốc') || lower.includes('mới bắt đầu') || lower.includes('beginner') || lower.includes('from a1')) {
-    updated.current_level = 'A1';
+    detectedLevel = 'A1';
   } else if (lower.includes('a2') || lower.includes('elementary') || lower.includes('cơ bản')) {
-    updated.current_level = 'A2';
+    detectedLevel = 'A2';
   } else if (lower.includes('b1') || lower.includes('intermediate') || lower.includes('trung cấp')) {
-    updated.current_level = 'B1';
+    detectedLevel = 'B1';
   } else if (lower.includes('b2') || lower.includes('upper-intermediate')) {
-    updated.current_level = 'B2';
+    detectedLevel = 'B2';
   } else if (lower.includes('c1') || lower.includes('advanced') || lower.includes('thành thạo')) {
-    updated.current_level = 'C1';
+    detectedLevel = 'C1';
+  }
+
+  if (detectedLevel) {
+    updated.self_reported_level = detectedLevel;
+    updated.current_level = detectedLevel;
   }
 
   if (lower.includes('đạt c1') || lower.includes('target c1') || lower.includes('reach c1') || lower.includes('to c1') || lower.includes('go to c1')) {
@@ -68,6 +80,41 @@ export function fallbackDiscoveryTurn(
   if (lower.includes('10')) updated.daily_minutes = 10;
   else if (lower.includes('30')) updated.daily_minutes = 30;
   else if (lower.includes('20')) updated.daily_minutes = 20;
+
+  // Build or augment structured_goal
+  const originalGoalText = currentProfile.structured_goal?.original_free_text || updated.goal_summary || currentProfile.goal_summary || userMessage.trim();
+  const effectivePrimaryGoal = updated.primary_goal || currentProfile.primary_goal || 'conversation';
+  const effectiveSelfReported = updated.self_reported_level || currentProfile.self_reported_level || updated.current_level || currentProfile.current_level || 'A1';
+  const effectiveTarget = updated.target_level || currentProfile.target_level || 'C1';
+  const effectiveMinutes = updated.daily_minutes || currentProfile.daily_minutes || 20;
+
+  const tone = isDatingOrSocial
+    ? 'playful_cheeky'
+    : effectivePrimaryGoal === 'workplace_tech'
+      ? 'formal_workplace'
+      : effectivePrimaryGoal === 'exam'
+        ? 'academic'
+        : 'casual';
+
+  const preferredSituations = isDatingOrSocial
+    ? ['Casual bantering & humor', 'Texting & social messaging', 'First dates & icebreakers', 'Compliments & playful teasing']
+    : effectivePrimaryGoal === 'workplace_tech'
+      ? ['Technical meetings & standups', 'PR reviews & architectural discussions', 'Incident post-mortems', 'Cross-functional alignment']
+      : ['Everyday casual conversations', 'Expressing opinions with friends', 'Travel & social gatherings'];
+
+  updated.structured_goal = {
+    original_free_text: originalGoalText,
+    interpreted_goal: isDatingOrSocial ? 'Casual Dating, Social Banter & Flirting' : originalGoalText,
+    primary_objective: isDatingOrSocial ? 'Speak and text naturally with humor, charisma, and confidence' : (updated.goal_summary || 'Authentic communicative fluency'),
+    secondary_objectives: isDatingOrSocial
+      ? ['Master witty conversational banter', 'Use natural slang and contemporary Gen Z phrasings', 'Avoid awkward overly formal textbook grammar']
+      : ['Achieve grammatical precision', 'Expand domain-specific vocabulary'],
+    preferred_situations: preferredSituations,
+    preferred_tone: tone,
+    available_daily_time: effectiveMinutes,
+    target_level: effectiveTarget,
+    self_reported_level: effectiveSelfReported
+  };
 
   if (turnsCount <= 1) {
     return {

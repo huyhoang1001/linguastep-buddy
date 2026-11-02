@@ -21,6 +21,8 @@ interface CatCompanionWidgetProps {
 }
 
 // Stable dimension constants
+const COLLAPSED_WIDTH = 64;
+const EXPANDED_WIDTH = 380;
 const EDGE_MARGIN = 16;
 const DRAG_THRESHOLD = 5;
 
@@ -222,13 +224,14 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
   const snapToEdge = useCallback((x: number, y: number, width: number, height: number) => {
     const centerX = x + width / 2;
     const isLeft = centerX < window.innerWidth / 2;
-    const edge = isLeft ? 'left' : 'right';
+    const edge: 'left' | 'right' = isLeft ? 'left' : 'right';
+    const nearestEdge = edge === 'left' ? 'left' : 'right';
     
     const maxY = window.innerHeight - height - EDGE_MARGIN;
     const clampedY = Math.max(EDGE_MARGIN, Math.min(maxY, y));
     const verticalRatio = clampedY / (window.innerHeight - height);
 
-    setPlacement({ edge, verticalRatio });
+    setPlacement({ edge: nearestEdge, verticalRatio });
     setDragPos(null);
     setIsSnapping(true);
     setTimeout(() => setIsSnapping(false), 300);
@@ -392,6 +395,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       {isChatOpen && (
         <div
           ref={chatPanelRef}
+          style={{ width: `min(${EXPANDED_WIDTH}px, calc(100vw - 32px))` }}
           className={`mb-3 w-[min(380px,calc(100vw-32px))] h-[min(520px,80vh)] bg-[#FAF7F2] dark:bg-[#1C211E] border border-[#EBE4D7] dark:border-[#333B35] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp transition-shadow ${
             isDragging ? 'shadow-amber-500/20 ring-2 ring-[#2D6A4F]/40' : ''
           }`}
@@ -478,6 +482,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
       <div
         ref={catButtonRef}
         onPointerDown={handlePointerDown}
+        style={{ minWidth: isMinimized ? `${COLLAPSED_WIDTH}px` : undefined }}
         className={`bg-[#161A17]/90 dark:bg-[#161A17]/95 border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition-all duration-300 ${isDragging ? 'scale-95 shadow-none' : 'hover:scale-[1.02]'} w-fit max-w-[min(260px,80vw)] touch-none`}
       >
         <div 

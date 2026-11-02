@@ -23,6 +23,20 @@ export type QuestionType =
 
 export type Verdict = 'correct' | 'partially_correct' | 'incorrect' | 'ambiguous';
 
+export interface LearnerGoal {
+  original_free_text: string;
+  interpreted_goal: string;
+  primary_objective: string;
+  secondary_objectives?: string[];
+  preferred_situations?: string[];
+  preferred_tone?: string;
+  professional_background?: string;
+  learning_challenges?: string[];
+  available_daily_time?: number;
+  target_level: EnglishLevel;
+  self_reported_level?: EnglishLevel;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -37,6 +51,16 @@ export interface UserProfile {
   feedback_style: FeedbackStyle;
   enable_audio_tips: boolean;
   onboarding_completed: boolean;
+
+  // Separated Self-Reported vs Assessed Proficiency (Section 3)
+  self_reported_level?: EnglishLevel;
+  assessed_overall_level?: EnglishLevel;
+  assessment_confidence?: 'provisional' | 'moderate' | 'high';
+  skill_proficiency?: Record<string, { level: string; confidence: string }>;
+  assessed_at?: string;
+
+  // Structured Goal (Section 2)
+  structured_goal?: LearnerGoal;
   
   // Extended conversational discovery fields
   struggles?: string[];
@@ -703,7 +727,73 @@ export interface PersonalizedStudyPlan {
   progressCheckIntervalDays: number;
   learnerApprovalStatus: 'draft' | 'approved';
   approvedAt?: string;
-  createdAt: string;
+  createdAt?: string;
+  created_at?: string;
+  studyPlan?: PersonalizedStudyPlan;
+}
+
+// ----------------------------------------------------
+// UNIFIED PERSISTED CURRICULUM ROADMAP (SECTION 4)
+// ----------------------------------------------------
+
+export interface RoadmapSkillItem {
+  skill_id: string;
+  name: string;
+  skill_name?: string;
+  category: SectionType | 'conversation' | 'collocation';
+  level?: EnglishLevel;
+  target_level?: EnglishLevel;
+  prerequisites: string[]; // skill IDs or names
+  target_mastery_stage?: SkillMasteryStage;
+  mastery_requirement?: string;
+  status?: 'locked' | 'learning' | 'mastered';
+  is_mastered?: boolean;
+  accuracy?: number;
+  evidence_summary?: string;
+}
+
+export interface RoadmapMilestone {
+  id?: string;
+  milestone_id: string;
+  order: number;
+  title: string;
+  title_vi?: string;
+  description: string;
+  target_objective?: string;
+  real_world_task?: string;
+  target_level?: EnglishLevel;
+  target_cefr?: EnglishLevel;
+  status: 'completed' | 'in_progress' | 'locked';
+  skills?: RoadmapSkillItem[];
+  required_skills: RoadmapSkillItem[];
+  completion_evidence?: string;
+  completed_at?: string;
+  unlocked_at?: string;
+  estimated_days?: number;
+}
+
+export interface CurriculumRoadmap {
+  id?: string;
+  roadmap_id: string;
+  version?: number;
+  learner_id: string;
+  goal_summary?: string;
+  goal_reference?: {
+    original_goal: string;
+    interpreted_goal: string;
+    focus_domain: string;
+  };
+  baseline_proficiency?: EnglishLevel;
+  assessed_starting_level?: EnglishLevel;
+  target_proficiency?: EnglishLevel;
+  target_cefr?: EnglishLevel;
+  milestones: RoadmapMilestone[];
+  current_milestone_id: string;
+  completion_evidence?: string[];
+  next_recommended_activity?: string;
+  review_schedule?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ActiveLessonState {
@@ -734,6 +824,7 @@ export interface LearningDataExport {
   diagnosticSession?: DiagnosticSession;
   diagnosticReports?: DiagnosticReport[];
   studyPlan?: PersonalizedStudyPlan;
+  roadmap?: CurriculumRoadmap;
   exported_at: string;
 }
 
