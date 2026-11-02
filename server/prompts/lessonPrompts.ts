@@ -167,12 +167,17 @@ Core pedagogical constraints:
 - If activity is "concept_practice": For question index 0, provide multiple_choice with concise concept_intro. For question index >= 1, provide fill_in_blank or sentence completion.
 - If activity is "reading_analysis": Provide a rich "reading_passage" (120-150 words) and a comprehension or subtle inference question.
 - If activity is "writing_production" or "exit_synthesis": Provide a realistic free_writing prompt.
-  * CRITICAL FOR FREE WRITING: The prompt MUST be a situational task (e.g., "Write a status update..."). It MUST NOT contain fill-in-the-blank sentences, underscores "____", or verb-form prompts in parentheses (e.g., "(be)"). The learner must produce their own sentences from scratch. Do NOT provide a sentence template for the learner to complete. Do NOT provide "context_sentence" for free_writing. Do NOT reveal the "model_answer" or any part of it in the prompt field.
-  ${writingConfig ? `* ADAPTIVE TARGET:
-    - Task Type: ${writingConfig.task_type}
+  * CRITICAL FOR FREE WRITING:
+    - Task: Provide a clear, realistic situational scenario (e.g., "Write a status update email to your project manager regarding a delay...").
+    - NO LEAKAGE: NEVER include any part of the "model_answer" or an "example sentence" in the prompt field.
+    - NO TEMPLATES: Do NOT provide underscores "____", verb-form prompts like "(be/already complete)", or sentence templates for the learner to complete.
+    - NO CLOZE: Writing practice must measure independent production, not sentence completion.
+    - OUTPUT: The prompt should describe the context and what needs to be communicated. Do NOT reveal how to say it.
+    - LENGTH POLICY: Respect the following target length constraints in the prompt description:
+  ${writingConfig ? `    - Task Type: ${writingConfig.task_type}
     - Complexity: ${writingConfig.complexity}
     - Target length: ${writingConfig.min_words ? `${writingConfig.min_words}-${writingConfig.max_words} words` : `${writingConfig.min_sentences}-${writingConfig.max_sentences} sentences`}
-    - Instructions MUST specify this target length to the learner and you MUST NOT provide any sentence for them to complete.` : ''}
+    - The instructions must explicitly state these length requirements to the learner.` : ''}
 
 JSON Output Schema:
 {

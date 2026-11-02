@@ -1515,7 +1515,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                     variant="primary"
                     rightIcon={<ArrowRight />}
                   >
-                    Finish Exam
+                    Finish
                   </AppButton>
                 ) : (
                   <AppButton
@@ -1526,7 +1526,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
                   >
                     {sectionCompletedNotice?.nextSection
                       ? 'Next Section'
-                      : 'Next Question'}
+                      : 'Next'}
                   </AppButton>
                 )}
               </div>

@@ -1125,11 +1125,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-[#5C645E] dark:text-[#A7ABA4]">
-                  {currentQuestion?.writing_config?.min_words ? (
-                    <span>Words: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{userAnswer.trim().split(/\s+/).filter(Boolean).length}</strong> (target: {currentQuestion.writing_config.min_words}-{currentQuestion.writing_config.max_words})</span>
-                  ) : (
-                    <span>Sentences: <strong className="text-[#1B4332] dark:text-[#F4F2EC]">{countSentences(userAnswer)}</strong> (target: {currentQuestion?.writing_config?.min_sentences || (currentQuestion?.difficulty === 'A1' ? 1 : 3)}-{currentQuestion?.writing_config?.max_sentences || (currentQuestion?.difficulty === 'A1' ? 2 : 5)})</span>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-0.5 rounded-md font-bold ${
+                      currentQuestion?.writing_config?.min_words
+                        ? (userAnswer.trim().split(/\s+/).filter(Boolean).length >= currentQuestion.writing_config.min_words ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788]' : 'bg-[#FAF7F2] dark:bg-[#242A25]')
+                        : (countSentences(userAnswer) >= (currentQuestion?.writing_config?.min_sentences || 1) ? 'bg-[#E7F3EF] text-[#2D6A4F] dark:bg-[#1E2B23] dark:text-[#52B788]' : 'bg-[#FAF7F2] dark:bg-[#242A25]')
+                    }`}>
+                      {currentQuestion?.writing_config?.min_words ? (
+                        <>Words: {userAnswer.trim().split(/\s+/).filter(Boolean).length} (target: {currentQuestion.writing_config.min_words}{currentQuestion.writing_config.max_words ? `-${currentQuestion.writing_config.max_words}` : '+'})</>
+                      ) : (
+                        <>Sentences: {countSentences(userAnswer)} (target: {currentQuestion?.writing_config?.min_sentences || 1}{currentQuestion?.writing_config?.max_sentences ? `-${currentQuestion.writing_config.max_sentences}` : '+'})</>
+                      )}
+                    </span>
+                  </div>
                   {speechSupported && (
                     <span className="text-[11px] text-[#8A938C]">
                       Mic uses browser voice dictation
@@ -1512,16 +1520,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                 <AppButton
                   onClick={handleNextQuestionOrSection}
-                  size="lg"
+                  size="md"
                   variant="primary"
-                  className="min-w-[160px]"
+                  className="min-w-[120px]"
                   rightIcon={<ArrowRight />}
                 >
                   {questionIndexInSection < targetQuestionsInSection - 1
-                    ? 'Next Question'
+                    ? 'Next'
                     : currentSectionIndex < activeSections.length - 1
                     ? 'Next Activity'
-                    : 'Finish Lesson'}
+                    : 'Finish'}
                 </AppButton>
               </div>
             </div>

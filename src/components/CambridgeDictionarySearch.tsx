@@ -59,32 +59,27 @@ export const CambridgeDictionarySearch: React.FC<CambridgeDictionarySearchProps>
       }
     };
     fetchVocab();
+
+    const handleFocusEvent = () => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+      setIsFocused(true);
+    };
+
+    window.addEventListener('meomeo:focus-global-search', handleFocusEvent);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('meomeo:focus-global-search', handleFocusEvent);
     };
   }, []);
 
-  // Global hotkey: '/' or 'Cmd+K' / 'Ctrl+K' focuses this search input
+  // Keyboard focus handling is now managed by the parent (Header/App) to prevent conflicts
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is already typing in an input, textarea, or contentEditable
-      const target = e.target as HTMLElement;
-      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
-
-      if ((e.key === '/' && !isInput) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
-        e.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.select();
-        setIsFocused(true);
-      } else if (e.key === 'Escape' && isFocused) {
-        setIsFocused(false);
-        inputRef.current?.blur();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFocused]);
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   // Click or tap outside to close dropdown
   useEffect(() => {

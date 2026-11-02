@@ -4,7 +4,6 @@ import {
   Sparkles,
   BookMarked,
   Layers,
-  Search,
   Sun,
   Moon,
   Sliders,
@@ -17,6 +16,7 @@ import {
 import { UserProfile } from '../types/learning.ts';
 import { UserAccount, BudgetLimits } from '../types/auth.ts';
 import { StatusBadge } from './ui/StatusBadge.tsx';
+import { CambridgeDictionarySearch } from './CambridgeDictionarySearch.tsx';
 
 export type NavigationDestination = 'home' | 'learn' | 'words' | 'progress';
 
@@ -34,6 +34,7 @@ interface HeaderProps {
   onOpenAuth?: () => void;
   onLogout?: () => void;
   onOpenSearchPalette: () => void;
+  onPracticeWord: (word: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -49,7 +50,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCatStudio,
   onOpenAuth,
   onLogout,
-  onOpenSearchPalette
+  onOpenSearchPalette,
+  onPracticeWord
 }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -81,9 +83,13 @@ export const Header: React.FC<HeaderProps> = ({
   // Keyboard shortcut listener for Cmd+K / Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      // Ignore if user is already typing in an input, textarea, or contentEditable
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !isInput)) {
         e.preventDefault();
-        onOpenSearchPalette();
+        window.dispatchEvent(new CustomEvent('meomeo:focus-global-search'));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -351,27 +357,16 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Dedicated Global Search Row */}
-        <div className="border-t border-[#EBE4D7]/80 dark:border-[#262E28] bg-[#F7F3EC]/80 dark:bg-[#181E19]/80 py-2.5 px-4 sm:px-6">
+        {/* Row 2: Dedicated Global Search Row (Inline Cambridge Search) */}
+        <div className="border-t border-[#EBE4D7]/80 dark:border-[#262E28] bg-[#F7F3EC]/80 dark:bg-[#181E19]/80 py-2 sm:py-3 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto flex justify-center">
-            <button
-              type="button"
-              onClick={onOpenSearchPalette}
-              title="Search dictionary, grammar rules & quick commands (⌘K)"
-              className="w-full max-w-3xl flex items-center justify-between px-3.5 py-2 rounded-2xl bg-white dark:bg-[#202722] hover:bg-[#FAF7F2] dark:hover:bg-[#27302A] border border-[#EBE4D7] dark:border-[#2C332E] text-xs text-[#5C645E] dark:text-[#A7ABA4] hover:text-[#1B4332] dark:hover:text-[#F4F2EC] transition cursor-pointer shadow-2xs group"
-            >
-              <div className="flex items-center space-x-2.5 min-w-0">
-                <Search className="w-4 h-4 text-[#2D6A4F] dark:text-[#52B788] group-hover:scale-110 transition-transform shrink-0" />
-                <span className="truncate text-xs font-normal text-[#5C645E] dark:text-[#A7ABA4] group-hover:text-[#1B4332] dark:hover:text-[#F4F2EC]">
-                  Search Cambridge dictionary, grammar rules &amp; quick commands...
-                </span>
-              </div>
-              <div className="flex items-center space-x-1.5 shrink-0 ml-2">
-                <kbd className="font-mono text-[10px] font-semibold bg-[#FAF7F2] dark:bg-[#161A17] border border-[#EBE4D7] dark:border-[#2E3730] px-2 py-0.5 rounded-lg text-[#5C645E] dark:text-[#8A938C] shadow-2xs">
-                  ⌘K
-                </kbd>
-              </div>
-            </button>
+            <div className="w-full max-w-3xl">
+              <CambridgeDictionarySearch
+                onSelectWord={onPracticeWord}
+                placeholder="Search Cambridge dictionary, grammar rules or type any English word... (⌘K)"
+                compact
+              />
+            </div>
           </div>
         </div>
       </header>

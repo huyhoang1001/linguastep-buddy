@@ -66,17 +66,7 @@ export default function App() {
   const [navigationDestination, setNavigationDestination] = useState<NavigationDestination>('home');
   const [showCommandPalette, setShowCommandPalette] = useState<boolean>(false);
 
-  // Global Cmd+K / Ctrl+K shortcut for command palette
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setShowCommandPalette(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // Global Cmd+K / Ctrl+K shortcut is now handled in Header.tsx to focus inline search
 
   // Cohesive Light / Dark theme state with instant DOM sync & system listener
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -443,6 +433,7 @@ export default function App() {
         onOpenAuth={() => setShowAuthModal(true)}
         onLogout={handleLogout}
         onOpenSearchPalette={() => setShowCommandPalette(true)}
+        onPracticeWord={(word) => setActiveDictionaryWord(word)}
       />
 
       {/* Main Content Area with 4 Primary Destinations */}
