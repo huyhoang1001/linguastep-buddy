@@ -89,6 +89,18 @@
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
+  /* Semantic Theme Mappings */
+  --color-app: var(--bg-app);
+  --color-surface: var(--bg-surface);
+  --color-surface-subdued: var(--bg-surface-subdued);
+  --color-border-app: var(--border-app);
+  --color-border-default: var(--border-default);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-fg: var(--brand-primary-fg);
+
   /* Cozy Warm Cream Canvas */
   --color-cream-50: #FAF7F2;
   --color-cream-100: #F4EFEB;

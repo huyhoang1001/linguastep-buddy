@@ -20,7 +20,7 @@ export const InteractiveCard: React.FC<InteractiveCardProps> = ({
   const stateStyles = disabled
     ? 'opacity-50 cursor-not-allowed pointer-events-none bg-[var(--bg-surface-subdued)] border border-[var(--border-default)]'
     : selected
-    ? 'bg-[var(--bg-surface)] border-2 border-[var(--brand-primary)] shadow-md text-[var(--text-primary)]'
+    ? 'bg-[var(--bg-concept)] border-2 border-[var(--brand-primary)] shadow-md text-[var(--text-primary)]'
     : 'bg-[var(--bg-surface-subdued)] border border-[var(--border-default)] hover:border-[var(--brand-primary)]/60 hover:bg-[var(--bg-surface)] hover:shadow-md text-[var(--text-secondary)]';
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

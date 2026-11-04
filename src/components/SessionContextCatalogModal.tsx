@@ -403,26 +403,26 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="catalog-modal-title"
     >
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-surface border border-app rounded-[2rem] shadow-2xl flex flex-col overflow-hidden text-primary">
+      <div className="relative w-full max-w-4xl max-h-[calc(100dvh-48px)] bg-surface border border-border-app rounded-[2rem] shadow-2xl flex flex-col overflow-hidden text-text-primary">
         
-        {/* Header Section */}
-        <div className="px-6 py-5 md:px-8 md:py-6 border-b border-app bg-surface shrink-0">
+        {/* Header Section (Fixed) */}
+        <div className="px-6 py-5 md:px-8 md:py-6 border-b border-border-app bg-surface shrink-0 z-10">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-primary flex items-center justify-center text-white shadow-md shadow-brand-primary/20">
+              <div className="w-10 h-10 rounded-2xl bg-brand-primary flex items-center justify-center text-brand-primary-fg shadow-md">
                 <Sliders className="w-5 h-5" />
               </div>
-              <div>
-                <h2 id="catalog-modal-title" className="text-xl md:text-2xl font-serif font-bold tracking-tight text-primary leading-tight">
+              <div className="min-w-0">
+                <h2 id="catalog-modal-title" className="text-lg md:text-2xl font-serif font-bold tracking-tight text-text-primary leading-tight">
                   Next Session Catalog
                 </h2>
-                <p className="text-xs text-muted mt-0.5 leading-relaxed">
-                  Tailor your learning objective, mistakes, and new skills for the next AI session.
+                <p className="text-[10px] md:text-xs text-text-muted mt-0.5 leading-relaxed">
+                  Tailor your learning objective, mistakes, and new skills.
                 </p>
               </div>
             </div>
@@ -432,11 +432,11 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
               ariaLabel="Close catalog"
               onClick={onClose}
               variant="ghost"
-              className="mt-1"
+              className="mt-1 shrink-0"
             />
           </div>
 
-          {/* Responsive Navigation Tabs */}
+          {/* Responsive Navigation Tabs (Horizontal Scrollable) */}
           <div className="flex items-center space-x-1 mt-6 overflow-x-auto no-scrollbar pb-1">
             {[
               { id: 'overview', label: 'Topic', icon: Briefcase },
@@ -451,22 +451,22 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 py-2 rounded-xl font-bold text-xs transition flex items-center space-x-2 shrink-0 cursor-pointer border-2 ${
                   activeTab === tab.id
-                    ? 'bg-brand-primary border-brand-primary text-white shadow-sm'
-                    : 'bg-transparent border-transparent text-muted hover:text-secondary'
+                    ? 'bg-brand-primary border-brand-primary text-brand-primary-fg shadow-sm'
+                    : 'bg-transparent border-transparent text-text-muted hover:text-text-secondary hover:bg-surface-subdued'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
                   <span className={`ml-1.5 px-1.5 py-0.5 rounded-lg text-[10px] font-mono leading-none ${
-                    activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'
+                    activeTab === tab.id ? 'bg-brand-primary-fg/20 text-brand-primary-fg' : 'bg-brand-primary/10 text-brand-primary'
                   }`}>
                     {tab.count}
                   </span>
                 )}
                 {tab.hasDot && (
                   <span className={`w-2 h-2 rounded-full animate-pulse ${
-                    activeTab === tab.id ? 'bg-white' : 'bg-brand-primary'
+                    activeTab === tab.id ? 'bg-brand-primary-fg' : 'bg-brand-primary'
                   }`} />
                 )}
               </button>
@@ -474,12 +474,12 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
           </div>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8 space-y-8 no-scrollbar bg-surface">
+        {/* Scrollable Content Area (Single Region) */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8 space-y-8 no-scrollbar bg-surface overscroll-contain">
           {isLoadingMemory ? (
             <div className="py-24 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-10 h-10 border-3 border-brand-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm font-medium text-muted">Analyzing your learning memory...</p>
+              <p className="text-sm font-medium text-text-muted">Analyzing your learning memory...</p>
             </div>
           ) : (
             <>
@@ -488,7 +488,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 <div className="space-y-8 animate-fadeIn">
                   {/* Duration Section */}
                   <div className="space-y-4">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-text-muted flex items-center gap-2">
                       <Clock className="w-4 h-4 opacity-50" />
                       <span>Duration & Pace</span>
                     </h3>
@@ -506,11 +506,11 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black uppercase tracking-wider opacity-60">{opt.title}</span>
-                            <opt.icon className={`w-4 h-4 ${dailyMinutes === opt.mins ? 'text-brand-primary' : 'text-muted'}`} />
+                            <opt.icon className={`w-4 h-4 ${dailyMinutes === opt.mins ? 'text-brand-primary' : 'text-text-muted'}`} />
                           </div>
                           <div className="mt-4">
                             <div className="text-xl font-bold">{opt.mins} min</div>
-                            <p className="text-[11px] text-muted leading-snug mt-1 font-medium">{opt.desc}</p>
+                            <p className="text-[11px] text-text-muted leading-snug mt-1 font-medium">{opt.desc}</p>
                           </div>
                         </InteractiveCard>
                       ))}
@@ -519,7 +519,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
                   {/* Industry Selection Grid */}
                   <div className="space-y-4">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-text-muted flex items-center gap-2">
                       <Briefcase className="w-4 h-4 opacity-50" />
                       <span>Industry & Discipline</span>
                     </h3>
@@ -534,7 +534,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                           <span className="text-2xl mt-0.5 shrink-0">{major.icon}</span>
                           <div className="min-w-0">
                             <strong className="text-[13px] font-bold block truncate leading-tight">{major.name}</strong>
-                            <span className="text-[10px] text-muted font-bold block truncate mt-0.5 opacity-60 uppercase">{major.nameVi}</span>
+                            <span className="text-[10px] text-text-muted font-bold block truncate mt-0.5 opacity-60 uppercase">{major.nameVi}</span>
                           </div>
                         </InteractiveCard>
                       ))}
@@ -547,7 +547,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                           value={customMajorText}
                           onChange={e => setCustomMajorText(e.target.value)}
                           placeholder="Type your custom discipline or major..."
-                          className="w-full bg-surface border border-app rounded-2xl px-5 py-3 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          className="w-full bg-surface-subdued border border-border-default rounded-2xl px-5 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       </div>
                     )}
@@ -555,7 +555,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
 
                   {/* Scenario Input */}
                   <div className="space-y-4">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-text-muted flex items-center gap-2">
                       <Languages className="w-4 h-4 opacity-50" />
                       <span>Project Context (Optional)</span>
                     </h3>
@@ -565,11 +565,11 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         value={customScenarioText}
                         onChange={e => setCustomScenarioText(e.target.value)}
                         placeholder="E.g., Client demo slides, code review comments, agile retrospectives..."
-                        className="w-full bg-surface border border-app rounded-2xl p-5 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm leading-relaxed"
+                        className="w-full bg-surface-subdued border border-border-default rounded-2xl p-5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm leading-relaxed"
                       />
                       <div className="flex items-start space-x-2 px-1">
                         <Sparkles className="w-3.5 h-3.5 text-brand-primary shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-muted leading-normal font-medium italic">
+                        <p className="text-[11px] text-text-muted leading-normal font-medium italic">
                           The AI will synthesize all exercises directly into this scenario context.
                         </p>
                       </div>
@@ -577,10 +577,10 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                   </div>
 
                   {/* Balance Slider */}
-                  <div className="bg-surface border border-app rounded-3xl p-6 space-y-5 shadow-sm">
+                  <div className="bg-surface-subdued border border-border-default rounded-3xl p-6 space-y-5 shadow-sm">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold uppercase tracking-wider text-muted">Context Balance</span>
-                      <div className="px-3 py-1 rounded-full bg-surface-subdued border border-app text-brand-primary font-mono font-bold text-[11px]">
+                      <span className="font-bold uppercase tracking-wider text-text-muted">Context Balance</span>
+                      <div className="px-3 py-1 rounded-full bg-surface border border-border-app text-brand-primary font-mono font-bold text-[11px]">
                         {100 - generalRatio}% Tech · {generalRatio}% General
                       </div>
                     </div>
@@ -592,10 +592,10 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         step={5}
                         value={generalRatio}
                         onChange={e => setGeneralRatio(Number(e.target.value))}
-                        className="w-full h-1.5 bg-app rounded-full appearance-none cursor-pointer accent-brand-primary"
+                        className="w-full h-1.5 bg-border-app rounded-full appearance-none cursor-pointer accent-brand-primary"
                       />
                     </div>
-                    <div className="flex justify-between text-[10px] font-bold text-muted uppercase tracking-tighter opacity-50">
+                    <div className="flex justify-between text-[10px] font-bold text-text-muted uppercase tracking-tighter opacity-50">
                       <span>100% Technical</span>
                       <span>50/50 Balanced</span>
                       <span>100% General</span>
@@ -609,8 +609,8 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 <div className="space-y-6 animate-fadeIn">
                   <div className="flex items-end justify-between px-1">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold tracking-tight">Mistakes Clinic</h3>
-                      <p className="text-sm text-muted font-medium">
+                      <h3 className="text-xl font-bold tracking-tight text-text-primary">Mistakes Clinic</h3>
+                      <p className="text-sm text-text-muted font-medium">
                         Select past recurring errors to target in this session.
                       </p>
                     </div>
@@ -623,7 +623,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </button>
                   </div>
 
-                  {/* Custom Mistake Input */}
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -636,7 +635,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         }
                       }}
                       placeholder="Add a custom mistake pattern to fix..."
-                      className="flex-1 bg-surface border border-app rounded-2xl px-5 py-3 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                      className="flex-1 bg-surface-subdued border border-border-default rounded-2xl px-5 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                     />
                     <AppButton
                       onClick={handleAddCustomMistake}
@@ -649,7 +648,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </AppButton>
                   </div>
 
-                  {/* Known Mistake Items */}
                   {allKnownMistakes.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {allKnownMistakes.map((mistake, idx) => {
@@ -663,14 +661,14 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                           >
                             <div className="flex items-center space-x-3 min-w-0">
                               <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                isSelected ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'border-app bg-app opacity-50'
+                                isSelected ? 'bg-brand-primary border-brand-primary text-brand-primary-fg shadow-sm' : 'border-border-default bg-surface opacity-50'
                               }`}>
                                 {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
                               </div>
                               <span className="text-sm font-bold truncate leading-none">{mistake}</span>
                             </div>
                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                              isSelected ? 'bg-brand-primary/10 text-brand-primary' : 'bg-surface-subdued text-muted opacity-60'
+                              isSelected ? 'bg-brand-primary/10 text-brand-primary' : 'bg-surface-subdued text-text-muted opacity-60'
                             }`}>
                               Clinic
                             </span>
@@ -679,12 +677,12 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                       })}
                     </div>
                   ) : (
-                    <div className="bg-surface border border-dashed border-app rounded-[2rem] p-12 text-center shadow-sm">
-                      <div className="w-12 h-12 bg-app rounded-2xl flex items-center justify-center mx-auto mb-4 text-muted opacity-40">
+                    <div className="bg-surface-subdued border border-dashed border-border-default rounded-[2rem] p-12 text-center shadow-sm">
+                      <div className="w-12 h-12 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4 text-text-muted opacity-40">
                         <AlertTriangle className="w-6 h-6" />
                       </div>
-                      <p className="text-sm text-muted font-medium max-w-sm mx-auto">
-                        No mistake patterns detected yet. Use the input above to focus on specific grammar weaknesses.
+                      <p className="text-sm text-text-muted font-medium max-w-sm mx-auto">
+                        No mistake patterns detected yet.
                       </p>
                     </div>
                   )}
@@ -696,8 +694,8 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 <div className="space-y-6 animate-fadeIn">
                   <div className="flex items-end justify-between px-1">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold tracking-tight">Vocab Catalog</h3>
-                      <p className="text-sm text-muted font-medium">
+                      <h3 className="text-xl font-bold tracking-tight text-text-primary">Vocab Catalog</h3>
+                      <p className="text-sm text-text-muted font-medium">
                         Select words from your memory to reinforce.
                       </p>
                     </div>
@@ -710,7 +708,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </button>
                   </div>
 
-                  {/* Custom Word Input */}
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -723,7 +720,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         }
                       }}
                       placeholder="Type a word to practice (e.g. 'mitigate')..."
-                      className="flex-1 bg-surface border border-app rounded-2xl px-5 py-3 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                      className="flex-1 bg-surface-subdued border border-border-default rounded-2xl px-5 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                     />
                     <AppButton
                       onClick={handleAddCustomVocab}
@@ -736,7 +733,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </AppButton>
                   </div>
 
-                  {/* Vocabulary List */}
                   {vocabulary.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {vocabulary.map((item, index) => {
@@ -751,13 +747,13 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                             <div className="flex items-start justify-between">
                               <div className="flex items-center space-x-3">
                                 <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                  isSelected ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'border-app bg-app opacity-50'
+                                  isSelected ? 'bg-brand-primary border-brand-primary text-brand-primary-fg shadow-sm' : 'border-border-default bg-surface opacity-50'
                                 }`}>
                                   {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
                                 </div>
                                 <div className="min-w-0">
                                   <strong className="text-sm font-black block truncate leading-none mb-1">{item.word}</strong>
-                                  <span className="text-[10px] text-muted font-mono font-bold opacity-50">{item.ipa || item.part_of_speech}</span>
+                                  <span className="text-[10px] text-text-muted font-mono font-bold opacity-50">{item.ipa || item.part_of_speech}</span>
                                 </div>
                               </div>
                               <StatusBadge
@@ -767,7 +763,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                                 {item.mastery_stage || 'Encountered'}
                               </StatusBadge>
                             </div>
-                            <p className="text-[11px] text-muted line-clamp-2 leading-relaxed font-bold opacity-80">
+                            <p className="text-[11px] text-text-muted line-clamp-2 leading-relaxed font-bold opacity-80">
                               {item.meaning}
                             </p>
                           </InteractiveCard>
@@ -775,12 +771,12 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                       })}
                     </div>
                   ) : (
-                    <div className="bg-surface border border-dashed border-app rounded-[2rem] p-12 text-center shadow-sm">
-                      <div className="w-12 h-12 bg-app rounded-2xl flex items-center justify-center mx-auto mb-4 text-muted opacity-40">
+                    <div className="bg-surface-subdued border border-dashed border-border-default rounded-[2rem] p-12 text-center shadow-sm">
+                      <div className="w-12 h-12 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4 text-text-muted opacity-40">
                         <BookOpen className="w-6 h-6" />
                       </div>
-                      <p className="text-sm text-muted font-medium max-w-sm mx-auto">
-                        No vocabulary words in memory. Click unfamiliar words during lessons to add them.
+                      <p className="text-sm text-text-muted font-medium max-w-sm mx-auto">
+                        No vocabulary words in memory.
                       </p>
                     </div>
                   )}
@@ -792,14 +788,13 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 <div className="space-y-6 animate-fadeIn">
                   <div className="flex flex-wrap items-end justify-between gap-4 px-1">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold tracking-tight">Grammar Catalog</h3>
-                      <p className="text-sm text-muted font-medium">
+                      <h3 className="text-xl font-bold tracking-tight text-text-primary">Grammar Catalog</h3>
+                      <p className="text-sm text-text-muted font-medium">
                         Choose new skills calibrated for your level.
                       </p>
                     </div>
 
-                    {/* Level Filter Tabs */}
-                    <div className="flex items-center space-x-1 bg-surface-subdued p-1 rounded-2xl shadow-inner border border-app/50">
+                    <div className="flex items-center space-x-1 bg-surface-subdued p-1 rounded-2xl shadow-inner border border-border-default/50">
                       {['all', 'B1', 'B2', 'C1'].map(lvl => (
                         <button
                           key={lvl}
@@ -807,8 +802,8 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                           onClick={() => setSkillFilterLevel(lvl)}
                           className={`px-3 py-1.5 rounded-xl font-black text-[10px] transition uppercase tracking-widest ${
                             skillFilterLevel === lvl
-                              ? 'bg-brand-primary text-white shadow-sm'
-                              : 'text-muted hover:text-secondary'
+                              ? 'bg-brand-primary text-brand-primary-fg shadow-sm'
+                              : 'text-text-muted hover:text-text-secondary'
                           }`}
                         >
                           {lvl}
@@ -817,7 +812,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </div>
                   </div>
 
-                  {/* Custom Skill Input */}
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -830,7 +824,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                         }
                       }}
                       placeholder="Add custom target (e.g. 'Inversion')..."
-                      className="flex-1 bg-surface border border-app rounded-2xl px-5 py-3 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                      className="flex-1 bg-surface-subdued border border-border-default rounded-2xl px-5 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                     />
                     <AppButton
                       onClick={handleAddCustomSkill}
@@ -843,7 +837,6 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                     </AppButton>
                   </div>
 
-                  {/* Grammar Catalog Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {filteredGrammar.map(item => {
                       const isSelected = selectedNewSkills.includes(item.name);
@@ -857,7 +850,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                           <div className="flex items-start justify-between">
                             <div className="flex items-start space-x-3">
                               <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                                isSelected ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'border-app bg-app opacity-50'
+                                isSelected ? 'bg-brand-primary border-brand-primary text-brand-primary-fg shadow-sm' : 'border-border-default bg-surface opacity-50'
                               }`}>
                                 {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
                               </div>
@@ -865,19 +858,19 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                                 <strong className="text-sm font-black block leading-snug">{item.name}</strong>
                                 <div className="flex items-center gap-2 mt-2">
                                   <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded uppercase tracking-wider">{item.level}</span>
-                                  <span className="text-[10px] font-black text-muted bg-surface-subdued px-2 py-0.5 rounded uppercase tracking-wider opacity-80">{item.category}</span>
+                                  <span className="text-[10px] font-black text-text-muted bg-surface-subdued px-2 py-0.5 rounded uppercase tracking-wider opacity-80">{item.category}</span>
                                 </div>
                               </div>
                             </div>
                           </div>
                           
-                          <p className="text-[11px] text-muted leading-relaxed font-bold opacity-80">
+                          <p className="text-[11px] text-text-muted leading-relaxed font-bold opacity-80">
                             {item.description}
                           </p>
 
-                          <div className="bg-app border border-app rounded-2xl p-4 shadow-inner">
-                            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted block mb-2 opacity-50">Usage Example</span>
-                            <p className="text-[11px] font-mono italic leading-relaxed text-secondary font-medium">"{item.example}"</p>
+                          <div className="bg-surface border border-border-default rounded-2xl p-4 shadow-inner">
+                            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-text-muted block mb-2 opacity-50">Usage Example</span>
+                            <p className="text-[11px] font-mono italic leading-relaxed text-text-secondary font-medium">"{item.example}"</p>
                           </div>
                         </InteractiveCard>
                       );
@@ -890,8 +883,8 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
               {activeTab === 'notes' && (
                 <div className="space-y-6 animate-fadeIn">
                   <div className="space-y-1 px-1">
-                    <h3 className="text-xl font-bold tracking-tight">Tutor Notes</h3>
-                    <p className="text-sm text-muted font-medium">
+                    <h3 className="text-xl font-bold tracking-tight text-text-primary">Tutor Notes</h3>
+                    <p className="text-sm text-text-muted font-medium">
                       Provide direct instructions or specific focus areas.
                     </p>
                   </div>
@@ -902,11 +895,11 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                       value={customInstructions}
                       onChange={e => setCustomInstructions(e.target.value)}
                       placeholder="• Use phrasal verbs for cloud deployments.&#10;• Focus on formal tone for executive reports..."
-                      className="w-full bg-surface border border-app rounded-[2rem] p-6 text-sm text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm leading-relaxed"
+                      className="w-full bg-surface-subdued border border-border-default rounded-[2rem] p-6 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm leading-relaxed"
                     />
 
                     <div className="space-y-4 px-1">
-                      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-muted opacity-60 block">Quick Suggestions:</span>
+                      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-text-muted opacity-60 block">Quick Suggestions:</span>
                       <div className="flex flex-wrap gap-2">
                         {[
                           'Diplomatic disagreement phrasing',
@@ -918,7 +911,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                             key={i}
                             type="button"
                             onClick={() => setCustomInstructions(prev => prev ? `${prev}\n• ${sug}` : `• ${sug}`)}
-                            className="px-4 py-2.5 rounded-2xl bg-surface border border-app text-[11px] font-bold text-secondary hover:border-brand-primary hover:text-brand-primary transition shadow-sm cursor-pointer"
+                            className="px-4 py-2.5 rounded-2xl bg-surface border border-border-default text-[11px] font-bold text-text-secondary hover:border-brand-primary hover:text-brand-primary transition shadow-sm cursor-pointer"
                           >
                             + {sug}
                           </button>
@@ -932,24 +925,24 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-6 py-5 md:px-8 md:py-6 border-t border-app bg-surface shrink-0">
+        {/* Footer Actions (Fixed) */}
+        <div className="px-6 py-5 md:px-8 md:py-6 border-t border-border-app bg-surface shrink-0 z-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             {/* Session Summary - Zero-Pill Discipline */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-black uppercase tracking-widest text-muted">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted">
               <div className="flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5 opacity-50" />
                 <span className="max-w-[120px] truncate">{getEffectiveMajorName()}</span>
               </div>
-              <span className="w-1 h-1 rounded-full bg-[var(--border-default)] shrink-0" />
+              <span className="w-1 h-1 rounded-full bg-border-default shrink-0" />
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 opacity-50" />
                 <span>{dailyMinutes} min</span>
               </div>
               {(selectedMistakes.length > 0 || selectedVocabWords.length > 0 || selectedNewSkills.length > 0) && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-[var(--border-default)] shrink-0" />
-                  <div className="flex items-center gap-1.5 text-[var(--brand-primary)]">
+                  <span className="w-1 h-1 rounded-full bg-border-default shrink-0" />
+                  <div className="flex items-center gap-1.5 text-brand-primary">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{selectedMistakes.length + selectedVocabWords.length + selectedNewSkills.length} Targets</span>
                   </div>
@@ -962,7 +955,7 @@ export const SessionContextCatalogModal: React.FC<SessionContextCatalogModalProp
                 onClick={onClose}
                 variant="ghost"
                 disabled={isBuilding}
-                className="flex-1 sm:flex-none font-bold text-muted hover:text-primary transition-colors"
+                className="flex-1 sm:flex-none font-bold text-text-muted hover:text-text-primary transition-colors"
               >
                 Cancel
               </AppButton>
