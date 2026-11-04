@@ -483,7 +483,7 @@ export const CatCompanionWidget: React.FC<CatCompanionWidgetProps> = ({
         ref={catButtonRef}
         onPointerDown={handlePointerDown}
         style={{ minWidth: isMinimized ? `${COLLAPSED_WIDTH}px` : undefined }}
-        className={`bg-[#161A17]/90 dark:bg-[#161A17]/95 border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl backdrop-blur-md flex items-center space-x-2.5 transition-all duration-300 ${isDragging ? 'scale-95 shadow-none' : 'hover:scale-[1.02]'} w-fit max-w-[min(260px,80vw)] touch-none`}
+        className={`bg-[#161A17]/90  border ${activeTheme.borderColor} p-2 rounded-3xl shadow-2xl  flex items-center space-x-2.5 transition-all duration-300 ${isDragging ? 'scale-95 shadow-none' : 'hover:scale-[1.02]'} w-fit max-w-[min(260px,80vw)] touch-none`}
       >
         <div 
           onClick={() => {

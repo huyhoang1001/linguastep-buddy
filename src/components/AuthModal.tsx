@@ -128,7 +128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClick={(e) => {
         if (currentUser && e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 bg-[#161A17]/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-md w-full p-7 shadow-2xl relative text-[#2D312E] dark:text-[#F4F2EC] animate-in fade-in zoom-in-95 duration-150">
         {currentUser && (

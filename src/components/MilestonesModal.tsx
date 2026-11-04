@@ -1,26 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Trophy,
+  TrendingUp,
   Award,
-  Medal,
-  Crown,
-  Sparkles,
-  Bookmark,
-  Footprints,
-  Compass,
-  Target,
-  BookOpen,
-  CheckCircle2,
-  Lock,
   X,
   ChevronRight,
-  TrendingUp
+  Trophy
 } from 'lucide-react';
 import { MilestoneBadge, MilestoneStats } from '../types/milestone.ts';
 import { DailySummary, Attempt } from '../types/learning.ts';
 import { WeeklyProgressChart } from './WeeklyProgressChart.tsx';
 import { localStore } from '../services/localStore.ts';
 import { AppButton } from './ui/AppButton.tsx';
+import { BadgeIcon } from './BadgeIcon.tsx';
+import { StatusBadge } from './ui/StatusBadge.tsx';
+import { InteractiveCard } from './ui/InteractiveCard.tsx';
 
 interface MilestonesModalProps {
   isOpen: boolean;
@@ -87,22 +80,6 @@ export const MilestonesModal: React.FC<MilestonesModalProps> = ({
     return b.category === selectedFilter;
   });
 
-  const getBadgeIcon = (iconName: string, isUnlocked: boolean) => {
-    const iconClass = `w-5 h-5 ${isUnlocked ? 'text-[#2D6A4F] dark:text-[#74A892]' : 'text-[#8C938D]'}`;
-    switch (iconName) {
-      case 'Trophy': return <Trophy className={iconClass} />;
-      case 'Medal': return <Medal className={iconClass} />;
-      case 'Crown': return <Crown className={iconClass} />;
-      case 'Sparkles': return <Sparkles className={iconClass} />;
-      case 'Bookmark': return <Bookmark className={iconClass} />;
-      case 'Footprints': return <Footprints className={iconClass} />;
-      case 'Compass': return <Compass className={iconClass} />;
-      case 'Target': return <Target className={iconClass} />;
-      case 'BookOpen': return <BookOpen className={iconClass} />;
-      default: return <Award className={iconClass} />;
-    }
-  };
-
   const completionPercentage = Math.round((unlockedBadges.length / allBadges.length) * 100);
 
   return (
@@ -110,7 +87,7 @@ export const MilestonesModal: React.FC<MilestonesModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#161A17]/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 "
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-3xl w-full p-5 sm:p-7 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh] overflow-y-auto space-y-6">
         {/* Top Header */}
@@ -247,84 +224,77 @@ export const MilestonesModal: React.FC<MilestonesModalProps> = ({
               ))}
             </div>
 
-            {/* Badges Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {filteredBadges.map(badge => {
                 const progressPct = Math.round((badge.currentValue / badge.targetValue) * 100);
 
                 return (
-                  <div
+                  <InteractiveCard
                     key={badge.id}
-                    className={`border rounded-2xl p-4 transition-all flex flex-col justify-between ${
-                      badge.isUnlocked
-                        ? 'bg-white dark:bg-[#262F28] border-[#2D6A4F]/40 shadow-xs'
-                        : 'bg-[#FAF7F2]/60 dark:bg-[#1E231F]/60 border-dashed border-[#D8CFBF] dark:border-[#3C443E] opacity-75'
+                    className={`flex flex-col h-full transition-all duration-300 ${
+                      !badge.isUnlocked ? 'bg-[var(--bg-surface-subdued)]/60 opacity-80 grayscale-[0.5]' : 'shadow-md'
                     }`}
                   >
-                    <div>
-                      {/* Top line: icon, title, tier */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-                            badge.isUnlocked
-                              ? 'bg-[#2D6A4F]/10 border-[#2D6A4F]/25 text-[#2D6A4F]'
-                              : 'bg-[#FAF7F2] dark:bg-[#1E231F] border-[#EBE4D7] dark:border-[#2C332E]'
-                          }`}>
-                            {getBadgeIcon(badge.icon, badge.isUnlocked)}
-                          </div>
-                          <div>
-                            <h4 className={`text-sm font-bold ${badge.isUnlocked ? 'text-[#1B4332] dark:text-[#F4F2EC]' : 'text-[#8C938D]'}`}>
-                              {badge.title}
-                            </h4>
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border uppercase tracking-wider inline-block mt-0.5 font-mono ${
-                              badge.isUnlocked
-                                ? 'bg-[#2D6A4F]/10 text-[#2D6A4F] dark:text-[#74A892] border-[#2D6A4F]/20'
-                                : 'bg-[#FAF7F2] dark:bg-[#1E231F] text-[#8C938D] border-[#EBE4D7] dark:border-[#2C332E]'
-                            }`}>
-                              {badge.tier}
-                            </span>
-                          </div>
-                        </div>
-
-                        {badge.isUnlocked ? (
-                          <span className="p-1 rounded-full bg-[#2D6A4F]/15 text-[#2D6A4F] dark:text-[#74A892] border border-[#2D6A4F]/30" title="Unlocked">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </span>
-                        ) : (
-                          <span className="p-1 rounded-full bg-[#FAF7F2] dark:bg-[#1E231F] text-[#8C938D] border border-[#EBE4D7] dark:border-[#2C332E]" title="Locked">
-                            <Lock className="w-4 h-4" />
-                          </span>
-                        )}
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      {/* Icon Container */}
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-colors ${
+                        badge.isUnlocked
+                          ? 'bg-[var(--bg-concept)] border-[var(--border-concept)] text-[var(--brand-primary)]'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-muted)]'
+                      }`}>
+                        <BadgeIcon iconName={badge.icon} className="w-5 h-5" />
                       </div>
 
-                      <p className="text-xs text-[#5C645E] dark:text-[#A7ABA4] mt-1 leading-relaxed">
-                        {badge.description}
-                      </p>
+                      {/* Content Area */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className={`text-sm font-bold tracking-tight leading-tight truncate ${
+                            badge.isUnlocked ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                          }`} title={badge.title}>
+                            {badge.title}
+                          </h4>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <StatusBadge variant={badge.isUnlocked ? 'success' : 'neutral'} className="scale-90 origin-left">
+                            {badge.isUnlocked ? 'Unlocked' : 'Locked'}
+                          </StatusBadge>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">
+                            {badge.tier}
+                          </span>
+                        </div>
+
+                        <p className={`text-[11px] leading-relaxed mt-2 ${
+                          badge.isUnlocked ? 'text-[var(--text-secondary)] font-medium' : 'text-[var(--text-muted)] italic'
+                        }`}>
+                          {badge.description}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Bottom progress or status */}
-                    <div className="mt-4 pt-3 border-t border-[#EBE4D7] dark:border-[#3C443E]">
-                      {badge.isUnlocked ? (
-                        <div className="flex items-center justify-between text-xs text-[#2D6A4F] dark:text-[#74A892] font-semibold">
-                          <span>✓ Milestone Achieved</span>
-                          <span className="text-[11px] text-[#8C938D] font-mono">Target: {badge.targetValue}</span>
+                    {/* Progress / Footer */}
+                    {!badge.isUnlocked && (
+                      <div className="mt-4 pt-3 border-t border-[var(--border-default)]">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] mb-1.5 px-0.5">
+                          <span className="uppercase tracking-widest text-[9px]">Progress</span>
+                          <span className="font-mono">{badge.currentValue} / {badge.targetValue}</span>
                         </div>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-[11px] text-[#5C645E] dark:text-[#A7ABA4] font-mono">
-                            <span>Progress: {badge.currentValue} / {badge.targetValue}</span>
-                            <span className="font-semibold text-[#2D6A4F] dark:text-[#74A892]">{progressPct}%</span>
-                          </div>
-                          <div className="w-full bg-[#FAF7F2] dark:bg-[#1E231F] h-1.5 rounded-full overflow-hidden border border-[#EBE4D7] dark:border-[#2C332E]">
-                            <div
-                              className="bg-[#2D6A4F] h-full rounded-full transition-all"
-                              style={{ width: `${progressPct}%` }}
-                            />
-                          </div>
+                        <div className="w-full bg-[var(--bg-app)] h-1.5 rounded-full overflow-hidden border border-[var(--border-default)]">
+                          <div
+                            className="bg-[var(--brand-primary)] h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progressPct}%` }}
+                          />
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    )}
+                    
+                    {badge.isUnlocked && badge.unlockedAt && (
+                      <div className="mt-4 pt-3 border-t border-[var(--border-default)] flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[var(--brand-primary)] uppercase tracking-widest">Mastered</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">{new Date(badge.unlockedAt).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </InteractiveCard>
                 );
               })}
             </div>

@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* 1. Desktop & Mobile Compact Header */}
-      <header className="bg-[#FAF7F2]/95 dark:bg-[#161A17]/95 backdrop-blur-md border-b border-[#EBE4D7] dark:border-[#262E28] text-[#2D312E] dark:text-[#F4F2EC] sticky top-0 z-40 select-none transition-colors">
+      <header className="bg-app border-b border-app text-primary sticky top-0 z-40 select-none transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           {/* Left: Brand Wordmark "meomeo." & CEFR Pill */}
           <div className="flex items-center space-x-3 shrink-0">
@@ -372,7 +372,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 2. Mobile Bottom Navigation Bar (4 Destinations) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FAF7F2]/95 dark:bg-[#161A17]/95 backdrop-blur-md border-t border-[#EBE4D7] dark:border-[#262E28] text-[#2D312E] dark:text-[#F4F2EC] px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-app border-t border-app text-primary px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg"
       >
         <button
           type="button"

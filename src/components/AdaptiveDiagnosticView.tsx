@@ -996,7 +996,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
     if (!session || session.status !== 'in_progress') return null;
 
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 dark:bg-[#161A17]/95 backdrop-blur-md border-b border-[#EBE4D7] dark:border-[#262E28] h-16 flex items-center select-none shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-app border-b border-app h-16 flex items-center select-none shadow-sm">
         <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between gap-4">
           {/* Zone 1: Left - Assessment Mode & Current Section */}
           <div className="flex flex-col min-w-0">
@@ -1692,7 +1692,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
 
       {/* Time's Up Modal: End with Results or Take Break */}
       {showTimeOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/80 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fadeIn">
           <div className="bg-white dark:bg-[#1E231F] border-2 border-[#2D6A4F] dark:border-[#52B788] rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden text-[#2D312E] dark:text-[#F4F2EC]">
             {/* Decorative top paws & cat avatar */}
             <div className="flex flex-col items-center justify-center space-y-2">

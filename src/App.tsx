@@ -718,7 +718,7 @@ export default function App() {
       {/* Full-Screen Loading Overlay when Building New Lesson - Blocks all user interactions */}
       {isBuildingSession && (
         <div 
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md select-none pointer-events-auto cursor-wait"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 select-none pointer-events-auto cursor-wait"
           aria-live="polite"
           aria-busy="true"
         >

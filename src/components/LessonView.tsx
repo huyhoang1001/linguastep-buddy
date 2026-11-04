@@ -1805,7 +1805,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Time's Up Modal: End with Summary or Continue / Take Break Tomorrow */}
       {showTimeOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/80 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fadeIn">
           <div className="bg-white dark:bg-[#1E231F] border-2 border-[#2D6A4F] dark:border-[#52B788] rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl relative overflow-hidden text-[#2D312E] dark:text-[#F4F2EC]">
             {/* Decorative top paws & cat avatar */}
             <div className="flex flex-col items-center justify-center space-y-2">

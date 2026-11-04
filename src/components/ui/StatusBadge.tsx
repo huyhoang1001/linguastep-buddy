@@ -20,15 +20,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   const variantStyles = {
     neutral:
-      'bg-[#EAE4D7]/70 text-[#5C645E] dark:bg-[#2C332E] dark:text-[#A7ABA4] border border-[#D8CFBF]/60 dark:border-[#3C443E]',
+      'bg-[var(--bg-surface-subdued)] text-[var(--text-muted)] border border-[var(--border-default)]',
     success:
-      'bg-[#EFF6F1] text-[#2D6A4F] dark:bg-[#252F28] dark:text-[#52B788] border border-[#CDE1D4] dark:border-[#354539]',
+      'bg-[var(--bg-concept)] text-[var(--fg-concept-title)] border border-[var(--border-concept)]',
     warning:
-      'bg-[#FFF8EC] text-[#B87A24] dark:bg-[#322A1E] dark:text-[#E6A23C] border border-[#F2E3C6] dark:border-[#4B3E2C]',
+      'bg-[var(--bg-warning)] text-[var(--fg-warning-title)] border border-[var(--border-warning)]',
     info:
-      'bg-[#F0F7FF] text-[#1E6091] dark:bg-[#1E2C38] dark:text-[#64B5F6] border border-[#D0E3F7] dark:border-[#2C4258]',
+      'bg-[var(--bg-concept)] text-[var(--fg-concept-title)] border border-[var(--border-concept)] opacity-90',
     accent:
-      'bg-[#FDF0ED] text-[#E07A5F] dark:bg-[#342421] dark:text-[#E07A5F] border border-[#F5D5CC] dark:border-[#4E342D]'
+      'bg-[var(--bg-alert)] text-[var(--fg-alert-title)] border border-[var(--border-alert)]'
   };
 
   return (

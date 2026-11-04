@@ -338,11 +338,11 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex justify-end animate-fadeIn"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/80 flex justify-end animate-fadeIn"
     >
       <div className="w-full max-w-3xl min-h-screen bg-[#FAF7F2] dark:bg-[#1A1F1B] border-l border-[#EBE4D7] dark:border-[#2C332E] shadow-2xl flex flex-col justify-between text-[#2D312E] dark:text-[#F4F2EC] font-sans">
         {/* Top Sticky Header with Return Button & Cambridge Search */}
-        <div className="sticky top-0 z-10 bg-[#FAF7F2]/95 dark:bg-[#1A1F1B]/95 backdrop-blur border-b border-[#EBE4D7] dark:border-[#2C332E] p-3.5 md:p-4 space-y-2.5">
+        <div className="sticky top-0 z-10 bg-surface border-b border-app p-3.5 md:p-4 space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center space-x-2.5">
               <AppButton
@@ -1213,7 +1213,7 @@ export const WordPracticeModal: React.FC<WordPracticeModalProps> = ({
         </div>
 
         {/* Bottom Persistent Action Bar */}
-        <div className="sticky bottom-0 bg-[#FAF7F2]/95 dark:bg-[#1A1F1B]/95 backdrop-blur border-t border-[#EBE4D7] dark:border-[#2C332E] p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="sticky bottom-0 bg-surface border-t border-app p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-[#5C645E] dark:text-[#A7ABA4]">
             {isSavedToMemory ? (
               <span className="text-[#2D6A4F] dark:text-[#52B788] font-semibold flex items-center space-x-1">

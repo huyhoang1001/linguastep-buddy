@@ -68,7 +68,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#161A17]/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 ">
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-3xl w-full p-4 sm:p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-y-auto">
         {/* Stage 1: Conversational Goal Discovery */}
         {phase === 'discovery' && (

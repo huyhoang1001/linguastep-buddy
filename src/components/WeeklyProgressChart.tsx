@@ -231,7 +231,7 @@ export const WeeklyProgressChart: React.FC<WeeklyProgressChartProps> = ({
     const data: DayProgressPoint = payload[0].payload;
 
     return (
-      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-3 shadow-xl backdrop-blur-md text-xs text-[#2D312E] dark:text-[#F4F2EC] min-w-[190px] space-y-2 pointer-events-none">
+      <div className="bg-white dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#3C443E] rounded-2xl p-3 shadow-xl  text-xs text-[#2D312E] dark:text-[#F4F2EC] min-w-[190px] space-y-2 pointer-events-none">
         <div className="flex items-center justify-between pb-1.5 border-b border-[#EBE4D7] dark:border-[#3C443E]">
           <div className="flex items-center space-x-1.5">
             <Calendar className="w-3.5 h-3.5 text-[#2D6A4F] dark:text-[#52B788]" />

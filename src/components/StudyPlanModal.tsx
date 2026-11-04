@@ -145,7 +145,7 @@ export const StudyPlanModal: React.FC<StudyPlanModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#161A17]/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh] overflow-y-auto space-y-6">
         {/* Header */}

@@ -135,7 +135,7 @@ export const CatCustomizerModal: React.FC<CatCustomizerModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#161A17]/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/80  flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1E231F] border border-[#EBE4D7] dark:border-[#2C332E] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#2D312E] dark:text-[#F4F2EC] max-h-[92vh]">
         {/* Modal Header */}

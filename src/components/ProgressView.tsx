@@ -17,6 +17,7 @@ import { MilestoneBadge } from '../types/milestone.ts';
 import { WeeklyProgressChart } from './WeeklyProgressChart.tsx';
 import { AppButton, InfoCard, FilterChip, StatusBadge, InteractiveCard } from './ui/index.ts';
 import { getCurriculumRoadmap, advanceRoadmapMilestone } from '../services/api.ts';
+import { BadgeIcon } from './BadgeIcon.tsx';
 
 interface ProgressViewProps {
   profile: UserProfile;
@@ -410,31 +411,77 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
 
       {/* 7. Tab 4: Milestone Badges */}
       {activeTab === 'badges' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fadeIn">
           {allBadges.map(badge => {
             const isUnlocked = unlockedBadges.some(b => b.id === badge.id);
+            const progressPct = Math.round((badge.currentValue / badge.targetValue) * 100);
 
             return (
               <InteractiveCard
                 key={badge.id}
-                className={`p-4 space-y-2 ${!isUnlocked ? 'opacity-60 grayscale' : ''}`}
+                className={`flex flex-col h-full transition-all duration-300 ${
+                  !isUnlocked ? 'bg-[var(--bg-surface-subdued)]/60 opacity-80 grayscale-[0.5]' : 'shadow-md'
+                }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#EFF6F1] dark:bg-[#252F28] border border-[#CDE1D4] dark:border-[#354539] flex items-center justify-center text-xl shrink-0">
-                    {badge.icon || '🏅'}
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  {/* Icon Container */}
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-colors ${
+                    isUnlocked
+                      ? 'bg-[var(--bg-concept)] border-[var(--border-concept)] text-[var(--brand-primary)]'
+                      : 'bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-muted)]'
+                  }`}>
+                    <BadgeIcon iconName={badge.icon} className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[#1B4332] dark:text-[#F4F2EC]">
-                      {badge.title}
-                    </h4>
-                    <StatusBadge variant={isUnlocked ? 'success' : 'neutral'}>
-                      {isUnlocked ? 'Unlocked' : 'Locked'}
-                    </StatusBadge>
+
+                  {/* Content Area */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className={`text-sm font-bold tracking-tight leading-tight truncate ${
+                        isUnlocked ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                      }`} title={badge.title}>
+                        {badge.title}
+                      </h4>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <StatusBadge variant={isUnlocked ? 'success' : 'neutral'} className="scale-90 origin-left">
+                        {isUnlocked ? 'Unlocked' : 'Locked'}
+                      </StatusBadge>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">
+                        {badge.tier}
+                      </span>
+                    </div>
+
+                    <p className={`text-[11px] leading-relaxed mt-2 ${
+                      isUnlocked ? 'text-[var(--text-secondary)] font-medium' : 'text-[var(--text-muted)] italic'
+                    }`}>
+                      {badge.description}
+                    </p>
                   </div>
                 </div>
-                <p className="text-[11px] text-[#5C645E] dark:text-[#A7ABA4] leading-relaxed">
-                  {badge.description}
-                </p>
+
+                {/* Progress / Footer */}
+                {!isUnlocked && (
+                  <div className="mt-4 pt-3 border-t border-[var(--border-default)]">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] mb-1.5 px-0.5">
+                      <span className="uppercase tracking-widest">Progress</span>
+                      <span className="font-mono">{badge.currentValue} / {badge.targetValue}</span>
+                    </div>
+                    <div className="w-full bg-[var(--bg-app)] h-1.5 rounded-full overflow-hidden border border-[var(--border-default)]">
+                      <div
+                        className="h-full bg-[var(--brand-primary)] transition-all duration-500"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {isUnlocked && badge.unlockedAt && (
+                   <div className="mt-4 pt-3 border-t border-[var(--border-default)] flex items-center justify-between">
+                     <span className="text-[10px] font-bold text-[var(--brand-primary)] uppercase tracking-widest">Mastered</span>
+                     <span className="text-[10px] text-[var(--text-muted)] font-mono">{new Date(badge.unlockedAt).toLocaleDateString()}</span>
+                   </div>
+                )}
               </InteractiveCard>
             );
           })}

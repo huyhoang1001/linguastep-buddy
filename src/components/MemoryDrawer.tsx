@@ -197,7 +197,7 @@ export const MemoryDrawer: React.FC<MemoryDrawerProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex justify-end bg-[#161A17]/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-end bg-black/80 "
     >
       <div className="bg-[#FAF7F2] dark:bg-[#1A1F1B] border-l border-[#EBE4D7] dark:border-[#2C332E] w-full max-w-2xl h-full flex flex-col text-[#2D312E] dark:text-[#F4F2EC] shadow-2xl font-sans">
         {/* Header */}
