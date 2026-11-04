@@ -516,11 +516,12 @@ class LocalLearningStore {
       attempt.section,
       isCorrect,
       errorTag,
-      undefined,
+      attempt.question_type,
       undefined,
       attempt.created_at,
       undefined,
-      attempt.writing_rubric
+      attempt.writing_rubric,
+      attempt.exercise_intent
     );
 
     return attempt;
@@ -540,7 +541,8 @@ class LocalLearningStore {
     questionDifficulty?: EnglishLevel,
     attemptTimestamp?: string,
     isProgressCheck?: boolean,
-    writingRubric?: WritingRubricScore
+    writingRubric?: WritingRubricScore,
+    exerciseIntent?: string
   ): Promise<LearnerSkillState> {
     const skills = await this.getSkills();
     let currentSkill = skills.find(s => s.skill_id === skillId || s.skill_name.toLowerCase() === skillName.toLowerCase());
@@ -552,6 +554,7 @@ class LocalLearningStore {
       isCorrect,
       errorTag,
       questionType,
+      exerciseIntent,
       questionDifficulty,
       attemptTimestamp,
       isProgressCheck,

@@ -21,6 +21,14 @@ export type QuestionType =
   | 'free_writing'
   | 'vi_to_en_translation';
 
+export type ExerciseIntent =
+  | 'grammar_form_recognition'
+  | 'grammar_application'
+  | 'vocabulary_recognition'
+  | 'vocabulary_recall'
+  | 'sentence_production'
+  | 'translation_production';
+
 export type Verdict = 'correct' | 'partially_correct' | 'incorrect' | 'ambiguous';
 
 export interface LearnerGoal {
@@ -317,6 +325,7 @@ export interface Question {
   skill_id: string;
   skill_name: string;
   question_type: QuestionType;
+  exercise_intent?: ExerciseIntent;
   difficulty: EnglishLevel;
   context_topic: 'general' | 'workplace_tech';
   
@@ -411,6 +420,8 @@ export interface Attempt {
   question_id: string;
   section: SectionType;
   skill_name: string;
+  question_type?: QuestionType | string;
+  exercise_intent?: ExerciseIntent | string;
   user_answer: string;
   verdict: Verdict;
   evaluation: AnswerEvaluation;

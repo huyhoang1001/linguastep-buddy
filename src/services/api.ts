@@ -577,6 +577,8 @@ export async function evaluateAnswer(
     question_id: question.id,
     section: question.section,
     skill_name: question.skill_name,
+    question_type: question.question_type,
+    exercise_intent: question.exercise_intent,
     user_answer: userAnswer,
     verdict: evaluation.verdict,
     evaluation,

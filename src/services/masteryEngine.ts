@@ -12,6 +12,7 @@ export interface SkillEvidenceInput {
   category: string;
   isCorrect: boolean;
   questionType?: QuestionType | string;
+  exerciseIntent?: string;
   questionDifficulty?: EnglishLevel;
   errorTag?: string;
   attemptTimestamp?: string;
@@ -176,8 +177,9 @@ export class MasteryEngine {
         explanation = `Advanced to Recognition. Learner successfully identified the correct target form.`;
       } else if (previousStage === 'recognition') {
         // Requires at least active recall exercise, productive translation, or multiple clean successes
-        const isProductive = input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
-        const hasRecallOrMultiple = (consecutive >= 2 && (diversityCount >= 2 || input.questionType === 'fill_in_blank')) || (isProductive && consecutive >= 1);
+        const isProductive = input.exerciseIntent === 'sentence_production' || input.exerciseIntent === 'translation_production' || input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
+        const isRecall = input.exerciseIntent === 'vocabulary_recall' || input.questionType === 'fill_in_blank';
+        const hasRecallOrMultiple = (consecutive >= 2 && (diversityCount >= 2 || isRecall)) || (isProductive && consecutive >= 1);
         if (hasRecallOrMultiple) {
           newStage = 'active_recall';
           skill.status = 'reviewing';
@@ -193,7 +195,7 @@ export class MasteryEngine {
           explanation = `Recognizing form reliably. Ready for active recall practice.`;
         }
       } else if (previousStage === 'active_recall') {
-        const isProductive = input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
+        const isProductive = input.exerciseIntent === 'sentence_production' || input.exerciseIntent === 'translation_production' || input.questionType === 'vi_to_en_translation' || input.questionType === 'free_writing';
         // Needs diverse exercises (at least 2 types) and consecutive >= 3 to reach Application, or strong productive translation with consecutive >= 2
         if ((consecutive >= 3 && diversityCount >= 2) || (isProductive && consecutive >= 2)) {
           newStage = 'application';

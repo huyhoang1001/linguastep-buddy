@@ -147,6 +147,16 @@ Explanation and hints must be in ${lang}. Examples and prompt in natural English
 
 Core pedagogical constraints:
 - MANDATORY TARGET SKILL FIDELITY: The question prompt, concept_intro, options, and explanation MUST strictly and directly teach and test the specified Target skill: "${targetSkillName || 'Core ' + section + ' skill'}". If Target skill is "Inversion in Professional Contexts" or "Negative Inversion", you MUST test inversion structures (e.g., "Seldom have we...", "Rarely did..."). NEVER substitute an unrelated topic or generic transition words.
+- EXERCISE INTENT & INTERACTION MAPPING:
+  * Select the most appropriate "exercise_intent" and map it to the "question_type" as follows:
+    - "grammar_form_recognition" -> "multiple_choice" (Testing if the learner can identify the correct form among distractors).
+    - "grammar_application" -> "multiple_choice" (Applying a rule in context where the options represent different grammatical choices).
+    - "vocabulary_recognition" -> "multiple_choice" (Identifying meaning or correct word in context).
+    - "vocabulary_recall" -> "fill_in_blank" (The learner must independently retrieve the word).
+    - "sentence_production" -> "free_writing" (Independent construction of a full sentence).
+    - "translation_production" -> "vi_to_en_translation" (Producing English from a Vietnamese prompt).
+  * FOR GRAMMAR FORM SELECTION: ALWAYS use "multiple_choice". If the exercise involves choosing the correct verb form (e.g., "found" vs "finded"), generate 4 plausible answer combinations. For multiple blanks, each option must provide a complete ordered combination (e.g., "found / fixed").
+  * FOR VOCABULARY RECALL: Use "fill_in_blank" only when the learner should recall a specific target word they have already studied.
 - CRITICAL FOR CLOZE & SENTENCE COMPLETION: The "prompt" MUST contain both the clear instruction AND the full authentic sentence with an explicit blank "________" (e.g., 'Complete the sentence with the most appropriate formal transition word:\n\n"The team encountered unforeseen obstacles; ________, the deliverable was completed on time."'). NEVER output an instruction alone without providing the sentence itself!
 - Always provide "context_sentence" containing the full sentence with the blank "________" for cloze and sentence completion tasks. For "free_writing", do NOT provide a "context_sentence" with blanks; focus only on the realistic scenario in the "prompt".
 - If section is "vocabulary" or activity is "vocab_acquisition":
@@ -164,7 +174,7 @@ Core pedagogical constraints:
     - Provide "reinforcement_prompt" (secondary_context, application_prompt, expected_usage_tip) testing or applying the word in a second distinct context.
     - Set "vocab_exercise_type", "target_word", and "context_sentence".
 - If activity is "warmup_review": Provide a swift retrieval check testing recognition or identifying a common error.
-- If activity is "concept_practice": For question index 0, provide multiple_choice with concise concept_intro. For question index >= 1, provide fill_in_blank or sentence completion.
+- If activity is "concept_practice": For question index 0, provide multiple_choice with concise concept_intro. For question index >= 1, choose between multiple_choice (for form selection) or fill_in_blank (for recall).
 - If activity is "reading_analysis": Provide a rich "reading_passage" (120-150 words) and a comprehension or subtle inference question.
 - If activity is "writing_production" or "exit_synthesis": Provide a realistic free_writing prompt.
   * CRITICAL FOR FREE WRITING:
@@ -203,6 +213,7 @@ JSON Output Schema:
   "section": "${section}",
   "skill_id": string,
   "skill_name": string,
+  "exercise_intent": "grammar_form_recognition" | "grammar_application" | "vocabulary_recognition" | "vocabulary_recall" | "sentence_production" | "translation_production",
   "question_type": "multiple_choice" | "fill_in_blank" | "reading_comprehension" | "free_writing" | "vi_to_en_translation",
   "difficulty": "${profile.current_level}",
   "context_topic": "${topic}",

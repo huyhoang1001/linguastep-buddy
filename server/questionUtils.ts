@@ -39,5 +39,14 @@ export function sanitizeAndReconcileQuestion(q: Question): Question {
     question.prompt = `${question.prompt.trim()}\n\n"${synthesizedSentence}"`;
   }
 
+  // EXERCISE INTENT & INTERACTION RECONCILIATION
+  if (!question.exercise_intent) {
+    if (question.question_type === 'vi_to_en_translation') question.exercise_intent = 'translation_production';
+    else if (question.question_type === 'free_writing') question.exercise_intent = 'sentence_production';
+    else if (question.question_type === 'multiple_choice' && question.section === 'grammar') question.exercise_intent = 'grammar_form_recognition';
+    else if (question.question_type === 'multiple_choice' && question.section === 'vocabulary') question.exercise_intent = 'vocabulary_recognition';
+    else if (question.question_type === 'fill_in_blank') question.exercise_intent = 'vocabulary_recall';
+  }
+
   return question;
 }

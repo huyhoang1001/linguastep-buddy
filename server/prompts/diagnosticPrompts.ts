@@ -42,6 +42,12 @@ Learner Goal: "${userGoal}", Target: ${profile.target_level}, Explanation Langua
 Answered items count in this diagnostic: ${answered.length}.
 EXAM SUBJECT & MAJOR REQUIREMENT: The learner's primary field / major is "${userMajor}" ${majorDetails ? `(${majorDetails})` : ''}, with overall goal "${userGoal}". You MUST tailor vocabulary choices, sentence scenarios, reading passage themes, and free-writing prompts to align directly with this specific major and field whenever possible.
 
+PEDAGOGICAL INTENT & INTERACTION MAPPING:
+- For grammar: Set "exercise_intent" to "grammar_form_recognition" and "question_type" to "multiple_choice".
+- For vocabulary: Set "exercise_intent" to "vocabulary_recognition" and "question_type" to "multiple_choice".
+- For writing: Set "exercise_intent" to "sentence_production" and "question_type" to "free_writing".
+- For reading: Use "question_type" "reading_comprehension".
+
 SECTION SPECIFIC RULES:
 - If section is "grammar": Create a multiple-choice item strictly matching grammar competence at CEFR ${targetLevel}:
   * If ${targetLevel} is A1: Test basic verb 'to be', subject pronouns, or Present Simple routine (e.g. He lives / They work). DO NOT test complex tenses or conditionals!
@@ -50,6 +56,7 @@ SECTION SPECIFIC RULES:
   * If ${targetLevel} is B2: Test Passive Voice, 3rd conditional, or professional connectors (e.g., despite/whereas).
   * If ${targetLevel} is C1: Test Inversion, Cleft Sentences, Subjunctive, or advanced participle clauses.
   Provide exactly 4 options A, B, C, D with 1 unambiguous correct answer and plausible distractors. Topic context MUST be ${topic === 'general' ? 'everyday social, travel, hobbies, or general communication' : 'workplace, software, or technical communication'}.
+  For multiple blanks, each option must provide a complete ordered combination (e.g., "found / fixed").
 - If section is "vocabulary": Create a contextual multiple-choice item matching vocabulary at CEFR ${targetLevel}. For A1/A2 use high-frequency daily words and basic workplace greetings; for B1/B2 use collocations; for C1 use nuanced registers. Provide exactly 4 options A, B, C, D with 1 unambiguous correct answer.
 - CRITICAL FOR CLOZE & SENTENCE COMPLETION: The "prompt" MUST contain the clear instruction AND the full authentic sentence with an explicit blank "________" (e.g., 'Our team needs to ________ a new project management tool to help us track our daily tasks more efficiently.'). NEVER output an instruction alone without providing the sentence itself!
 - CRITICAL FOR ANSWER KEY: "expected_answer_ids" MUST contain ONLY the single letter ID ("A" | "B" | "C" | "D") that corresponds strictly to the correct option. "expected_answer_text" MUST be the exact verbatim text of that option.
@@ -74,6 +81,7 @@ Output strictly in JSON format:
   "section": "${targetSection}",
   "skill_id": string,
   "skill_name": string,
+  "exercise_intent": "grammar_form_recognition" | "grammar_application" | "vocabulary_recognition" | "sentence_production",
   "question_type": "${targetSection === 'writing' ? 'free_writing' : targetSection === 'reading' ? 'reading_comprehension' : 'multiple_choice'}",
   "difficulty": "${targetLevel}",
   "context_topic": "${topic}",
@@ -214,65 +222,53 @@ Exam Sections to Generate:
 ${plan.sections.map((s, idx) => `Section ${idx + 1}: ${s.section.toUpperCase()} (${s.targetQuestionsCount} items) — ${s.description}`).join('\n')}
 
 Quality & Formatting Rules:
-1. MANDATORY SUBJECT & MAJOR ALIGNMENT: The learner's core focus domain is "${userMajor}" ${majorDetails ? `(${majorDetails})` : ''}. Every vocabulary item, cloze sentence, reading passage topic, and free-writing prompt MUST be naturally grounded in this discipline (e.g. software engineering and IT for developers, corporate finance and banking for finance professionals, healthcare and clinical scenarios for medical personnel, marketing and campaigns for media professionals, etc.).
+1. MANDATORY SUBJECT & MAJOR ALIGNMENT: The learner's core focus domain is "${userMajor}" ${majorDetails ? `(${majorDetails})` : ''}. Every vocabulary item, cloze sentence, reading passage topic, and free-writing prompt MUST be naturally grounded in this discipline.
 2. CEFR Progression:
    - For Grammar and Vocabulary items: Start near baseline ${baseline} and slightly escalate in difficulty across the items.
-3. Multiple Choice Sections (Grammar, Vocabulary, Reading):
+3. Pedagogy & Interaction Mapping:
+   - For Grammar: Set "exercise_intent" to "grammar_form_recognition" and "question_type" to "multiple_choice".
+   - For Vocabulary: Set "exercise_intent" to "vocabulary_recognition" and "question_type" to "multiple_choice".
+   - For Writing: Set "exercise_intent" to "sentence_production" and "question_type" to "free_writing".
+4. Multiple Choice Sections (Grammar, Vocabulary, Reading):
    - MUST have question_type 'multiple_choice' (or 'reading_comprehension').
    - MUST provide exactly 4 options labeled 'A', 'B', 'C', 'D' with plausible distractors.
    - For sentence completion / cloze items: The "prompt" MUST contain the full authentic sentence with an explicit blank "________".
+   - For grammar multiple blanks, each option must provide a complete ordered combination (e.g., "found / fixed").
    - "expected_answer_ids" MUST be an array containing ONLY the single correct letter ID (e.g. ["A"]).
    - "expected_answer_text" MUST be the exact verbatim string of that option.
    - "accepted_alternatives" should include both the option text and the letter ID.
    - Provide a clear grammatical/lexical rule explanation in ${lang}.
-4. Reading Section:
+5. Reading Section:
    - Provide a coherent, realistic "reading_passage" ({ "title": string, "text": string, "word_count": number, "topic": string }).
    - All questions in the reading section must reference this passage for reading comprehension, factual detail, or author's intent.
-5. Writing Section:
+6. Writing Section:
    - The final section items (${plan.sections.find(s => s.section === 'writing')?.targetQuestionsCount || 1} items) MUST have question_type "free_writing".
    - Prompt the learner for an authentic workplace or daily scenario response aligned with "${userGoal}".
    - Do NOT provide a "context_sentence" with blanks for writing.
    - Provide a native-level model response in "model_answer".
    - Include level-appropriate "writing_config" (task_type, complexity, min_sentences, max_sentences).
-6. Output JSON: Return strictly a valid JSON object matching this schema:
+7. Output JSON: Return strictly a valid JSON object matching this schema:
 {
   "questions": [
     {
-      "id": "diag-1",
-      "section": "grammar",
-      "skill_id": "grammar_tense",
-      "skill_name": "Past Simple vs Present Perfect",
-      "question_type": "multiple_choice",
-      "difficulty": "B1",
+      "id": string,
+      "section": "grammar" | "vocabulary" | "reading" | "writing",
+      "skill_id": string,
+      "skill_name": string,
+      "exercise_intent": "grammar_form_recognition" | "vocabulary_recognition" | "sentence_production",
+      "question_type": "multiple_choice" | "reading_comprehension" | "free_writing",
+      "difficulty": string,
       "context_topic": "${topic}",
-      "prompt": "Our team ________ the deployment yesterday before the client called.",
+      "prompt": string,
       "options": [
-        {"id": "A", "text": "completed"},
-        {"id": "B", "text": "have completed"},
-        {"id": "C", "text": "are completing"},
-        {"id": "D", "text": "will complete"}
+        {"id": "A"|"B"|"C"|"D", "text": string}
       ],
-      "expected_answer_ids": ["A"],
-      "expected_answer_text": "completed",
-      "accepted_alternatives": ["completed", "A"],
-      "hint": "Pay attention to 'yesterday' as a completed past time marker.",
-      "explanation_rule": "We use Past Simple with definite past time markers.",
-      "sentence_translation": "Đội ngũ của chúng tôi đã hoàn tất việc triển khai ngày hôm qua trước khi khách hàng gọi đến."
-    },
-    {
-      "id": "diag-writing-1",
-      "section": "writing",
-      "skill_id": "prof_email_writing",
-      "skill_name": "Professional Email Drafting",
-      "question_type": "free_writing",
-      "difficulty": "B2",
-      "context_topic": "${topic}",
-      "prompt": "Task: Write a detailed formal email to a senior stakeholder summarizing the recent project delays and proposing a mitigation strategy.\n\nInstructions: Write a complete email. Use formal professional register.",
-      "writing_config": { "task_type": "email", "complexity": "independent", "min_sentences": 8, "max_sentences": 12 },
-      "model_answer": "Dear Stakeholders, I am writing to provide an update on the current project status...",
-      "hint": "Ensure you address both the cause of the delay and the specific steps for recovery.",
-      "explanation_rule": "High-level professional communication requires transparency and solution-oriented phrasing.",
-      "sentence_translation": "Nhiệm vụ: Viết một email chính thức chi tiết cho một bên liên quan cấp cao tóm tắt các lần trì hoãn dự án gần đây và đề xuất một chiến lược giảm thiểu."
+      "expected_answer_ids": ["A"|"B"|"C"|"D"],
+      "expected_answer_text": string,
+      "accepted_alternatives": [string],
+      "hint": string,
+      "explanation_rule": string,
+      "sentence_translation": string
     }
   ]
 }

@@ -825,6 +825,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               variant="secondary"
               fullWidth
               size="md"
+              className="h-12"
             >
               {startingMode === 'quick' ? (
                 <span>Starting Express Exam...</span>
@@ -889,6 +890,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               variant="primary"
               fullWidth
               size="md"
+              className="h-12"
               rightIcon={!startingMode && <ArrowRight />}
             >
               {startingMode === 'standard' ? (
@@ -951,6 +953,7 @@ export const AdaptiveDiagnosticView: React.FC<AdaptiveDiagnosticViewProps> = ({
               variant="secondary"
               fullWidth
               size="md"
+              className="h-12"
             >
               {startingMode === 'comprehensive' ? (
                 <span>Starting Comprehensive Exam...</span>
